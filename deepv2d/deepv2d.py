@@ -457,7 +457,7 @@ class DeepV2D:
 
         # (fx, cy, cx, cy)
         self.intrinsics = intrinsics
-
+        # 获取位姿信息
         poses = np.eye(4).reshape(1, 4, 4)
         poses = np.tile(poses, [n_frames, 1, 1])
         self.poses = poses
