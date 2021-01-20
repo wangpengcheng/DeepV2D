@@ -46,7 +46,7 @@ class DepthNetwork(object):
           'is_training': self.is_training,
         }
 
-
+    # 编码部分
     def encoder(self, inputs, reuse=False):
         """ 2D feature extractor """
 

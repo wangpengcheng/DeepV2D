@@ -64,19 +64,26 @@ class DeepV2D:
                 self.image_dims = [None, cfg.INPUT.HEIGHT, cfg.INPUT.WIDTH]
 
         self.outputs = {}
+        # 创建文件夹
         self._create_placeholders()
+        # 创建位姿估计网络
         self._build_motion_graph()
+        # 创建深度网络
         self._build_depth_graph()
+        # 
         self._build_reprojection_graph()
+        # 相似值图
         self._build_visibility_graph()
+        # 创建点云图
         self._build_point_cloud_graph()
-
+        # 深度
         self.depths = []
+        # 位姿
         self.poses = []
 
         if self.use_fcrn:
             self._build_fcrn_graph()
-
+        # 加载模型
         self.saver = tf.train.Saver(tf.model_variables())
 
 
@@ -109,7 +116,7 @@ class DeepV2D:
         # placeholders for storing graph adj_list and edges
         self.edges_placeholder = tf.placeholder(tf.int32, [None, 2])
         self.adj_placeholder = tf.placeholder(tf.int32, [None, None])
-
+    # 
     def _build_motion_graph(self):
         self.motion_net = MotionNetwork(self.cfg.MOTION, mode=self.mode,
             use_regressor=self.use_regressor, is_calibrated=self.is_calibrated, is_training=False)
@@ -435,7 +442,7 @@ class DeepV2D:
         print("Press q to exit")
         vis.visualize_prediction(point_cloud, point_colors, self.poses)
 
-
+    # call基本函数
     def __call__(self, images, intrinsics=None, iters=5, viz=False):
         n_frames = len(images)
         self.images = np.stack(images, axis=0)
