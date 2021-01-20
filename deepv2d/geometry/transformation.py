@@ -207,7 +207,7 @@ class SE3:
             vmask = tf.cast(vmask, tf.float32)[..., tf.newaxis]
             return coords, vmask
         return coords
-
+    # 特征相机网络
     def induced_flow(self, depth, intrinsics, valid_mask=False):
         coords0 = pops.coords_grid(tf.shape(depth), homogeneous=False)
         if valid_mask:

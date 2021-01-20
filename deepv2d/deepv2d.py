@@ -15,9 +15,9 @@ from geometry.intrinsics import *
 from geometry.transformation import *
 from geometry import projective_ops
 
-
 def fill_depth(depth):
-    """ Fill in the holes in the depth map """
+    """ Fill in the holes in the depth map  将整个图填充为深度图像
+    """
     ht, wd = depth.shape
     x, y = np.meshgrid(np.arange(wd), np.arange(ht))
     xx = x[depth > 0].astype(np.float32)
@@ -48,7 +48,7 @@ class DeepV2D:
                  mode='keyframe'):
 
         self.cfg = cfg
-        self.ckpt = ckpt 
+        self.ckpt = ckpt # ckpt文件位置
         self.mode = mode
 
         self.use_fcrn = use_fcrn
@@ -64,13 +64,13 @@ class DeepV2D:
                 self.image_dims = [None, cfg.INPUT.HEIGHT, cfg.INPUT.WIDTH]
 
         self.outputs = {}
-        # 创建文件夹
+        # 创建预定于变量
         self._create_placeholders()
         # 创建位姿估计网络
         self._build_motion_graph()
         # 创建深度网络
         self._build_depth_graph()
-        # 
+        # 前置图构建
         self._build_reprojection_graph()
         # 相似值图
         self._build_visibility_graph()
@@ -86,10 +86,11 @@ class DeepV2D:
         # 加载模型
         self.saver = tf.train.Saver(tf.model_variables())
 
-
+    # 创建session
     def set_session(self, sess):
         self.sess = sess
         sess.run(tf.global_variables_initializer())
+        # 存储
         self.saver.restore(self.sess, self.ckpt)
 
         if self.use_fcrn:
@@ -102,36 +103,40 @@ class DeepV2D:
 
 
     def _create_placeholders(self):
+        """
+        创建预定义变量
+        """
         frames, ht, wd = self.image_dims
+        # 输入数据占位，注意这里的输入是3张图片
         self.images_placeholder = tf.placeholder(tf.float32, [frames, ht, wd, 3])
         if self.mode == 'keyframe':
             self.depths_placeholder = tf.placeholder(tf.float32, [1, ht, wd])
         else:
             self.depths_placeholder = tf.placeholder(tf.float32, [frames, ht, wd])
-
+        # 位置占位
         self.poses_placeholder = tf.placeholder(tf.float32, [frames, 4, 4])
-        self.intrinsics_placeholder = tf.placeholder(tf.float32, [4])
+        self.intrinsics_placeholder = tf.placeholder(tf.float32, [4]) # 内联特征占位
         self.init_placeholder = tf.placeholder(tf.bool, [])
 
         # placeholders for storing graph adj_list and edges
-        self.edges_placeholder = tf.placeholder(tf.int32, [None, 2])
-        self.adj_placeholder = tf.placeholder(tf.int32, [None, None])
+        self.edges_placeholder = tf.placeholder(tf.int32, [None, 2]) # 边缘函数
+        self.adj_placeholder = tf.placeholder(tf.int32, [None, None]) # adj函数
     # 
     def _build_motion_graph(self):
         self.motion_net = MotionNetwork(self.cfg.MOTION, mode=self.mode,
             use_regressor=self.use_regressor, is_calibrated=self.is_calibrated, is_training=False)
-
+        # 定义图相关数据
         images = self.images_placeholder[tf.newaxis]
-        depths = self.depths_placeholder[tf.newaxis]
-        poses = self.poses_placeholder[tf.newaxis]
+        depths = self.depths_placeholder[tf.newaxis] # 定义深度数据
+        poses = self.poses_placeholder[tf.newaxis] # 定义位置数据
         
         do_init = self.init_placeholder
         intrinsics = self.intrinsics_placeholder[tf.newaxis]
-        edge_inds = tf.unstack(self.edges_placeholder, num=2, axis=-1)
-
+        edge_inds = tf.unstack(self.edges_placeholder, num=2, axis=-1) # 在这里进行矩阵分解
+        # 将位姿矩阵，转换位SE3
         # convert pose matrix into SE3 object
         Ts = VideoSE3Transformation(matrix=poses)
-
+        # 线进行位姿初始化，并进行前向计算
         Ts, intrinsics = self.motion_net.forward(Ts, 
             images, depths, intrinsics, edge_inds, init=do_init)
 
@@ -247,7 +252,7 @@ class DeepV2D:
         Ts = VideoSE3Transformation(matrix=poses)
         ii, jj = tf.unstack(self.edges_placeholder, num=2, axis=-1)
         intrinsics = intrinsics_vec_to_matrix(intrinsics)
-
+        # 缩放深度信息和特征点信息
         depths, intrinsics = rescale_depths_and_intrinsics(depths, intrinsics, downscale=4)
         ht = tf.cast(tf.shape(depths)[2], tf.float32)
         wd = tf.cast(tf.shape(depths)[3], tf.float32)
@@ -349,7 +354,7 @@ class DeepV2D:
 
     def update_poses(self, itr=0):
         n = self.images.shape[0]
-
+        # 生成矩阵网格点坐标
         if self.mode == 'keyframe':
             ii, jj = np.meshgrid(np.arange(1), np.arange(1,n))
         else:
@@ -372,7 +377,7 @@ class DeepV2D:
             
         # execute pose subgraph
         outputs = [self.outputs['poses'], self.outputs['intrinsics'], self.outputs['weights']]
-        self.poses, self.intrinsics, self.weights = self.sess.run(outputs, feed_dict=feed_dict)
+        self.poses, self.intrinsics, self.weights = self.sess.run(outputs, feed_dict=feed_dict) # 在这里进行推理和训练
 
         if not self.cfg.MOTION.IS_CALIBRATED:
             print("intrinsics (fx, fy, cx, cy): ", self.intrinsics)
@@ -445,7 +450,7 @@ class DeepV2D:
     # call基本函数
     def __call__(self, images, intrinsics=None, iters=5, viz=False):
         n_frames = len(images)
-        self.images = np.stack(images, axis=0)
+        self.images = np.stack(images, axis=0) # 将所有图片进行维度叠加
 
         if intrinsics is None:
             # initialize intrinsics
@@ -455,18 +460,18 @@ class DeepV2D:
             cy = images.shape[1] / 2.0
             intrinsics = np.stack([fx, fy, cx, cy])
 
-        # (fx, cy, cx, cy)
-        self.intrinsics = intrinsics
-        # 获取位姿信息
+
+        # (fx, fy, cx, cy) # 初步估计相机内参
+        self.intrinsics = intrinsics # 获取初始值
         poses = np.eye(4).reshape(1, 4, 4)
         poses = np.tile(poses, [n_frames, 1, 1])
-        self.poses = poses
+        self.poses = poses #初始化位姿
 
         # initalize reconstruction
         self.deepv2d_init() 
 
         for i in range(iters):
-            self.update_poses(i)    
+            self.update_poses(i)    # 计算位姿
             self.update_depths()
 
         if viz:

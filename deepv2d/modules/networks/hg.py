@@ -4,7 +4,7 @@ slim = tf.contrib.slim
 
 from .layer_ops import *
     
-
+# 沙漏网络2d
 def hourglass_2d(x, n, dim, expand=64):
     dim2 = dim + expand
     x = x + conv2d(conv2d(x, dim), dim)
@@ -25,7 +25,7 @@ def hourglass_2d(x, n, dim, expand=64):
 
     return out
 
-
+# 3d 沙漏网络
 def hourglass_3d(x, n, dim, expand=48):
     dim2 = dim + expand
 
