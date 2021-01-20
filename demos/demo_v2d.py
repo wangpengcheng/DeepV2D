@@ -1,3 +1,4 @@
+# -*- coding:UTF-8 -*-
 import sys
 sys.path.append('deepv2d')
 
@@ -15,11 +16,11 @@ import random
 from core import config
 from deepv2d import DeepV2D
 
-# 加载测试数据集图片和特征数据
+
 def load_test_sequence(path, n_frames=-1):
     """ loads images and intrinsics from demo folder """
     images = []
-    # 加载图像
+    #加载图像
     for imfile in sorted(glob.glob(os.path.join(path, "*.png"))):
         img = cv2.imread(imfile)
         images.append(img)
@@ -27,13 +28,13 @@ def load_test_sequence(path, n_frames=-1):
     inds = np.arange(1, len(images))
     if n_frames > 0:
         inds = np.random.choice(inds, n_frames, replace=False)
-    # 选取第一帧为关键帧
-    inds = [0] + inds.tolist() # put keyframe image first
-    # 获取所有图像
+    #选取第一帧为关键帧
+    inds = [0] + inds.tolist()
+    #获取所有图像
     images = [images[i] for i in inds]
-    # 图像转换为float 32位
+    #图像转换为float 32位
     images = np.stack(images).astype(np.float32)
-    # 加载信息
+    #加载信息
     intrinsics = np.loadtxt(os.path.join(path, 'intrinsics.txt'))
 
     return images, intrinsics
@@ -54,13 +55,13 @@ def main(args):
     cfg = config.cfg_from_file(args.cfg)
     is_calibrated = not args.uncalibrated
 
-    # build the DeepV2D graph
+    #build the DeepV2D graph
     deepv2d = DeepV2D(cfg, args.model, use_fcrn=args.fcrn, is_calibrated=is_calibrated, mode=args.mode)
 
     with tf.Session() as sess:
         deepv2d.set_session(sess)
-        # 加载图像和相机位姿初始值
-        # call deepv2d on a video sequence
+        #加载图像和相机位姿初始值
+        #call deepv2d on a video sequence
         images, intrinsics = load_test_sequence(args.sequence)
         
         if is_calibrated:

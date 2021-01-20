@@ -46,7 +46,7 @@ def extract_and_reshape_intrinsics(intrinsics, shape=None):
 
     return (fx, fy, cx, cy)
 
-
+# 将depthmap转换为点云
 def backproject(depth, intrinsics, jacobian=False):
     """ backproject depth map to point cloud """
 
@@ -55,7 +55,7 @@ def backproject(depth, intrinsics, jacobian=False):
 
     x_shape = tf.shape(x)
     fx, fy, cx, cy = extract_and_reshape_intrinsics(intrinsics, x_shape)
-
+    # 在这里矫正fx
     Z = tf.identity(depth)
     X = Z * (x - cx) / fx
     Y = Z * (y - cy) / fy

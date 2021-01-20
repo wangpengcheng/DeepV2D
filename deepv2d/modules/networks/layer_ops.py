@@ -4,23 +4,23 @@ slim = tf.contrib.slim
 
 from core.config import cfg
 
-
+# 激活层
 def bnrelu(x):
     return tf.nn.relu(slim.batch_norm(x))
 
-
+# 3d卷积层
 def conv3d(x, dim, stride=1, bn=True):
     if bn:
         return slim.conv3d(bnrelu(x), dim, [3, 3, 3], stride=stride)
     else:
         return slim.conv3d(tf.nn.relu(x), dim, [3, 3, 3], stride=stride)
-
+# 二维卷积
 def conv2d(x, dim, stride=1, bn=True):
     if bn:
         return slim.conv2d(bnrelu(x), dim, [3, 3], stride=stride)
     else:
         return slim.conv2d(tf.nn.relu(x), dim, [3, 3], stride=stride)
-
+# 2维度卷积
 def res_conv2d(x, dim, stride=1):
     if stride==1:
         y = conv2d(conv2d(x, dim), dim)
@@ -28,8 +28,8 @@ def res_conv2d(x, dim, stride=1):
         y = conv2d(conv2d(x, dim), dim, stride=2)
         x = slim.conv2d(x, dim, [1,1], stride=2)
 
-    out = x + y
-    tf.add_to_collection("checkpoints", out)
+    out = x + y # 将卷积数据进行叠加
+    tf.add_to_collection("checkpoints", out) # 将数据放入集合参数
 
     return out
 
@@ -43,7 +43,7 @@ def upnn3d(x, y, sc=2):
         x1 = x1[:, :hy, :wy]
 
     return x1
-
+# 进行向上分解
 def upnn2d(x, y, sc=2):
     dim = x.get_shape().as_list()[-1]
     bx, hx, wx, _ = tf.unstack(tf.shape(x), num=4)

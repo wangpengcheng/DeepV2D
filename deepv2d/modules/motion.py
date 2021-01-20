@@ -26,7 +26,7 @@ def compute_weights_reg_loss(ws, k=2048):
     l = tf.nn.sigmoid_cross_entropy_with_logits(labels=ref, logits=top)
     return tf.reduce_mean(l)
 
-
+# 位姿态估计网络
 class MotionNetwork:
     def __init__(self, cfg, 
                  reuse=False,

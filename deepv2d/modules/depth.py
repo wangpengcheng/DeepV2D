@@ -46,12 +46,12 @@ class DepthNetwork(object):
           'is_training': self.is_training,
         }
 
-    # 编码部分
+    # 编码部分，主要用来获取图像的2d特征信息
     def encoder(self, inputs, reuse=False):
         """ 2D feature extractor """
-
+        # 在第5个通道上进行分离
         batch, frames, ht, wd, _ = tf.unstack(tf.shape(inputs), num=5)
-        inputs = tf.reshape(inputs, [batch*frames, ht, wd, 3])
+        inputs = tf.reshape(inputs, [batch*frames, ht, wd, 3]) # 调整输入维度为图片数量*高*宽*3
 
         with tf.variable_scope("encoder") as sc:
             with slim.arg_scope([slim.batch_norm], **self.batch_norm_params):
@@ -60,8 +60,8 @@ class DepthNetwork(object):
                                     normalizer_fn=None,
                                     activation_fn=None,
                                     reuse=reuse):
-
-                    net = slim.conv2d(inputs, 32, [7, 7], stride=2)
+                    # 2d卷积网络 -- 这里可以拆成3个3*3的小网络，同时将输入图像betch更改为3
+                    net = slim.conv2d(inputs, 32, [7, 7], stride=2) # slim.conv2d = cov2d+relu
 
                     net = res_conv2d(net, 32, 1)
                     net = res_conv2d(net, 32, 1)
@@ -97,21 +97,21 @@ class DepthNetwork(object):
         prob_volume = tf.nn.softmax(prob_volume, axis=-1)
         pred = tf.reduce_sum(self.depths*prob_volume, axis= -1)
         return pred
-
+    # 匹配网络avg方式下降
     def stereo_network_avg(self, Ts, images, intrinsics, adj_list=None):
         """3D Matching Network with view pooling
-        Ts: collection of pose estimates correponding to images
+        Ts: collection of pose estimates correponding to images 
         images: rgb images
         intrinsics: image intrinsics
-        adj_list: [n, m] matrix specifying frames co-visiblee frames
+        adj_list: [n, m] matrix specifying frames co-visiblee frames 共同可见帧的矩阵
         """
 
         cfg = self.cfg
-        depths = tf.lin_space(cfg.MIN_DEPTH, cfg.MAX_DEPTH, cfg.COST_VOLUME_DEPTH)
-        intrinsics = intrinsics_vec_to_matrix(intrinsics / 4.0)
+        depths = tf.lin_space(cfg.MIN_DEPTH, cfg.MAX_DEPTH, cfg.COST_VOLUME_DEPTH) # 进行线性插值获取深度序列
+        intrinsics = intrinsics_vec_to_matrix(intrinsics / 4.0) # 将图像特征转换为矩阵
 
         with tf.variable_scope("stereo", reuse=self.reuse) as sc:
-            # extract 2d feature maps from images and build cost volume
+            # extract 2d feature maps from images and build cost volume # 进行编码，获取2d的图像信息
             fmaps = self.encoder(images)
             volume = operators.backproject_avg(Ts, depths, intrinsics, fmaps, adj_list)
 
@@ -177,10 +177,10 @@ class DepthNetwork(object):
 
     def forward(self, poses, images, intrinsics, idx=None):
 
-        images = 2 * (images / 255.0) - 1.0
-        ht = images.get_shape().as_list()[2]
+        images = 2 * (images / 255.0) - 1.0 # 将其映射
+        ht = images.get_shape().as_list()[2] # 
         wd = images.get_shape().as_list()[3]
-        self.input_dims = [ht, wd]
+        self.input_dims = [ht, wd] # 获取输入信息
 
         # perform per-view average pooling
         if self.cfg.MODE == 'avg':

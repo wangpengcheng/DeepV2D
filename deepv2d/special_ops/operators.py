@@ -30,7 +30,7 @@ else:
 def adj_to_inds(num=-1, adj_list=None):
     """ Convert adjency list into list of edge indicies (ii, jj) = (from, to)"""
     if adj_list is None:
-        ii, jj = tf.meshgrid(tf.range(1), tf.range(1, num))
+        ii, jj = tf.meshgrid(tf.range(1), tf.range(1, num)) # 进行平滑操作
     else:
         n, m = tf.unstack(tf.shape(adj_list), num=2)
         ii, jj = tf.split(adj_list, [1, m-1], axis=-1)
@@ -45,7 +45,7 @@ def backproject_avg(Ts, depths, intrinsics, fmaps, adj_list=None):
 
     dim = fmaps.get_shape().as_list()[-1]
     dd = depths.get_shape().as_list()[0]
-    batch, num, ht, wd, _ = tf.unstack(tf.shape(fmaps), num=5)
+    batch, num, ht, wd, _ = tf.unstack(tf.shape(fmaps), num=5) # 获取特征图信息
 
     # make depth volume
     depths = tf.reshape(depths, [1, 1, dd, 1, 1])
@@ -61,7 +61,7 @@ def backproject_avg(Ts, depths, intrinsics, fmaps, adj_list=None):
     coords1 = Tii.transform(depths, intrinsics)
     coords2 = Tij.transform(depths, intrinsics)
 
-    fmap1 = tf.gather(fmaps, ii, axis=1)
+    fmap1 = tf.gather(fmaps, ii, axis=1) # 获取数组切片
     fmap2 = tf.gather(fmaps, jj, axis=1)
 
     if use_cuda_backproject:
