@@ -15,7 +15,7 @@ import random
 from core import config
 from deepv2d import DeepV2D
 
-
+# 加载测试数据集图片和特征数据
 def load_test_sequence(path, n_frames=-1):
     """ loads images and intrinsics from demo folder """
     images = []
