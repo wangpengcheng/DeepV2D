@@ -1,11 +1,11 @@
 import tensorflow as tf
 import numpy as np
 from utils.einsum import einsum
-
+# 将相机参数转换为矩阵
 def intrinsics_vec_to_matrix(kvec):
     fx, fy, cx, cy = tf.unstack(kvec, num=4, axis=-1)
-    z = tf.zeros_like(fx)
-    o = tf.ones_like(fx)
+    z = tf.zeros_like(fx) #零阶矩阵
+    o = tf.ones_like(fx) #1阶矩阵
 
     K = tf.stack([fx, z, cx, z, fy, cy, z, z, o], axis=-1)
     K = tf.reshape(K, kvec.get_shape().as_list()[:-1] + [3,3])
@@ -16,7 +16,7 @@ def intrinsics_matrix_to_vec(kmat):
     fy = kmat[..., 1, 1]
     cx = kmat[..., 0, 2]
     cy = kmat[..., 1, 2]
-    return tf.stack([fx, fy, cx, cy], axis=-1)
+    return tf.stack([fx, fy, cx, cy], axis=-1) # 提取所有帧的相机内参
 
 def update_intrinsics(intrinsics, delta_focal):
     kvec = intrinsics_matrix_to_vec(intrinsics)

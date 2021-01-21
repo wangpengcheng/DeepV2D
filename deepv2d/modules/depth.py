@@ -98,21 +98,29 @@ class DepthNetwork(object):
         pred = tf.reduce_sum(self.depths*prob_volume, axis= -1)
         return pred
     # 匹配网络avg方式下降
-    def stereo_network_avg(self, Ts, images, intrinsics, adj_list=None):
+    def stereo_network_avg(self, 
+        Ts, 
+        images, 
+        intrinsics, 
+        adj_list=None
+        ):
         """3D Matching Network with view pooling
-        Ts: collection of pose estimates correponding to images 
+        Ts: collection of pose estimates correponding to images  
         images: rgb images
         intrinsics: image intrinsics
         adj_list: [n, m] matrix specifying frames co-visiblee frames 共同可见帧的矩阵
         """
 
         cfg = self.cfg
+        # 进行线性插值，构造深度数据
         depths = tf.lin_space(cfg.MIN_DEPTH, cfg.MAX_DEPTH, cfg.COST_VOLUME_DEPTH) # 进行线性插值获取深度序列
-        intrinsics = intrinsics_vec_to_matrix(intrinsics / 4.0) # 将图像特征转换为矩阵
+        intrinsics = intrinsics_vec_to_matrix(intrinsics / 4.0) # 将相机参数转换为矩阵
 
         with tf.variable_scope("stereo", reuse=self.reuse) as sc:
             # extract 2d feature maps from images and build cost volume # 进行编码，获取2d的图像信息
+            # 进行图像编码
             fmaps = self.encoder(images)
+            # 获取误差信息
             volume = operators.backproject_avg(Ts, depths, intrinsics, fmaps, adj_list)
 
             self.spreds = []
@@ -184,7 +192,7 @@ class DepthNetwork(object):
         
         self.input_dims = [ht, wd] # 获取输入信息
 
-        # perform per-view average pooling
+        # perform per-view average pooling 使用均值池化层模式
         if self.cfg.MODE == 'avg':
             spred = self.stereo_network_avg(poses, images, intrinsics, idx)
 

@@ -216,7 +216,16 @@ class MotionNetwork:
         return flow, weight
 
 
-    def forward(self, Ts, images, depths, intrinsics, inds=None, num_fixed=0, init=tf.constant(False)):
+    def forward(
+            self, 
+            Ts, 
+            images, 
+            depths, 
+            intrinsics, 
+            inds=None, 
+            num_fixed=0, 
+            init=tf.constant(False)
+            ):
         # motion network performs projection operations in features space
         cfg = self.cfg
         batch = tf.shape(images)[0]
