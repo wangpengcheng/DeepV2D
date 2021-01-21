@@ -15,6 +15,7 @@ from geometry.intrinsics import *
 from geometry.transformation import *
 from geometry import projective_ops
 
+# 填充深度图像，主要是对深度图像进行线性插值
 def fill_depth(depth):
     """ Fill in the holes in the depth map  将整个图填充为深度图像
     """
@@ -23,37 +24,45 @@ def fill_depth(depth):
     xx = x[depth > 0].astype(np.float32)
     yy = y[depth > 0].astype(np.float32)
     zz = depth[depth > 0].ravel()
+    # 进行插值 
     return interpolate.griddata((xx, yy), zz, (x, y), method='linear')
 
+# 将旋转转换为角度
 def vee(R):
     x1 = R[2,1] - R[1,2]
     x2 = R[0,2] - R[2,0]
     x3 = R[1,0] - R[0,1]
     return np.array([x1, x2, x3])
 
+# 获取位姿距离；主要用来表示变换的剧烈程度
 def pose_distance(G):
+    # 获取相机旋转R和平移t 
     R, t = G[:3,:3], G[:3,3]
     r = vee(R)
+    # dr的均方和
     dR = np.sqrt(np.sum(r**2))
     dt = np.sqrt(np.sum(t**2))
     return dR, dt
 
 
 class DeepV2D:
-    def __init__(self, cfg, ckpt, 
+    def __init__(self, 
+                 cfg,
+                 ckpt, 
                  is_calibrated=True, 
                  use_fcrn=False, 
                  use_regressor=True, 
                  image_dims=None,
-                 mode='keyframe'):
+                 mode='keyframe'
+                 ):
 
-        self.cfg = cfg
+        self.cfg = cfg # cfg配置文件
         self.ckpt = ckpt # ckpt文件位置
-        self.mode = mode
+        self.mode = mode # 加载的模型文件
 
-        self.use_fcrn = use_fcrn
-        self.use_regressor = use_regressor
-        self.is_calibrated = is_calibrated
+        self.use_fcrn = use_fcrn # 使用文件
+        self.use_regressor = use_regressor # 用户
+        self.is_calibrated = is_calibrated # 是否已经校准
 
         if image_dims is not None:
             self.image_dims = image_dims
@@ -61,7 +70,7 @@ class DeepV2D:
             if cfg.STRUCTURE.MODE == 'concat':
                 self.image_dims = [cfg.INPUT.FRAMES, cfg.INPUT.HEIGHT, cfg.INPUT.WIDTH]
             else:
-                self.image_dims = [None, cfg.INPUT.HEIGHT, cfg.INPUT.WIDTH]
+                self.image_dims = [None, cfg.INPUT.HEIGHT, cfg.INPUT.WIDTH] # 构建输入的训练图片维度
 
         self.outputs = {}
         # 创建预定于变量
@@ -82,9 +91,9 @@ class DeepV2D:
         self.poses = []
 
         if self.use_fcrn:
-            self._build_fcrn_graph()
+            self._build_fcrn_graph() # 
         # 加载模型
-        self.saver = tf.train.Saver(tf.model_variables())
+        self.saver = tf.train.Saver(tf.model_variables()) #构建存储模型
 
     # 创建session
     def set_session(self, sess):
@@ -104,47 +113,61 @@ class DeepV2D:
 
     def _create_placeholders(self):
         """
-        创建预定义变量
+        创建预定义变量；主要是构建数据
         """
         frames, ht, wd = self.image_dims
         # 输入数据占位，注意这里的输入是3张图片
         self.images_placeholder = tf.placeholder(tf.float32, [frames, ht, wd, 3])
+        # 如果是关键帧模式frames值为1
         if self.mode == 'keyframe':
             self.depths_placeholder = tf.placeholder(tf.float32, [1, ht, wd])
         else:
             self.depths_placeholder = tf.placeholder(tf.float32, [frames, ht, wd])
-        # 位置占位
+        # 位姿内存分配；每一个位姿都是4*4的一个矩阵
         self.poses_placeholder = tf.placeholder(tf.float32, [frames, 4, 4])
-        self.intrinsics_placeholder = tf.placeholder(tf.float32, [4]) # 内联特征占位
-        self.init_placeholder = tf.placeholder(tf.bool, [])
+        # 相机内参矩阵一维数组
+        self.intrinsics_placeholder = tf.placeholder(tf.float32, [4])
+        self.init_placeholder = tf.placeholder(tf.bool, []) # bool 数据是否占位符号
 
         # placeholders for storing graph adj_list and edges
+        
         self.edges_placeholder = tf.placeholder(tf.int32, [None, 2]) # 边缘函数
         self.adj_placeholder = tf.placeholder(tf.int32, [None, None]) # adj函数
-    # 
+    # 构建位姿估计网络
     def _build_motion_graph(self):
         self.motion_net = MotionNetwork(self.cfg.MOTION, mode=self.mode,
             use_regressor=self.use_regressor, is_calibrated=self.is_calibrated, is_training=False)
-        # 定义图相关数据
-        images = self.images_placeholder[tf.newaxis]
+        # 定义图相关数据，注意这里的数据是共享的
+        images = self.images_placeholder[tf.newaxis] # 输入图像数据 
         depths = self.depths_placeholder[tf.newaxis] # 定义深度数据
-        poses = self.poses_placeholder[tf.newaxis] # 定义位置数据
+        poses = self.poses_placeholder[tf.newaxis] # 定义相机姿态数据
         
-        do_init = self.init_placeholder
-        intrinsics = self.intrinsics_placeholder[tf.newaxis]
+        do_init = self.init_placeholder # 初始化数据
+        intrinsics = self.intrinsics_placeholder[tf.newaxis] # 定义相机位姿
         edge_inds = tf.unstack(self.edges_placeholder, num=2, axis=-1) # 在这里进行矩阵分解
         # 将位姿矩阵，转换位SE3
         # convert pose matrix into SE3 object
         Ts = VideoSE3Transformation(matrix=poses)
         # 线进行位姿初始化，并进行前向计算
-        Ts, intrinsics = self.motion_net.forward(Ts, 
-            images, depths, intrinsics, edge_inds, init=do_init)
-
+        Ts, intrinsics = self.motion_net.forward(
+            Ts, 
+            images, 
+            depths, 
+            intrinsics, 
+            edge_inds, 
+            init=do_init
+            )
+        # 更新位姿信息
         self.outputs['poses'] = tf.squeeze(Ts.matrix(), 0)
+        # 更新相机参数
         self.outputs['intrinsics'] = intrinsics[0]
+        # 更新权重
         self.outputs['weights'] = self.motion_net.weights_history[-1]
 
     def _build_depth_graph(self):
+        """
+        构建深度图信息
+        """
         self.depth_net = DepthNetwork(self.cfg.STRUCTURE, is_training=False)
         images = self.images_placeholder[tf.newaxis]
         poses = self.poses_placeholder[tf.newaxis]
@@ -157,9 +180,15 @@ class DeepV2D:
         if self.mode == 'global':
             adj_list = self.adj_placeholder
         
-        depths = self.depth_net.forward(Ts, images, intrinsics, adj_list)
+        depths = self.depth_net.forward(
+            Ts, # 相机位姿 
+            images, # 图像 
+            intrinsics, # 相机参数
+            adj_list # 激活函数
+            )
+        # 更新深度图
         self.outputs['depths'] = depths
-
+    # 创建点云图
     def _build_point_cloud_graph(self):
         """Use poses and depth maps to create point cloud"""
         depths = self.depths_placeholder[tf.newaxis]
@@ -471,9 +500,12 @@ class DeepV2D:
         self.deepv2d_init() 
 
         for i in range(iters):
+            print("start iterator {}".format(i))
+            time_start=time.time()
             self.update_poses(i)    # 计算位姿
             self.update_depths()
-
+            time_end=time.time()
+            print('time cost',time_end-time_start,'ms')
         if viz:
             self.vizualize_output()
 

@@ -63,7 +63,7 @@ class DepthNetwork(object):
                     # 2d卷积网络 -- 这里可以拆成3个3*3的小网络，同时将输入图像betch更改为3
                     net = slim.conv2d(inputs, 32, [7, 7], stride=2) # slim.conv2d = cov2d+relu
 
-                    net = res_conv2d(net, 32, 1)
+                    net = res_conv2d(net, 32, 1) # 卷积
                     net = res_conv2d(net, 32, 1)
                     net = res_conv2d(net, 32, 1)
                     net = res_conv2d(net, 64, 2)
@@ -177,16 +177,18 @@ class DepthNetwork(object):
 
     def forward(self, poses, images, intrinsics, idx=None):
 
-        images = 2 * (images / 255.0) - 1.0 # 将其映射
-        ht = images.get_shape().as_list()[2] # 
-        wd = images.get_shape().as_list()[3]
+        images = 2 * (images / 255.0) - 1.0 # 将其映射到0-1
+        
+        ht = images.get_shape().as_list()[2] # 高度 
+        wd = images.get_shape().as_list()[3] # 宽度
+        
         self.input_dims = [ht, wd] # 获取输入信息
 
         # perform per-view average pooling
         if self.cfg.MODE == 'avg':
             spred = self.stereo_network_avg(poses, images, intrinsics, idx)
 
-        # perform view concatenation
+        # perform view concatenation 执行视图连接，连接位姿图像和参数
         elif self.cfg.MODE == 'concat':
             spred = self.stereo_network_cat(poses, images, intrinsics)
 

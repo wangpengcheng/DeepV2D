@@ -221,7 +221,7 @@ class MotionNetwork:
         cfg = self.cfg
         batch = tf.shape(images)[0]
         num = tf.shape(images)[1]
-
+        # 如果图片需要缩放，对其进行降采样，将其压缩到0-1
         if cfg.RESCALE_IMAGES:
             images = 2 * (images / 255.0) - 1.0
 

@@ -69,7 +69,7 @@ def backproject_avg(Ts, depths, intrinsics, fmaps, adj_list=None):
         coords = tf.reshape(coords, [batch*num, dd, ht, wd, 2, 2])
         coords = tf.transpose(coords, [0, 2, 3, 1, 4, 5])
 
-        fmap1 = tf.reshape(fmap1, [batch*num, ht, wd, dim])
+        fmap1 = tf.reshape(fmap1, [batch*num, ht, wd, dim]) # 调整特征图
         fmap2 = tf.reshape(fmap2, [batch*num, ht, wd, dim])
         fmaps_stack = tf.stack([fmap1, fmap2], axis=-2)
 

@@ -12,7 +12,7 @@ import os
 import time
 import glob
 import random
-
+from utils.count import * 
 from core import config
 from deepv2d import DeepV2D
 
@@ -60,14 +60,18 @@ def main(args):
 
     with tf.Session() as sess:
         deepv2d.set_session(sess)
+        summary_writer = tf.summary.FileWriter('./log/', sess.graph)
         #加载图像和相机位姿初始值
         #call deepv2d on a video sequence
         images, intrinsics = load_test_sequence(args.sequence)
-        
+        graph =tf.get_default_graph()
+        stats_graph(graph)
         if is_calibrated:
             depths, poses = deepv2d(images, intrinsics, viz=True, iters=args.n_iters)
         else:
             depths, poses = deepv2d(images, viz=True, iters=args.n_iters)
+        
+       
 
 
 if __name__ == '__main__':
