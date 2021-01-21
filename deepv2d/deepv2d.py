@@ -489,9 +489,9 @@ class DeepV2D:
             cy = images.shape[1] / 2.0
             intrinsics = np.stack([fx, fy, cx, cy])
 
+
         # (fx, fy, cx, cy) # 初步估计相机内参
         self.intrinsics = intrinsics # 获取初始值
-
         poses = np.eye(4).reshape(1, 4, 4)
         poses = np.tile(poses, [n_frames, 1, 1])
         self.poses = poses #初始化位姿
