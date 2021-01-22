@@ -53,7 +53,7 @@ class DepthNetwork(object):
         batch, frames, ht, wd, _ = tf.unstack(tf.shape(inputs), num=5)
         inputs = tf.reshape(inputs, [batch*frames, ht, wd, 3]) # 调整输入维度为图片数量*高*宽*3
 
-        with tf.variable_scope("encoder") as sc:
+        with tf.variable_scope("encoder") as sc: 
             with slim.arg_scope([slim.batch_norm], **self.batch_norm_params):
                 with slim.arg_scope([slim.conv2d],
                                     weights_regularizer=slim.l2_regularizer(0.00005),
@@ -80,7 +80,7 @@ class DepthNetwork(object):
         return embd
 
     def stereo_head(self, x):
-        """ Predict probability volume from hg features"""
+        """ Predict probability volume from hg features hg的特征概率"""
         x = bnrelu(x)
         x = slim.conv3d(x, 32, [3, 3, 3], activation_fn=tf.nn.relu)
         x = slim.conv3d(x, 32, [3, 3, 3], activation_fn=tf.nn.relu)
@@ -88,15 +88,15 @@ class DepthNetwork(object):
 
         logits = slim.conv3d(x, 1, [1, 1, 1], activation_fn=None)
         logits = tf.squeeze(logits, axis=-1)
-
+        # 日志
         logits = tf.image.resize_bilinear(logits, self.input_dims)
         return logits
 
     def soft_argmax(self, prob_volume):
-        """ Convert probability volume into point estimate of depth"""
+        """ Convert probability volume into point estimate of depth 转换概率体积为深度的点估计"""
         prob_volume = tf.nn.softmax(prob_volume, axis=-1)
-        pred = tf.reduce_sum(self.depths*prob_volume, axis= -1)
-        return pred
+        pred = tf.reduce_sum(self.depths*prob_volume, axis= -1) # 对概率深度进行求和
+        return pred # 返回深度估计值
     # 匹配网络avg方式下降
     def stereo_network_avg(self, 
         Ts, 
@@ -120,7 +120,7 @@ class DepthNetwork(object):
             # extract 2d feature maps from images and build cost volume # 进行编码，获取2d的图像信息
             # 进行图像编码
             fmaps = self.encoder(images)
-            # 获取误差信息
+            # 反投影
             volume = operators.backproject_avg(Ts, depths, intrinsics, fmaps, adj_list)
 
             self.spreds = []
@@ -199,8 +199,8 @@ class DepthNetwork(object):
         # perform view concatenation 执行视图连接，连接位姿图像和参数
         elif self.cfg.MODE == 'concat':
             spred = self.stereo_network_cat(poses, images, intrinsics)
-
-        return spred
+        # 返回最终的深度估计值
+        return spred 
 
 
     def compute_loss(self, depth_gt, log_error=True):

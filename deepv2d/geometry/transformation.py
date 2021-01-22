@@ -55,7 +55,7 @@ def cond_transform(cond, T1, T2):
     
     return T
 
-
+# SE3初始化
 class SE3:
     def __init__(self, upsilon=None, matrix=None, so3=None, translation=None, eq=None, internal=DEFAULT_INTERNAL):
         self.eq = eq
@@ -197,8 +197,8 @@ class SE3:
             return mat
 
     def transform(self, depth, intrinsics, valid_mask=False, return3d=False):
-        pt = pops.backproject(depth, intrinsics)
-        pt_new = self.__call__(pt)
+        pt = pops.backproject(depth, intrinsics) # 根据深度和相机内参获取三维点云
+        pt_new = self.__call__(pt) # 获取新的三维点云图像
         coords = pops.project(pt_new, intrinsics)
         if return3d: 
             return coords, pt_new

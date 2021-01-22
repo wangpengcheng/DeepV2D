@@ -239,7 +239,7 @@ class DeepV2D:
 
 
     def _build_reprojection_graph(self):
-        """ Used to project depth from keyframes onto new frame """
+        """ Used to project depth from keyframes onto new frame 用于将深度从关键帧投影到新帧上"""
 
         EPS = 1e-8
         depths = self.depths_placeholder[tf.newaxis]
@@ -248,49 +248,49 @@ class DeepV2D:
 
         batch, num, ht, wd = tf.unstack(tf.shape(depths), num=4)
         Ts = VideoSE3Transformation(matrix=poses)
-        intrinsics = intrinsics_vec_to_matrix(intrinsics)
+        intrinsics = intrinsics_vec_to_matrix(intrinsics) # 将相机参数转换为矩阵
 
-        ii, jj = tf.meshgrid(tf.range(0, num), tf.range(num, num+1))
-        ii = tf.reshape(ii, [-1])
-        jj = tf.reshape(jj, [-1])
+        ii, jj = tf.meshgrid(tf.range(0, num), tf.range(num, num+1)) # 构建多帧的数量，ii为num,jj为1
+        ii = tf.reshape(ii, [-1]) # 将其转换为1维度向量
+        jj = tf.reshape(jj, [-1]) # 
 
-        Tij = Ts.gather(jj) * Ts.gather(ii).inv()
-        X0 = projective_ops.backproject(depths, intrinsics)
-        X1 = Tij(X0)
+        Tij = Ts.gather(jj) * Ts.gather(ii).inv() # 获取对应的照片位姿i*j;注意j一般为1，进行取反
+        X0 = projective_ops.backproject(depths, intrinsics) # 获取点云图
+        X1 = Tij(X0) # 获取对应点的位姿，注意这里的点应该是n,w,h,x,y,d的6维度数据
 
-        coords = projective_ops.project(X1, intrinsics)
-        depths = X1[..., 2]
+        coords = projective_ops.project(X1, intrinsics) # 获取每个点对应的x,y
+        depths = X1[..., 2] #获取深度图
 
-        indicies = tf.cast(coords[..., ::-1] + .5, tf.int32)
-        indicies = tf.reshape(indicies, [-1, 2])
-        depths = tf.reshape(depths, [-1])
+        indicies = tf.cast(coords[..., ::-1] + .5, tf.int32) #
+        indicies = tf.reshape(indicies, [-1, 2]) # 转换为2列数据
+        depths = tf.reshape(depths, [-1]) # 将深度数据转换为一个数组
 
-        depth = tf.scatter_nd(indicies, depths, [ht, wd])
-        count = tf.scatter_nd(indicies, tf.ones_like(depths), [ht, wd])
+        depth = tf.scatter_nd(indicies, depths, [ht, wd]) 
+        count = tf.scatter_nd(indicies, tf.ones_like(depths), [ht, wd]) # 将其分散到新的张量中
 
         depth = depth / (count + EPS)
         self.outputs['depth_reprojection'] = depth
 
     def _build_visibility_graph(self):
-        """ Find induced optical flow between pairs of frames """
+        """ Find induced optical flow between pairs of frames 查找帧之间产生的光流 """
 
-        depths = self.depths_placeholder[tf.newaxis]
-        poses = self.poses_placeholder[tf.newaxis]
-        intrinsics = self.intrinsics_placeholder[tf.newaxis]
+        depths = self.depths_placeholder[tf.newaxis] # 深度
+        poses = self.poses_placeholder[tf.newaxis] # 位姿
+        intrinsics = self.intrinsics_placeholder[tf.newaxis] # 相机内参
 
         Ts = VideoSE3Transformation(matrix=poses)
-        ii, jj = tf.unstack(self.edges_placeholder, num=2, axis=-1)
-        intrinsics = intrinsics_vec_to_matrix(intrinsics)
+        ii, jj = tf.unstack(self.edges_placeholder, num=2, axis=-1) # 这里将边缘矩阵进分解，-1表示逆序的最后一个维度
+        intrinsics = intrinsics_vec_to_matrix(intrinsics) # 进行参数转换
         # 缩放深度信息和特征点信息
         depths, intrinsics = rescale_depths_and_intrinsics(depths, intrinsics, downscale=4)
         ht = tf.cast(tf.shape(depths)[2], tf.float32)
         wd = tf.cast(tf.shape(depths)[3], tf.float32)
 
-        depths = tf.gather(depths, ii, axis=1)
-        Tij = Ts.gather(jj) * Ts.gather(ii).inv()
+        depths = tf.gather(depths, ii, axis=1) # 从depths的axis维根据ii的参数值获取切片
+        Tij = Ts.gather(jj) * Ts.gather(ii).inv() # 进行位姿数据切片
 
-        flow = Tij.induced_flow(depths, intrinsics)
-        coords = Tij.transform(depths, intrinsics)
+        flow = Tij.induced_flow(depths, intrinsics) # 计算流
+        coords = Tij.transform(depths, intrinsics) # 进行坐标转换
 
         flo_graph = tf.sqrt(tf.reduce_sum(flow**2, axis=-1))
         flo_graph = tf.reduce_mean(flo_graph, [-1, -2])
