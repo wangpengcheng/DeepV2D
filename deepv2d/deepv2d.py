@@ -79,7 +79,7 @@ class DeepV2D:
         self._build_motion_graph()
         # 创建深度网络
         self._build_depth_graph()
-        # 前置图构建
+        # 构建深度映射图
         self._build_reprojection_graph()
         # 相似值图
         self._build_visibility_graph()
@@ -210,7 +210,7 @@ class DeepV2D:
         batch, num, ht, wd = tf.unstack(tf.shape(depths), num=4)
 
         ii, jj = tf.meshgrid(tf.range(1), tf.range(0, num))
-        ii = tf.reshape(ii, [-1])
+        ii = tf.reshape(ii, [-1]) # 将其变为一维度向量
         jj = tf.reshape(jj, [-1])
 
         Ts = VideoSE3Transformation(matrix=poses)
@@ -226,7 +226,7 @@ class DeepV2D:
         valid = valid[:, :, crop_h:-crop_h, crop_w:-crop_w]
         images = images[:, :, crop_h:-crop_h, crop_w:-crop_w, ::-1]
         
-        X1 = tf.reshape(X1, [-1, 3])
+        X1 = tf.reshape(X1, [-1, 3]) #n*3个三维向量
         colors = tf.reshape(images, [-1, 3])
 
         valid_inds = tf.where(tf.reshape(valid, [-1]))
@@ -262,14 +262,14 @@ class DeepV2D:
         depths = X1[..., 2] #获取深度图
 
         indicies = tf.cast(coords[..., ::-1] + .5, tf.int32) #
-        indicies = tf.reshape(indicies, [-1, 2]) # 转换为2列数据
+        indicies = tf.reshape(indicies, [-1, 2]) # 转换为2列数据，主要是X,Y
         depths = tf.reshape(depths, [-1]) # 将深度数据转换为一个数组
 
-        depth = tf.scatter_nd(indicies, depths, [ht, wd]) 
-        count = tf.scatter_nd(indicies, tf.ones_like(depths), [ht, wd]) # 将其分散到新的张量中
+        depth = tf.scatter_nd(indicies, depths, [ht, wd]) # 转换为ht*wd的二维矩阵，主要值是depth
+        count = tf.scatter_nd(indicies, tf.ones_like(depths), [ht, wd]) # 将其分散到新的张量中,来统计是否有深度数据
 
-        depth = depth / (count + EPS)
-        self.outputs['depth_reprojection'] = depth
+        depth = depth / (count + EPS) #在这里对深度进行均一化
+        self.outputs['depth_reprojection'] = depth # 获取深度映射信息
 
     def _build_visibility_graph(self):
         """ Find induced optical flow between pairs of frames 查找帧之间产生的光流 """
@@ -278,7 +278,7 @@ class DeepV2D:
         poses = self.poses_placeholder[tf.newaxis] # 位姿
         intrinsics = self.intrinsics_placeholder[tf.newaxis] # 相机内参
 
-        Ts = VideoSE3Transformation(matrix=poses)
+        Ts = VideoSE3Transformation(matrix=poses) # 将位姿转换为矩阵
         ii, jj = tf.unstack(self.edges_placeholder, num=2, axis=-1) # 这里将边缘矩阵进分解，-1表示逆序的最后一个维度
         intrinsics = intrinsics_vec_to_matrix(intrinsics) # 进行参数转换
         # 缩放深度信息和特征点信息
@@ -298,9 +298,9 @@ class DeepV2D:
         contained = tf.to_float(
             (coords[...,0] > 0.0) & (coords[...,0] < wd) & 
             (coords[...,1] > 0.0) & (coords[...,1] < ht))
-        
+        # 在这里进行求取中间值
         vis_graph = tf.reduce_mean(contained, [-1, -2])
-        self.outputs['visibility'] = (flo_graph[0], vis_graph[0], flow)
+        self.outputs['visibility'] = (flo_graph[0], vis_graph[0], flow) # 可见性
 
     def _build_fcrn_graph(self):
         """ Build single image initializion graph"""
@@ -361,9 +361,9 @@ class DeepV2D:
 
         else:
             if self.mode == 'keyframe':
-                images = np.stack([self.images[0]] * self.images.shape[0], axis=0)
-                poses = np.stack([np.eye(4)] * self.images.shape[0], axis=0)
-
+                images = np.stack([self.images[0]] * self.images.shape[0], axis=0) # 将第一张图片复制8次，构建临时空变量
+                poses = np.stack([np.eye(4)] * self.images.shape[0], axis=0) #复制8次单位矩阵
+                # 在这里进行初始赋值
                 feed_dict = {
                     self.images_placeholder: images,
                     self.poses_placeholder: poses,
@@ -389,12 +389,12 @@ class DeepV2D:
         else:
             ii, jj = np.meshgrid(np.arange(n), np.arange(n))
         
-        ii = ii.reshape(-1)
-        jj = jj.reshape(-1)
-        v = ~np.equal(ii, jj)
+        ii = ii.reshape(-1) # 转变为一维度向量
+        jj = jj.reshape(-1) # 1-8数组
+        v = ~np.equal(ii, jj) # 1*7的True数组
 
         # don't use pairs with self loop
-        edges = np.stack([ii[v], jj[v]], axis=-1)
+        edges = np.stack([ii[v], jj[v]], axis=-1) #7*2的数组，[0,1],[0,2]...
 
         feed_dict = {
             self.images_placeholder: self.images,
@@ -478,7 +478,7 @@ class DeepV2D:
 
     # call基本函数
     def __call__(self, images, intrinsics=None, iters=5, viz=False):
-        n_frames = len(images)
+        n_frames = len(images) # 8张图像
         self.images = np.stack(images, axis=0) # 将所有图片进行维度叠加
 
         if intrinsics is None:
@@ -492,8 +492,8 @@ class DeepV2D:
 
         # (fx, fy, cx, cy) # 初步估计相机内参
         self.intrinsics = intrinsics # 获取初始值
-        poses = np.eye(4).reshape(1, 4, 4)
-        poses = np.tile(poses, [n_frames, 1, 1])
+        poses = np.eye(4).reshape(1, 4, 4) # 1个单位矩阵4*4
+        poses = np.tile(poses, [n_frames, 1, 1]) # 给每个frame一个相机参数矩阵，有8*4*4的矩阵
         self.poses = poses #初始化位姿
 
         # initalize reconstruction

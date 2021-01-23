@@ -202,7 +202,7 @@ class DepthNetwork(object):
         # 返回最终的深度估计值
         return spred 
 
-
+    # 计算loss
     def compute_loss(self, depth_gt, log_error=True):
 
         b_gt, h_gt, w_gt, _ = depth_gt.get_shape().as_list()

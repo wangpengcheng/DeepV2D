@@ -9,10 +9,16 @@
             "type": "python",
             "request": "launch",
             // "cwd":"${workSpaceRoot}",
-            "program": "demos/demo_v2d.py",
+            // "program": "demos/demo_v2d.py",
+            // "args": [
+            //     "--model=models/nyu.ckpt",
+            //     "--sequence=data/demos/nyu_0"
+            // ],
+            "program": "training/train_kitti.py",
             "args": [
-                "--model=models/nyu.ckpt",
-                "--sequence=data/demos/nyu_0"
+                "--cfg=cfgs/kitti.yaml",
+                "--name=kitti_model",
+                "--tfrecords=kitti_train.tfrecords"
             ],
             "console": "integratedTerminal"
         }

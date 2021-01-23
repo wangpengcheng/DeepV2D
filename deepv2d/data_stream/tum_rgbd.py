@@ -18,6 +18,7 @@ cx = 318.6
 cy = 255.3
 intrinsics = np.array([fx, fy, cx, cy])
 
+# 时间轴对齐
 def associate_frames(image_times, depth_times, pose_times):
     associations = []
     for i, t in enumerate(image_times):
@@ -68,15 +69,16 @@ def transform44(l):
 class TUM_RGBD:
     def __init__(self, dataset_path):
         self.dataset_path = dataset_path
-
+    # 读取迭代器列表
     def iterate_sequence(self, sequence_name, matrix=False):
         """returns list of images, depths, and poses"""
         sequence_dir = os.path.join(self.dataset_path, sequence_name)
         image_list = os.path.join(sequence_dir, 'rgb.txt')
         depth_list = os.path.join(sequence_dir, 'depth.txt')
         pose_list = os.path.join(sequence_dir, 'groundtruth.txt')
-
+        # 图像数据
         image_data = np.loadtxt(image_list, delimiter=' ', dtype=np.unicode_, skiprows=3)
+        # 深度数据
         depth_data = np.loadtxt(depth_list, delimiter=' ', dtype=np.unicode_, skiprows=3)
 
         try:
@@ -84,7 +86,7 @@ class TUM_RGBD:
         except:
             pose_data = np.zeros((len(image_data), 7))
             secret = True
-
+        # 获取相机参数矩阵
         intrinsics_mat = intrinsics.copy()
 
         images = []

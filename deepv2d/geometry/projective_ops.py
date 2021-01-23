@@ -6,7 +6,7 @@ from utils.einsum import einsum
 MIN_DEPTH = 0.1
 # 按照形状进行网格化
 def coords_grid(shape, homogeneous=True):
-    """ grid of pixel coordinates """
+    """ grid of pixel coordinates 获取每个像素的网格坐标点"""
     xx, yy = tf.meshgrid(tf.range(shape[-1]), tf.range(shape[-2]))
 
     xx = tf.cast(xx, tf.float32) # 转换坐标
@@ -82,7 +82,7 @@ def project(points, intrinsics, jacobian=False):
     Z = tf.maximum(Z, MIN_DEPTH) # 获取最大深度
 
     x_shape = tf.shape(X) # 获取x数据的长度
-    fx, fy, cx, cy = extract_and_reshape_intrinsics(intrinsics, x_shape) # 获取x方向上的相机内参
+    fx, fy, cx, cy = extract_and_reshape_intrinsics(intrinsics, x_shape) # 调整相机内参矩阵
 
     x = fx * (X / Z) + cx
     y = fy * (Y / Z) + cy

@@ -16,9 +16,10 @@ def intrinsics_matrix_to_vec(kmat):
     fy = kmat[..., 1, 1]
     cx = kmat[..., 0, 2]
     cy = kmat[..., 1, 2]
-    return tf.stack([fx, fy, cx, cy], axis=-1) # 提取所有帧的相机内参
+    return tf.stack([fx, fy, cx, cy], axis=-1) # 提取所有帧的相机内参，并转化为一维度数据
 
 def update_intrinsics(intrinsics, delta_focal):
+    # 将位姿信息转转为kvect
     kvec = intrinsics_matrix_to_vec(intrinsics)
     fx, fy, cx, cy = tf.unstack(kvec, num=4, axis=-1)
     df = tf.squeeze(delta_focal, -1)
@@ -30,11 +31,11 @@ def update_intrinsics(intrinsics, delta_focal):
     kvec = tf.stack([fx, fy, cx, cy], axis=-1)
     kmat = intrinsics_vec_to_matrix(kvec)
     return kmat
-
+# 对深度进行重新缩放
 def rescale_depth(depth, downscale=4):
-    depth = tf.expand_dims(depth, axis=-1)
+    depth = tf.expand_dims(depth, axis=-1) # 将所有维度扩展
     new_shape = tf.shape(depth)[1:3] // downscale
-    depth = tf.image.resize_nearest_neighbor(depth, new_shape)
+    depth = tf.image.resize_nearest_neighbor(depth, new_shape) # 进行插值和
     return tf.squeeze(depth, axis=-1)
 
 def rescale_depth_and_intrinsics(depth, intrinsics, downscale=4):

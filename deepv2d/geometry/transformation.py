@@ -195,7 +195,7 @@ class SE3:
                 mat = tf.concat([mat, filler], axis=-2)
 
             return mat
-
+    # 将深度图像，转换为(X，Y,Z)点云图
     def transform(self, depth, intrinsics, valid_mask=False, return3d=False):
         pt = pops.backproject(depth, intrinsics) # 根据深度和相机内参获取三维点云
         pt_new = self.__call__(pt) # 获取新的三维点云图像
@@ -209,12 +209,12 @@ class SE3:
         return coords
     # 特征相机网络
     def induced_flow(self, depth, intrinsics, valid_mask=False):
-        coords0 = pops.coords_grid(tf.shape(depth), homogeneous=False)
+        coords0 = pops.coords_grid(tf.shape(depth), homogeneous=False) # 获取相机网格坐标
         if valid_mask:
             coords1, vmask = self.transform(depth, intrinsics, valid_mask=valid_mask)
             return coords1 - coords0, vmask
         coords1 = self.transform(depth, intrinsics, valid_mask=valid_mask)
-        return coords1 - coords0
+        return coords1 - coords0 # 获取相机坐标差值
 
     def depth_change(self, depth, intrinsics):
         pt = pops.backproject(depth, intrinsics)
