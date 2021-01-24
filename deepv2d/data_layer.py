@@ -34,7 +34,7 @@ def _write_prediction_py(ids, prediction):
 
 
 class DataLayer(object):
-    """数据加载基础类
+    """数据加载基础类,主要是字符串类型的数据源加载
 
     Args:
         object ([type]): [description]

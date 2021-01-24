@@ -1,10 +1,9 @@
-#!/usr/bin/python
-
+# -*- coding: UTF-8 -*-
 import argparse
 import sys
 import os
 import numpy
-
+import numpy as np
 
 def read_file_list(filename):
     """
@@ -28,6 +27,7 @@ def read_file_list(filename):
     list = [(float(l[0]),l[1:]) for l in list if len(l)>1]
     return dict(list)
 
+
 def associate(first_list, second_list,offset,max_difference):
     """
     Associate two dictionaries of (stamp,data). As the time stamps never match exactly, we aim 
@@ -43,8 +43,8 @@ def associate(first_list, second_list,offset,max_difference):
     matches -- list of matched tuples ((stamp1,data1),(stamp2,data2))
     
     """
-    first_keys = first_list.keys()
-    second_keys = second_list.keys()
+    first_keys = list(first_list)
+    second_keys = list(second_list)
     potential_matches = [(abs(a - (b + offset)), a, b) 
                          for a in first_keys 
                          for b in second_keys 
@@ -60,34 +60,69 @@ def associate(first_list, second_list,offset,max_difference):
     matches.sort()
     return matches
 
+
 # 将三个向量进行合并
 def associate_3(first_list, second_list,three_list,offset,max_difference):
-    match1 = associate(first_list,second_list)
-    matches = associate(match1,three_list)
+    three_keys = list(three_list)
+    matches1 = associate(first_list,second_list,offset,max_difference)
+    matches = [
+        (a,b,c)
+        for a,b in matches1
+        for c in three_keys
+        if  abs(a - (c + offset)) < max_difference 
+    ]
+    matches.sort()
     return matches
 
-if __name__ == '__main__':
+def tmu_associate(first_file,second_file,three_file,order_file,offset=0.0,max_difference=0.02):
     
     # parse command line
-    parser = argparse.ArgumentParser(description='''
-    This script takes two data files with timestamps and associates them   
-    ''')
-    parser.add_argument('first_file', help='first text file (format: timestamp data)')
-    parser.add_argument('second_file', help='second text file (format: timestamp data)')
-    parser.add_argument('three_file',help='three text file (format: timestamp data)')
-    parser.add_argument('--first_only', help='only output associated lines from first file', action='store_true')
-    parser.add_argument('--offset', help='time offset added to the timestamps of the second file (default: 0.0)',default=0.0)
-    parser.add_argument('--max_difference', help='maximally allowed time difference for matching entries (default: 0.02)',default=0.02)
-    args = parser.parse_args()
+    # parser = argparse.ArgumentParser(description='''
+    # This script takes two data files with timestamps and associates them   
+    # ''')
+    # parser.add_argument('first_file', help='first text file (format: timestamp data)')
+    # parser.add_argument('second_file', help='second text file (format: timestamp data)')
+    # parser.add_argument('three_file',help='three text file (format: timestamp data)')
+    # parser.add_argument('--first_only', help='only output associated lines from first file', action='store_true')
+    # parser.add_argument('--offset', help='time offset added to the timestamps of the second file (default: 0.0)',default=0.0)
+    # parser.add_argument('--max_difference', help='maximally allowed time difference for matching entries (default: 0.02)',default=0.02)
+    # args = parser.parse_args()
 
-    first_list = read_file_list(args.first_file)
-    second_list = read_file_list(args.second_file)
-    three_list = read_file_list(args.three_file)
+    first_list = read_file_list(first_file)
+    second_list = read_file_list(second_file)
+    three_list = read_file_list(three_file)
     #matches = associate(first_list, second_list, three_list,float(args.offset),float(args.max_difference))    
-    matches = associate_3(first_list, second_list, three_list,float(args.offset),float(args.max_difference))
-    if args.first_only:
-        for a,b,c in matches:
-            print("%f %s"%(a," ".join(first_list[a])))
-    else:
-        for a,b,c in matches:
-            print("%f %s %f %s %f %s"%(a," ".join(first_list[a]),b-float(args.offset)," ".join(second_list[b],c-float(args.offset)," ".join(three_list[c])))
+    matches = associate_3(first_list, second_list, three_list,offset,max_difference)
+    fo = open(order_file, "w")
+    for a,b,c in matches:
+        fo.write("{} {} {} {} {} {} \r\n".format(a," ".join(first_list[a]),b-float(args.offset)," ".join(second_list[b]),c-float(args.offset)," ".join(three_list[c])))
+    fo.close()
+
+def get_data_from_sum_file(order_file):
+    print(order_file)
+    # # 图像数据
+    images = np.loadtxt(order_file, delimiter=' ', dtype=np.unicode_,usecols=(1,))
+    # 深度数据
+    depths = np.loadtxt(order_file, delimiter=' ', dtype=np.unicode_,usecols=(3,))
+    # 位姿数据
+    try:
+        poses = np.loadtxt(order_file, delimiter=' ', dtype=np.float64, usecols=(5,6,7,8,9,10,11))
+    except:
+        poses = np.zeros((len(images), 7))
+    return images,depths,poses
+
+# if __name__ == '__main__':
+    
+# #     # parse command line
+#     parser = argparse.ArgumentParser(description='''
+#     This script takes two data files with timestamps and associates them   
+#     ''')
+#     parser.add_argument('first_file', help='first text file (format: timestamp data)')
+# #     parser.add_argument('second_file', help='second text file (format: timestamp data)')
+# #     parser.add_argument('three_file',help='three text file (format: timestamp data)')
+# #     parser.add_argument('--first_only', help='only output associated lines from first file', action='store_true')
+# #     parser.add_argument('--offset', help='time offset added to the timestamps of the second file (default: 0.0)',default=0.0)
+# #     parser.add_argument('--max_difference', help='maximally allowed time difference for matching entries (default: 0.02)',default=0.02)
+#     args = parser.parse_args()
+# #     tmu_associate(args.first_file, args.second_file,args.three_file,"test2.txt",float(args.offset),float(args.max_difference))
+#     get_data_from_sum_file(args.first_file)

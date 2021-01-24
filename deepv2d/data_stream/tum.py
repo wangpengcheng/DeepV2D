@@ -13,22 +13,49 @@ import argparse
 import random
 import numpy
 import sys
-
+from utils.tum_associate import *
 
 fx = 517.3
 fy = 516.5
 cx = 318.6
 cy = 255.3
 intrinsics = np.array([fx, fy, cx, cy])
+def get_TUM_data(data_path):
+    """读取tum中的数据
 
-# 时间轴对齐
-def associate_frames(image_times, depth_times, pose_times):
-    associations = []
-    for i, t in enumerate(image_times):
-        j = np.argmin(np.abs(depth_times - t))
-        k = np.argmin(np.abs(pose_times - t))
-        associations.append((i, j, k))
-    return associations
+    Args:
+        data_path ([str]): 数据存在的路径 
+
+    Returns:
+        [type]: [description]
+    """
+    sum_data_file_name = "rgb_depth_ground.txt"
+    data_file_path = os.path.join(data_path,sum_data_file_name)
+    print("====   {} ======".format(data_file_path))
+    # 不存在综合数据就进行创建
+    if not os.path.isfile(data_file_path):
+        # 获取图像列表
+        image_list = os.path.join(data_path, 'rgb.txt')
+        # 获取深度列表
+        depth_list = os.path.join(data_path, 'depth.txt')
+        # 获取位姿列表
+        pose_list = os.path.join(data_path, 'groundtruth.txt')
+        # 执行数据合并文件
+        tum_associate(image_list,depth_list,pose_list)
+
+    # 读取综合数据文件
+    # 文件样例:
+    # 1341841310.82 rgb/1341841310.821702.png 1341841310.82 depth/1341841310.822401.png 1341841310.81 -2.7366 0.1278 1.2413 0.7256 -0.5667 0.2209 -0.3217
+    #
+    images,depths,poses = get_data_from_sum_file(data_file_path)
+    print(len(images))
+    # 遍历修改
+    for i in range(0,len(images)):
+        print("====   {} ======".format(images[i]))
+        images[i]=data_path+"/"+images[i]
+        print("====   {} ======".format(images[i]))
+        depths[i]=data_path+'/'+depths[i]
+    return images,depths,poses
 
 _EPS = numpy.finfo(float).eps * 4.0
 
@@ -107,6 +134,7 @@ class TUM_RGBD:
         # 读取图像
         images = []
         for i in inds:
+            print("images:{}".format(data_blob['images'][i]))
             image = cv2.imread(data_blob['images'][i])
             image = cv2.resize(image, (640, 480))
             images.append(image)
@@ -152,34 +180,19 @@ class TUM_RGBD:
         """
         sequence_dir = os.path.join(self.dataset_path, sequence_name)
         # 创建序列化文件
-        datum_file = os.path.join(scan_path, 'pickle-TUM.pkl')
+        datum_file = os.path.join(sequence_dir, 'pickle-TUM.pkl')
         # 如果序列化文件不存在就进行创建
-        if not os.path.isfile(datum_file):
-            # 获取图像列表
-            image_list = os.path.join(sequence_dir, 'rgb.txt')
-            # 获取深度列表
-            depth_list = os.path.join(sequence_dir, 'depth.txt')
-            # 获取位姿列表
-            pose_list = os.path.join(sequence_dir, 'groundtruth.txt')
-
-            # 图像数据
-            images = np.loadtxt(image_list, delimiter=' ', dtype=np.unicode_, skiprows=3)
-            # 深度数据
-            depths = np.loadtxt(depth_list, delimiter=' ', dtype=np.unicode_, skiprows=3)
-            # 位姿数据
-            try:
-                poses = np.loadtxt(pose_list, delimiter=' ', dtype=np.float64, skiprows=3)
-            except:
-                poses = np.zeros((len(images), 7))
-
-            depth_intrinsics = intrinsics.copy()
-            color_intrinsics = intrinsics.copy()
-            # 写入序列化数据
-            datum = images, depths, poses, color_intrinsics, depth_intrinsics
-            pickle.dump(datum, open(datum_file, 'wb'))
+        #if not os.path.isfile(datum_file):
+            # 获取对齐之后的数据 
+        images, depths, poses = get_TUM_data(sequence_dir)
+        depth_intrinsics = intrinsics.copy()
+        color_intrinsics = intrinsics.copy()
+        # 写入序列化数据
+        datum = images, depths, poses, color_intrinsics, depth_intrinsics
+        #pickle.dump(datum, open(datum_file, 'wb'))
             
-        else:
-            datum = pickle.load(open(datum_file, 'rb'))
+        #else:
+        #    datum = pickle.load(open(datum_file, 'rb'))
 
         return datum
 
@@ -197,7 +210,7 @@ class TUM_RGBD:
                 # some poses in scannet are nans
                 if np.any(np.isnan(poses[i-r:i+r+1])):
                     continue
-
+                # 加载网络数据参数
                 training_example = {}
                 training_example['depth'] = depths[i]
                 training_example['images'] = images[i-r:i+r+1]
@@ -209,85 +222,8 @@ class TUM_RGBD:
                 self.dataset_index.append(training_example)
                 data_id += 1
 
-    def test_set_iterator(self):
+    #def test_set_iterator(self):
 
-        test_frames = np.loadtxt('data/scannet/scannet_test.txt', dtype=np.unicode_)
-        test_data = []
-
-        for i in range(0, len(test_frames), 4):
-            test_frame_1 = str(test_frames[i]).split('/')
-            test_frame_2 = str(test_frames[i+1]).split('/')
-            scan = test_frame_1[3]
-
-            imageid_1 = int(re.findall(r'frame-(.+?).color.jpg', test_frame_1[-1])[0])
-            imageid_2 = int(re.findall(r'frame-(.+?).color.jpg', test_frame_2[-1])[0])            
-            test_data.append((scan, imageid_1, imageid_2))
-
-        # random.shuffle(test_data)        
-        for (scanid, imageid_1, imageid_2) in test_data:
-
-            scandir = os.path.join(self.dataset_path, scanid)
-            num_frames = len(os.listdir(os.path.join(scandir, 'color')))
-
-            images = []
-
-            # we need to include imageid_2 and imageid_1 to compare to BA-Net poses,
-            # then sample remaining 6 frames uniformly
-            dt = imageid_2 - imageid_1
-            s = 3
-
-            for i in [0, dt, -3*s, -2*s, -s, s, 2*s, 3*s]:
-                otherid = min(max(1, i+imageid_1), num_frames-1)
-                image_file = os.path.join(scandir, 'color', '%d.jpg'%otherid)
-                image = cv2.imread(image_file)
-                image = cv2.resize(image, (640, 480))
-                images.append(image)
-
-            depth_file = os.path.join(scandir, 'depth', '%d.png'%imageid_1)
-            depth = cv2.imread(depth_file, cv2.IMREAD_ANYDEPTH)
-            depth = (depth/1000.0).astype(np.float32)
-
-            pose1 = np.loadtxt(os.path.join(scandir, 'pose', '%d.txt'%imageid_1), delimiter=' ')
-            pose2 = np.loadtxt(os.path.join(scandir, 'pose', '%d.txt'%imageid_2), delimiter=' ')
-            pose1 = np.linalg.inv(pose1)
-            pose2 = np.linalg.inv(pose2)
-            pose_gt = np.dot(pose2, np.linalg.inv(pose1))
-
-            depth_intrinsics = os.path.join(scandir, 'intrinsic/intrinsic_depth.txt')
-            K = np.loadtxt(depth_intrinsics, delimiter=' ')
-            fx, fy, cx, cy = K[0,0], K[1,1], K[0,2], K[1,2]
-
-            images = np.stack(images, axis=0).astype(np.uint8)
-            depth = depth.astype(np.float32)
-            intrinsics = np.array([fx, fy, cx, cy], dtype=np.float32)
-
-            data_blob = {
-                'images': images,
-                'depth': depth,
-                'pose': pose_gt,
-                'intrinsics': intrinsics,
-            }
-
-            yield data_blob
-
-
-    # def iterate_sequence(self, scan):
-    #     # 扫描路径
-    #     scan_path = os.path.join(self.dataset_path, scan)
-    #     imfiles = glob.glob(os.path.join(scan_path, 'pose', '*.txt'))
-    #     ixs = sorted([int(os.path.basename(x).split('.')[0]) for x in imfiles])
-
-    #     K = np.loadtxt(os.path.join(scan_path, 'intrinsic', 'intrinsic_depth.txt'), delimiter=' ')
-    #     fx, fy, cx, cy = K[0,0], K[1,1], K[0,2], K[1,2]
-    #     intrinsics = np.array([fx, fy, cx, cy], dtype=np.float32)
-
-    #     images = []
-    #     for i in ixs:
-    #         imfile = os.path.join(scan_path, 'color', '%d.jpg'%i)
-    #         image = cv2.imread(imfile)
-    #         image = cv2.resize(image, (640, 480))
-    #         yield image, intrinsics
-    # 读取迭代器列表
     def iterate_sequence(self, sequence_name, matrix=False):
         """returns list of images, depths, and poses 返回地址位姿"""
         sequence_dir = os.path.join(self.dataset_path, sequence_name)
@@ -298,7 +234,6 @@ class TUM_RGBD:
         image_data = np.loadtxt(image_list, delimiter=' ', dtype=np.unicode_, skiprows=3)
         # 深度数据
         depth_data = np.loadtxt(depth_list, delimiter=' ', dtype=np.unicode_, skiprows=3)
-
         try:
             pose_data = np.loadtxt(pose_list, delimiter=' ', dtype=np.float64, skiprows=3)
         except:
@@ -311,7 +246,6 @@ class TUM_RGBD:
         for (tstamp, image_file) in image_data:
             image_file = os.path.join(sequence_dir, image_file)
             image = cv2.imread(image_file)
-
             yield image, intrinsics_mat
 
         #     images.append(image)

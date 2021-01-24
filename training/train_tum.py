@@ -14,7 +14,7 @@ import argparse
 from core import config
 from trainer import DeepV2DTrainer
 
-from data_stream.tmu import TUM_RGBD
+from data_stream.tum import TUM_RGBD
 
 
 def main(args):
@@ -25,11 +25,11 @@ def main(args):
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
 
-    checkpoint_dir = os.path.join('checkpoints/tmu', args.name)
+    checkpoint_dir = os.path.join('checkpoints/tum', args.name)
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
 
-    tmp_dir = os.path.join('tmp/tmu', args.name)
+    tmp_dir = os.path.join('tmp/tum', args.name)
     # 检查对应的文件夹是否存在
     if not os.path.exists(tmp_dir):
         os.makedirs(tmp_dir)
@@ -54,7 +54,8 @@ def main(args):
 
 
 if __name__ == '__main__':
-
+   
+    #设置value的显示长度为100，默认为50
     seed = 1234
     tf.set_random_seed(seed)
     np.random.seed(seed)
