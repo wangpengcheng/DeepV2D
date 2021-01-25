@@ -19,7 +19,9 @@ fx = 517.3
 fy = 516.5
 cx = 318.6
 cy = 255.3
-intrinsics = np.array([fx, fy, cx, cy])
+factor = 5000.0 # for the 16-bit PNG files
+intrinsics = np.array([fx, fy, cx, cy],dtype=np.float32)
+
 def get_TUM_data(data_path):
     """读取tum中的数据
 
@@ -31,7 +33,7 @@ def get_TUM_data(data_path):
     """
     sum_data_file_name = "rgb_depth_ground.txt"
     data_file_path = os.path.join(data_path,sum_data_file_name)
-    print("====   {} ======".format(data_file_path))
+    print("==== {} ======".format(data_file_path))
     # 不存在综合数据就进行创建
     if not os.path.isfile(data_file_path):
         # 获取图像列表
@@ -41,7 +43,7 @@ def get_TUM_data(data_path):
         # 获取位姿列表
         pose_list = os.path.join(data_path, 'groundtruth.txt')
         # 执行数据合并文件
-        tum_associate(image_list,depth_list,pose_list)
+        tum_associate(image_list,depth_list,pose_list,data_file_path)
 
     # 读取综合数据文件
     # 文件样例:
@@ -49,12 +51,8 @@ def get_TUM_data(data_path):
     #
     images,depths,poses = get_data_from_sum_file(data_file_path)
     print(len(images))
-    # 遍历修改
-    for i in range(0,len(images)):
-        print("====   {} ======".format(images[i]))
-        images[i]=data_path+"/"+images[i]
-        print("====   {} ======".format(images[i]))
-        depths[i]=data_path+'/'+depths[i]
+    images = [data_path+'/'+i for i in images ]
+    depths = [data_path+'/'+i for i in depths ]
     return images,depths,poses
 
 _EPS = numpy.finfo(float).eps * 4.0
@@ -90,7 +88,7 @@ def transform44(l):
         ), dtype=numpy.float64)
 
 
-factor = 5000 # for the 16-bit PNG files
+
 def fill_depth(depth):
     x, y = np.meshgrid(np.arange(depth.shape[1]).astype("float32"),
                        np.arange(depth.shape[0]).astype("float32"))
@@ -101,6 +99,28 @@ def fill_depth(depth):
     grid = interpolate.griddata((xx, yy), zz.ravel(),
                                 (x, y), method='nearest')
     return grid
+# 将四元数组转换为旋转矩阵
+def quat2rotm(q):
+    """Convert quaternion into rotation matrix """
+    q /= np.sqrt(np.sum(q**2)) 
+    x, y, z, s = q[:, 0], q[:, 1], q[:, 2], q[:, 3]
+    r1 = np.stack([1-2*(y**2+z**2), 2*(x*y-s*z), 2*(x*z+s*y)], axis=1)
+    r2 = np.stack([2*(x*y+s*z), 1-2*(x**2+z**2), 2*(y*z-s*x)], axis=1)
+    r3 = np.stack([2*(x*z-s*y), 2*(y*z+s*x), 1-2*(x**2+y**2)], axis=1)
+    return np.stack([r1, r2, r3], axis=1)
+
+# 将位姿转换为矩阵
+def pose_vec2mat(pvec, use_filler=True):
+    """Convert quaternion vector represention to SE3 group"""
+    t, q = pvec[np.newaxis, 0:3], pvec[np.newaxis, 3:7]
+    R = quat2rotm(q)
+    t = np.expand_dims(t, axis=-1)
+    # 最终的转换矩阵
+    P = np.concatenate([R, t], axis=2)
+    if use_filler:
+        filler = np.array([0.0, 0.0, 0.0, 1.0]).reshape([1, 1, 4])
+        P = np.concatenate([P, filler], axis=1)
+    return P[0]
 
 class TUM_RGBD:
     """主要用来进行数据的加载与查找
@@ -138,10 +158,12 @@ class TUM_RGBD:
             image = cv2.imread(data_blob['images'][i])
             image = cv2.resize(image, (640, 480))
             images.append(image)
-
+        # 转换位姿信息
         poses = []
         for i in inds:
-            poses.append(data_blob['poses'][i])
+            pose_vec = data_blob['poses'][i]
+            pose_mat = pose_vec2mat(pose_vec)
+            poses.append(np.linalg.inv(pose_mat))
         # 转换图像和深度信息
         images = np.stack(images, axis=0).astype(np.uint8)
         poses = np.stack(poses, axis=0).astype(np.float32)
@@ -150,12 +172,12 @@ class TUM_RGBD:
         # 读取深度信息
         depth = cv2.imread(depth_file, cv2.IMREAD_ANYDEPTH)
         
-        depth = (depth.astype(np.float32)) / 1000.0
+        depth = (depth.astype(np.float32)) /factor
         filled = fill_depth(depth)
         
         K = data_blob['intrinsics']
         # 相机内参，转换为向量矩阵
-        kvec = np.stack([K[0,0], K[1,1], K[0,2], K[1,2]], axis=0)
+        kvec = K.copy()
 
         depth = depth[...,None]
         return images, poses, depth, filled, filled, kvec, frameid
@@ -202,7 +224,7 @@ class TUM_RGBD:
         data_id = 0
         # 访问数据文件夹，并列举所有数据文件夹
         for scan in sorted(os.listdir(self.dataset_path)):
-
+            print("scan:{}".format(scan))
             # 访问数据文件夹，构造对应的数据
             images, depths, poses, color_intrinsics, depth_intrinsics = self._load_scan(scan)
 

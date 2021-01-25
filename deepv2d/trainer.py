@@ -129,7 +129,7 @@ class DeepV2DTrainer(object):
         tower_predictions = []
         tower_losses = []
         write_ops = []
-        
+
         for gpu_id in range(num_gpus):
             # 位姿估计网络
             motion_net = MotionNetwork(cfg.MOTION, reuse=gpu_id>0)
@@ -271,7 +271,7 @@ class DeepV2DTrainer(object):
         self.summary_op = tf.summary.merge_all()
 
         saver = tf.train.Saver([var for var in tf.model_variables()], max_to_keep=10)
-        train_writer = tf.summary.FileWriter(cfg.LOG_DIR+'_stage_%s'%str(stage))
+        train_writer = tf.summary.FileWriter(cfg.LOG_DIR+'_stage_%s'%str(stage)) # 写入到数据训练文件中
 
         init_op = tf.group(tf.global_variables_initializer(),
                    tf.local_variables_initializer())

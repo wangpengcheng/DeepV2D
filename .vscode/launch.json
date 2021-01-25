@@ -14,11 +14,11 @@
             //     "--model=models/nyu.ckpt",
             //     "--sequence=data/demos/nyu_0"
             // ],
-            "program": "training/train_kitti.py",
+            "program": "training/train_tum.py",
             "args": [
-                "--cfg=cfgs/kitti.yaml",
-                "--name=kitti_model",
-                "--tfrecords=kitti_train.tfrecords"
+                "--cfg=cfgs/tum.yaml",
+                "--name=tmu_model",
+                "--dataset_dir=data/tum"
             ],
             "console": "integratedTerminal"
         }

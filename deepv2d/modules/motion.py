@@ -51,8 +51,8 @@ class MotionNetwork:
         self.mode = mode
         self.use_regressor = use_regressor
 
-        self.transform_history = []
-        self.coords_history = []
+        self.transform_history = [] # 转换历史
+        self.coords_history = []    # x,y坐标历史
         self.residual_history = []
         self.inds_history = []
         self.weights_history = []
@@ -94,7 +94,7 @@ class MotionNetwork:
 
         Tij = VideoSE3Transformation(matrix=pose_mat)
         Ts = Tij.append_identity()
-
+        # 添加位姿
         self.transform_history.append(Ts)
         self.residual_history.append(0.0)
 
@@ -218,6 +218,7 @@ class MotionNetwork:
 
     def forward(self, Ts, images, depths, intrinsics, inds=None, num_fixed=0, init=tf.constant(False)):
         # motion network performs projection operations in features space
+        # 相机位姿网络进行前向计算
         cfg = self.cfg
         batch = tf.shape(images)[0]
         num = tf.shape(images)[1]
@@ -249,7 +250,7 @@ class MotionNetwork:
             else:
                 if self.use_regressor:
                     Gs = self.pose_regressor_init(images)
-                    Ts = cond_transform(init, Gs, Ts)
+                    Ts = cond_transform(init, Gs, Ts) #转换坐标体系
 
             feats = self.extract_features(images)
             depths = tf.gather(depths_low, ii, axis=1) + EPS
@@ -310,7 +311,7 @@ class MotionNetwork:
         total_loss = 0.0
         for i in range(len(self.transform_history)):
             Ts = self.transform_history[i]
-            Tij = Ts.gather(jj) * Ts.gather(ii).inv()
+            Tij = Ts.gather(jj) * Ts.gather(ii).inv() #
             Gij = Gs.gather(jj) * Gs.gather(ii).inv()
   
             intrinsics_pred = intrinsics

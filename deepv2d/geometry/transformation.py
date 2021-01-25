@@ -140,7 +140,7 @@ class SE3:
 
     def to_vec(self):
         return tf.concat([self.so3, self.translation], axis=-1)
-        
+    # 
     def inv(self):
         if self.internal == 'matrix':
             Ginv = se3_matrix_inverse(self.matrix())
