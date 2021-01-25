@@ -174,3 +174,8 @@ python training/train_kitti.py --cfg=cfgs/kitti.yaml --name=kitti_model --tfreco
 ```Shell
 python training/train_scannet.py --cfg=cfgs/scannet.yaml --name=scannet_model --dataset_dir="path to scannet"
 ```
+
+#### [TMU](http://www.scan-net.org/):
+```Shell
+python training/train_tum.py --cfg=cfgs/tum.yaml --name=tum_model --dataset_dir=data/tum
+```

@@ -17,13 +17,18 @@ from modules.motion import MotionNetwork
 MOTION_LR_FRACTION = 0.1
 
 class DeepV2DTrainer(object):
-
+    """
+    网络训练基础类型类
+    Args:
+        object ([type]): [description]
+    """
     def __init__(self, cfg):
         self.cfg = cfg
-
+    # 第一阶段训练，主要是深度估计网络的训练
     def build_train_graph_stage1(self, cfg, num_gpus=1):
-
+        # 读取基本参数
         id_batch, images_batch, poses_batch, gt_batch, filled_batch, pred_batch, intrinsics_batch = self.dl.next()
+        
         images_batch = tf.split(images_batch, num_gpus)
         poses_batch = tf.split(poses_batch, num_gpus)
         gt_batch = tf.split(gt_batch, num_gpus)
@@ -38,7 +43,7 @@ class DeepV2DTrainer(object):
 
         tower_grads = []
         tower_losses = []
-
+        # 枚举GPU
         for gpu_id in range(num_gpus):
             images = images_batch[gpu_id]
             poses = poses_batch[gpu_id]
@@ -48,17 +53,21 @@ class DeepV2DTrainer(object):
             intrinsics = intrinsics_batch[gpu_id]
 
             Gs = VideoSE3Transformation(matrix=poses)
+            # 创建位姿估计网络
             motion_net = MotionNetwork(cfg.MOTION, bn_is_training=True, reuse=gpu_id>0)
 
             with tf.device('/gpu:%d' % gpu_id):
-
+                # 获取深度信息
                 depth_input = tf.expand_dims(depth_filled, 1)
+                # 前向计算
                 Ts, kvec = motion_net.forward(None, images, depth_input, intrinsics)
-
+                # 计算loss值
                 total_loss = motion_net.compute_loss(Gs, depth_input, intrinsics, log_error=(gpu_id==0))
+                # 计算总loss
                 tower_losses.append(total_loss)
-
+                # 显示数据
                 var_list = tf.trainable_variables()
+                # 梯度下降
                 grads = gradients(total_loss, var_list)
 
                 gvs = []
@@ -87,7 +96,7 @@ class DeepV2DTrainer(object):
             tf.summary.scalar("learning_rate", lr)
             tf.summary.scalar("total_loss", total_loss)
 
-
+    # 构建二段训练，主要是相机位姿和深度信息的整合
     def build_train_graph_stage2(self, cfg, num_gpus=1):
 
         with tf.name_scope("training_schedule"):
@@ -122,7 +131,9 @@ class DeepV2DTrainer(object):
         write_ops = []
 
         for gpu_id in range(num_gpus):
+            # 位姿估计网络
             motion_net = MotionNetwork(cfg.MOTION, reuse=gpu_id>0)
+            # 深度估计网络
             depth_net = DepthNetwork(cfg.STRUCTURE, schedule=schedule, reuse=gpu_id>0)
 
             images = images_batch[gpu_id]
@@ -226,28 +237,41 @@ class DeepV2DTrainer(object):
 
 
     def train(self, data_source, cfg, stage=1, ckpt=None, restore_ckpt=None, num_gpus=1):
+        """主要的训练函数
 
+        Args:
+            data_source ([type]): [description]
+            cfg ([type]): [description]
+            stage (int, optional): [description]. Defaults to 1.
+            ckpt ([type], optional): [description]. Defaults to None.
+            restore_ckpt ([type], optional): [description]. Defaults to None.
+            num_gpus (int, optional): [description]. Defaults to 1.
+
+        Returns:
+            [type]: [description]
+        """
         batch_size = num_gpus * cfg.TRAIN.BATCH[stage-1]
         max_steps = cfg.TRAIN.ITERS[stage-1]
         self.training_steps = max_steps
-
+        # 开始加载数据模型
         print ("batch size: %d \t max steps: %d"%(batch_size, max_steps))
+        # 开始加载数据模型
         if isinstance(data_source, str):
             self.dl = DataLayer(data_source, batch_size=batch_size)
         else:
             self.dl = DBDataLayer(data_source, batch_size=batch_size)
-
+        # 第一阶段
         if stage == 1:
             self.build_train_graph_stage1(cfg, num_gpus=num_gpus)
-
+        # 第二阶段
         elif stage == 2:
             self.build_train_graph_stage2(cfg, num_gpus=num_gpus)
 
-
+        # 进行数据合并
         self.summary_op = tf.summary.merge_all()
 
         saver = tf.train.Saver([var for var in tf.model_variables()], max_to_keep=10)
-        train_writer = tf.summary.FileWriter(cfg.LOG_DIR+'_stage_%s'%str(stage))
+        train_writer = tf.summary.FileWriter(cfg.LOG_DIR+'_stage_%s'%str(stage)) # 写入到数据训练文件中
 
         init_op = tf.group(tf.global_variables_initializer(),
                    tf.local_variables_initializer())
@@ -259,11 +283,12 @@ class DeepV2DTrainer(object):
         with tf.Session() as sess:
             sess.run(init_op)
 
-            # train with tfrecords
+            # train with tfrecords 
+            # 数据加载层
             if isinstance(self.dl, DataLayer):
-                coord = tf.train.Coordinator()
-                threads = tf.train.start_queue_runners(coord=coord)
-
+                coord = tf.train.Coordinator() # 创建线程协调器
+                threads = tf.train.start_queue_runners(coord=coord) # 创建任务队列
+ 
             # train with python data loader
             elif isinstance(self.dl, DBDataLayer):
                 self.dl.init(sess)
@@ -281,6 +306,7 @@ class DeepV2DTrainer(object):
                     saver.restore(sess, restore_ckpt)
 
             running_loss = 0.0
+            # 开始步长
             for step in range(1, max_steps):
 
                 kwargs = {}

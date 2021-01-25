@@ -16,6 +16,7 @@ fx = 5.1885790117450188e+02
 fy = 5.1946961112127485e+02
 cx = 3.2558244941119034e+02
 cy = 2.5373616633400465e+02
+# 相机基本参数
 intrinsics = np.array([fx, fy, cx, cy], dtype=np.float32)
 
 
@@ -23,30 +24,35 @@ from scipy import interpolate
 
 
 def fill_depth(depth):
+    # 创建深度网络图
     x, y = np.meshgrid(np.arange(depth.shape[1]).astype("float32"),
                        np.arange(depth.shape[0]).astype("float32"))
-    xx = x[depth > 0]
-    yy = y[depth > 0]
+    xx = x[depth > 0] # 只留大于0的点
+    yy = y[depth > 0] #
+    
     zz = depth[depth > 0]
-
+    # 进行二维插值
     grid = interpolate.griddata((xx, yy), zz.ravel(),
                                 (x, y), method='nearest')
+    # 网格数据
     return grid
-
+# 将四元数组转换为旋转矩阵
 def quat2rotm(q):
     """Convert quaternion into rotation matrix """
-    q /= np.sqrt(np.sum(q**2))
+    q /= np.sqrt(np.sum(q**2)) 
     x, y, z, s = q[:, 0], q[:, 1], q[:, 2], q[:, 3]
     r1 = np.stack([1-2*(y**2+z**2), 2*(x*y-s*z), 2*(x*z+s*y)], axis=1)
     r2 = np.stack([2*(x*y+s*z), 1-2*(x**2+z**2), 2*(y*z-s*x)], axis=1)
     r3 = np.stack([2*(x*z-s*y), 2*(y*z+s*x), 1-2*(x**2+y**2)], axis=1)
     return np.stack([r1, r2, r3], axis=1)
 
+# 将位姿转换为矩阵
 def pose_vec2mat(pvec, use_filler=True):
     """Convert quaternion vector represention to SE3 group"""
     t, q = pvec[np.newaxis, 0:3], pvec[np.newaxis, 3:7]
     R = quat2rotm(q)
     t = np.expand_dims(t, axis=-1)
+    # 最终的转换矩阵
     P = np.concatenate([R, t], axis=2)
     if use_filler:
         filler = np.array([0.0, 0.0, 0.0, 1.0]).reshape([1, 1, 4])

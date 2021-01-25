@@ -30,7 +30,7 @@ else:
 def adj_to_inds(num=-1, adj_list=None):
     """ Convert adjency list into list of edge indicies (ii, jj) = (from, to)"""
     if adj_list is None:
-        ii, jj = tf.meshgrid(tf.range(1), tf.range(1, num))
+        ii, jj = tf.meshgrid(tf.range(1), tf.range(1, num)) # 进行平滑操作
     else:
         n, m = tf.unstack(tf.shape(adj_list), num=2)
         ii, jj = tf.split(adj_list, [1, m-1], axis=-1)
@@ -45,31 +45,31 @@ def backproject_avg(Ts, depths, intrinsics, fmaps, adj_list=None):
 
     dim = fmaps.get_shape().as_list()[-1]
     dd = depths.get_shape().as_list()[0]
-    batch, num, ht, wd, _ = tf.unstack(tf.shape(fmaps), num=5)
+    batch, num, ht, wd, _ = tf.unstack(tf.shape(fmaps), num=5) # 获取特征图信息
 
     # make depth volume
     depths = tf.reshape(depths, [1, 1, dd, 1, 1])
     depths = tf.tile(depths, [batch, 1, 1, ht, wd])
 
     ii, jj = adj_to_inds(num, adj_list)
-    Tii = Ts.gather(ii) * Ts.gather(ii).inv() # this is just a set of id trans.
-    Tij = Ts.gather(jj) * Ts.gather(ii).inv() # relative camera poses in graph
+    Tii = Ts.gather(ii) * Ts.gather(ii).inv() # this is just a set of id trans. 
+    Tij = Ts.gather(jj) * Ts.gather(ii).inv() # relative camera poses in graph 图形中的相对相机姿势
 
     num = tf.shape(ii)[0]
     depths = tf.tile(depths, [1, num, 1, 1, 1])
 
-    coords1 = Tii.transform(depths, intrinsics)
-    coords2 = Tij.transform(depths, intrinsics)
+    coords1 = Tii.transform(depths, intrinsics) # 进行坐标转换
+    coords2 = Tij.transform(depths, intrinsics) # 坐标2
 
-    fmap1 = tf.gather(fmaps, ii, axis=1)
-    fmap2 = tf.gather(fmaps, jj, axis=1)
+    fmap1 = tf.gather(fmaps, ii, axis=1) # 获取数组切片
+    fmap2 = tf.gather(fmaps, jj, axis=1) #
 
     if use_cuda_backproject:
         coords = tf.stack([coords1, coords2], axis=-2)
         coords = tf.reshape(coords, [batch*num, dd, ht, wd, 2, 2])
         coords = tf.transpose(coords, [0, 2, 3, 1, 4, 5])
 
-        fmap1 = tf.reshape(fmap1, [batch*num, ht, wd, dim])
+        fmap1 = tf.reshape(fmap1, [batch*num, ht, wd, dim]) # 调整特征图
         fmap2 = tf.reshape(fmap2, [batch*num, ht, wd, dim])
         fmaps_stack = tf.stack([fmap1, fmap2], axis=-2)
 
@@ -90,7 +90,7 @@ def backproject_avg(Ts, depths, intrinsics, fmaps, adj_list=None):
         n, m = tf.unstack(tf.shape(adj_list), num=2)
         volume = tf.reshape(volume, [batch*n, m-1, ht, wd, dd, 2*dim])
 
-    return volume
+    return volume # 3D特征差值
 
 
 def backproject_cat(Ts, depths, intrinsics, fmaps):

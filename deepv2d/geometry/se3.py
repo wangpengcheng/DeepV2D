@@ -5,7 +5,7 @@ SO3 and SE3 operations, exponentials and logarithms adapted from Sophus
 import numpy as np
 import tensorflow as tf
 from utils.einsum import *
-
+import os
 from tensorflow.python.framework import function
 
 
@@ -190,11 +190,13 @@ def se3_logm(so3, t):
     upsilon = tf.concat([tau, omega], axis=-1)
     return upsilon
 
-
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 ### matrix functions ###
 
 def se3_matrix_inverse(G):
-    """ Invert SE3 matrix """
+    """ Invert SE3 matrix 
+    se3维度变换
+    """
     inp_shape = tf.shape(G)
     G = tf.reshape(G, [-1, 4, 4])
 

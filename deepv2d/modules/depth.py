@@ -46,24 +46,24 @@ class DepthNetwork(object):
           'is_training': self.is_training,
         }
 
-
+    # 编码部分，主要用来获取图像的2d特征信息
     def encoder(self, inputs, reuse=False):
         """ 2D feature extractor """
-
+        # 在第5个通道上进行分离
         batch, frames, ht, wd, _ = tf.unstack(tf.shape(inputs), num=5)
-        inputs = tf.reshape(inputs, [batch*frames, ht, wd, 3])
+        inputs = tf.reshape(inputs, [batch*frames, ht, wd, 3]) # 调整输入维度为图片数量*高*宽*3
 
-        with tf.variable_scope("encoder") as sc:
+        with tf.variable_scope("encoder") as sc: 
             with slim.arg_scope([slim.batch_norm], **self.batch_norm_params):
                 with slim.arg_scope([slim.conv2d],
                                     weights_regularizer=slim.l2_regularizer(0.00005),
                                     normalizer_fn=None,
                                     activation_fn=None,
                                     reuse=reuse):
+                    # 2d卷积网络 -- 这里可以拆成3个3*3的小网络，同时将输入图像betch更改为3
+                    net = slim.conv2d(inputs, 32, [7, 7], stride=2) # slim.conv2d = cov2d+relu
 
-                    net = slim.conv2d(inputs, 32, [7, 7], stride=2)
-
-                    net = res_conv2d(net, 32, 1)
+                    net = res_conv2d(net, 32, 1) # 卷积
                     net = res_conv2d(net, 32, 1)
                     net = res_conv2d(net, 32, 1)
                     net = res_conv2d(net, 64, 2)
@@ -80,7 +80,7 @@ class DepthNetwork(object):
         return embd
 
     def stereo_head(self, x):
-        """ Predict probability volume from hg features"""
+        """ Predict probability volume from hg features hg的特征概率"""
         x = bnrelu(x)
         x = slim.conv3d(x, 32, [3, 3, 3], activation_fn=tf.nn.relu)
         x = slim.conv3d(x, 32, [3, 3, 3], activation_fn=tf.nn.relu)
@@ -88,31 +88,39 @@ class DepthNetwork(object):
 
         logits = slim.conv3d(x, 1, [1, 1, 1], activation_fn=None)
         logits = tf.squeeze(logits, axis=-1)
-
+        # 日志
         logits = tf.image.resize_bilinear(logits, self.input_dims)
         return logits
 
     def soft_argmax(self, prob_volume):
-        """ Convert probability volume into point estimate of depth"""
+        """ Convert probability volume into point estimate of depth 转换概率体积为深度的点估计"""
         prob_volume = tf.nn.softmax(prob_volume, axis=-1)
-        pred = tf.reduce_sum(self.depths*prob_volume, axis= -1)
-        return pred
-
-    def stereo_network_avg(self, Ts, images, intrinsics, adj_list=None):
+        pred = tf.reduce_sum(self.depths*prob_volume, axis= -1) # 对概率深度进行求和
+        return pred # 返回深度估计值
+    # 匹配网络avg方式下降
+    def stereo_network_avg(self, 
+        Ts, 
+        images, 
+        intrinsics, 
+        adj_list=None
+        ):
         """3D Matching Network with view pooling
-        Ts: collection of pose estimates correponding to images
+        Ts: collection of pose estimates correponding to images  
         images: rgb images
         intrinsics: image intrinsics
-        adj_list: [n, m] matrix specifying frames co-visiblee frames
+        adj_list: [n, m] matrix specifying frames co-visiblee frames 共同可见帧的矩阵
         """
 
         cfg = self.cfg
-        depths = tf.lin_space(cfg.MIN_DEPTH, cfg.MAX_DEPTH, cfg.COST_VOLUME_DEPTH)
-        intrinsics = intrinsics_vec_to_matrix(intrinsics / 4.0)
+        # 进行线性插值，构造深度数据
+        depths = tf.lin_space(cfg.MIN_DEPTH, cfg.MAX_DEPTH, cfg.COST_VOLUME_DEPTH) # 进行线性插值获取深度序列
+        intrinsics = intrinsics_vec_to_matrix(intrinsics / 4.0) # 将相机参数转换为矩阵
 
         with tf.variable_scope("stereo", reuse=self.reuse) as sc:
-            # extract 2d feature maps from images and build cost volume
+            # extract 2d feature maps from images and build cost volume # 进行编码，获取2d的图像信息
+            # 进行图像编码
             fmaps = self.encoder(images)
+            # 反投影
             volume = operators.backproject_avg(Ts, depths, intrinsics, fmaps, adj_list)
 
             self.spreds = []
@@ -177,22 +185,24 @@ class DepthNetwork(object):
 
     def forward(self, poses, images, intrinsics, idx=None):
 
-        images = 2 * (images / 255.0) - 1.0
-        ht = images.get_shape().as_list()[2]
-        wd = images.get_shape().as_list()[3]
-        self.input_dims = [ht, wd]
+        images = 2 * (images / 255.0) - 1.0 # 将其映射到0-1
+        
+        ht = images.get_shape().as_list()[2] # 高度 
+        wd = images.get_shape().as_list()[3] # 宽度
+        
+        self.input_dims = [ht, wd] # 获取输入信息
 
-        # perform per-view average pooling
+        # perform per-view average pooling 使用均值池化层模式
         if self.cfg.MODE == 'avg':
             spred = self.stereo_network_avg(poses, images, intrinsics, idx)
 
-        # perform view concatenation
+        # perform view concatenation 执行视图连接，连接位姿图像和参数
         elif self.cfg.MODE == 'concat':
             spred = self.stereo_network_cat(poses, images, intrinsics)
+        # 返回最终的深度估计值
+        return spred 
 
-        return spred
-
-
+    # 计算loss
     def compute_loss(self, depth_gt, log_error=True):
 
         b_gt, h_gt, w_gt, _ = depth_gt.get_shape().as_list()
