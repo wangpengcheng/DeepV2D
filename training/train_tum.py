@@ -16,7 +16,6 @@ from trainer import DeepV2DTrainer
 
 from data_stream.tum import TUM_RGBD
 
-
 def main(args):
 
     cfg = config.cfg_from_file(args.cfg)
@@ -60,7 +59,7 @@ if __name__ == '__main__':
     tf.set_random_seed(seed)
     np.random.seed(seed)
     random.seed(seed)
-
+    
     parser = argparse.ArgumentParser()
     parser.add_argument('--name', help='name of your experiment')
     parser.add_argument('--dataset_dir', help='path to scannet directory')

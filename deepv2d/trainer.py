@@ -13,6 +13,8 @@ from utils import mem_util
 from modules.depth import DepthNetwork
 from modules.motion import MotionNetwork
 
+gpu_no = '1' # or '1'
+os.environ["CUDA_VISIBLE_DEVICES"] = gpu_no
 
 MOTION_LR_FRACTION = 0.1
 
@@ -279,6 +281,17 @@ class DeepV2DTrainer(object):
         SUMMARY_FREQ = 10
         LOG_FREQ = 100
         CHECKPOINT_FREQ = 5000
+        # 定义TensorFlow配置
+        config = tf.ConfigProto()
+
+        # 配置GPU内存分配方式，按需增长，很关键
+        config.gpu_options.allow_growth = True
+
+        # 配置可使用的显存比例
+        config.gpu_options.per_process_gpu_memory_fraction = 0.5
+
+        # 在创建session的时候把config作为参数传进去
+        sess = tf.InteractiveSession(config = config)
 
         with tf.Session() as sess:
             sess.run(init_op)
