@@ -1,4 +1,4 @@
-import tensorflow as tf
+import torch
 import numpy as np
 import re
 import string
@@ -6,7 +6,7 @@ import string
 def einsum(equation, *inputs):
 
     equation = equation.replace(' ', '')
-    input_shapes = [x.get_shape() for x in list(inputs)]
+    input_shapes = [x.shape for x in list(inputs)] # 枚举所有输入类型
     match = re.match('^([a-zA-Z,.]+)(->[a-zA-Z.]*)?$', equation)
     if not match:
         raise ValueError('Indices have incorrect format: %s' % equation)
@@ -31,9 +31,9 @@ def einsum(equation, *inputs):
                 parts = ax.split('...')
                 if len(parts) != 2:
                     raise ValueError('Unable to resolve ellipsis. Excess number found.')
-                if input_shapes[i].ndims is None:
+                if len(input_shapes[i]) is None:
                     raise ValueError('Unable to statically infer ellipsis axes.')
-                n = input_shapes[i].ndims - len(''.join(parts))
+                n = len(input_shapes[i]) - len(''.join(parts))
                 if n < 0:
                     raise ValueError('Ellipses lengths do not match.')
                 if len(unused) < n:
@@ -46,6 +46,9 @@ def einsum(equation, *inputs):
                     ellipsis_axes = replace_axes
 
     equation = equation.replace('...', ellipsis_axes)
-    out = tf.einsum(equation, *inputs)
-    tf.add_to_collection("checkpoints", out)
+    print(equation,)
+    print("===")
+    print(*inputs)
+    out = torch.einsum(equation, *inputs)
+    #tf.add_to_collection("checkpoints", out) 将输出放入集合
     return out

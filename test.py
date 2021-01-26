@@ -1,7 +1,26 @@
+import PIL.Image as Image
+import torchvision.transforms as transforms
+from torchvision.transforms import Compose, CenterCrop, ToTensor, Resize
+ 
+#读入图片
+image=Image.open("/home/node/workspace/DeepV2D/depth.png")
+print(image.size, image.format, image.mode)
+w,h = image.size[0:2]
 
-import  tensorflow as tf 
-a = tf.constant([1.0,2.0,3.0],shape = [3], name='a')
-b = tf.constant([1.0,2.0,3.0], shape = [3], name='b')
-c = a +b
-sess = tf.Session(config = tf.ConfigProto(log_device_placement =True))
-print(sess.run(c))
+
+w=int(w/2)
+h=int(h/2)
+print(w,h)
+
+
+#生成一个CenterCrop类的对象,用来将图片从中心裁剪成224*224
+transform1 = transforms.Compose([
+        #transforms.CenterCrop(image.size),
+        Resize((480,640))
+])
+
+image = transform1(image)  
+print(image.size, image.format, image.mode)
+
+#将裁剪之后的图片保存下来
+image.save("test.png", format='PNG')
