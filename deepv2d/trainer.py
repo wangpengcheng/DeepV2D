@@ -13,7 +13,7 @@ from utils import mem_util
 from modules.depth import DepthNetwork
 from modules.motion import MotionNetwork
 
-gpu_no = '1' # or '1'
+gpu_no = '0' # or '1'
 os.environ["CUDA_VISIBLE_DEVICES"] = gpu_no
 
 MOTION_LR_FRACTION = 0.1
