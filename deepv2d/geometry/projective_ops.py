@@ -1,28 +1,26 @@
 import numpy as np
 import tensorflow as tf
 from utils.einsum import einsum
-
+import torch
 
 MIN_DEPTH = 0.1
 # 按照形状进行网格化
 def coords_grid(shape, homogeneous=True):
     """ grid of pixel coordinates 获取每个像素的网格坐标点"""
-    xx, yy = tf.meshgrid(tf.range(shape[-1]), tf.range(shape[-2]))
-
-    xx = tf.cast(xx, tf.float32) # 转换坐标
-    yy = tf.cast(yy, tf.float32)
-
+    xx, yy = torch.meshgrid(torch.range(shape[-1]), tf.range(shape[-2]))
+    xx = xx.float()
+    yy = yy.float()
     if homogeneous:
-        coords = tf.stack([xx, yy, tf.ones_like(xx)], axis=-1)
+        coords = torch.stack((xx, yy, torch.ones_like(xx)), axis=-1)
     else:
-        coords = tf.stack([xx, yy], axis=-1)
+        coords = torch.stack((xx, yy), axis=-1)
 
-    new_shape = (tf.ones_like(shape[:-2]), shape[-2:], [-1])
-    new_shape = tf.concat(new_shape, axis=0)
-    coords = tf.reshape(coords, new_shape)
+    new_shape = (torch.ones_like(shape[:-2]), shape[-2:], [-1])
+    new_shape = torch.cat(new_shape, axis=0)
+    coords = torch.reshape(coords, new_shape)
 
-    tile = tf.concat((shape[:-2], [1,1,1]), axis=0) # 获取小块
-    coords = tf.tile(coords, tile) # 对坐标点张量进行扩张
+    tile = torch.cat((shape[:-2], [1,1,1]), axis=0) # 获取小块
+    coords = torch.Tensor.repeat(coords, tile) # 对坐标点张量进行扩张
     return coords
 
 def extract_and_reshape_intrinsics(intrinsics, shape=None):
@@ -34,14 +32,14 @@ def extract_and_reshape_intrinsics(intrinsics, shape=None):
     cy = intrinsics[:, 1, 2]
 
     if shape is not None:
-        batch = tf.shape(fx)[:1]
-        fillr = tf.ones_like(shape[1:])
-        k_shape = tf.concat([batch, fillr], axis=0)
+        batch = fx.shape[:1]
+        fillr = torch.ones_like(shape[1:])
+        k_shape = torch.cat([batch, fillr], axis=0)
 
-        fx = tf.reshape(fx, k_shape)
-        fy = tf.reshape(fy, k_shape)
-        cx = tf.reshape(cx, k_shape)
-        cy = tf.reshape(cy, k_shape)
+        fx = torch.reshape(fx, k_shape)
+        fy = torch.reshape(fy, k_shape)
+        cx = torch.reshape(cx, k_shape)
+        cy = torch.reshape(cy, k_shape)
 
     return (fx, fy, cx, cy)
 
@@ -52,7 +50,7 @@ def backproject(depth, intrinsics, jacobian=False):
     coords = coords_grid(tf.shape(depth), homogeneous=True)
     x, y, _ = tf.unstack(coords, num=3, axis=-1)
 
-    x_shape = tf.shape(x)
+    x_shape = x.shape
     fx, fy, cx, cy = extract_and_reshape_intrinsics(intrinsics, x_shape)
     # 在这里矫正fx
     Z = tf.identity(depth) # 获取全像素的真实深度
