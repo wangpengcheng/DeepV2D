@@ -1,6 +1,7 @@
 import sys
 sys.path.append('deepv2d')
 
+
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
@@ -13,12 +14,13 @@ import argparse
 
 from core import config
 from trainer import DeepV2DTrainer
-
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 def main(args):
 
     cfg = config.cfg_from_file(args.cfg)
-
+   
     log_dir = os.path.join('logs/kitti', args.name)
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
@@ -26,21 +28,21 @@ def main(args):
     checkpoint_dir = os.path.join('checkpoints/kitti', args.name)
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
-
-    tmp_dir = os.path.join('tmp/nyu', args.name)
+    # 
+    tmp_dir = os.path.join('tmp/kitti', args.name)
     if not os.path.exists(tmp_dir):
         os.makedirs(tmp_dir)
-
+    print(tmp_dir)
     cfg.LOG_DIR = log_dir
     cfg.CHECKPOINT_DIR = checkpoint_dir
     cfg.TMP_DIR = tmp_dir
 
     solver = DeepV2DTrainer(cfg)
     ckpt = None
-
+    # 存在暂存文件就直接开始二段初始化
     if args.restore is not None:
         solver.train(args.tfrecords, cfg, stage=2, restore_ckpt=args.restore, num_gpus=args.num_gpus)
-
+    # 不存在就开始1，2段初始化
     else:
         for stage in [1, 2]:
             ckpt = solver.train(args.tfrecords, cfg, stage=stage, ckpt=ckpt, num_gpus=args.num_gpus)

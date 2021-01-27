@@ -4,12 +4,12 @@ from utils.einsum import einsum
 
 
 MIN_DEPTH = 0.1
-
+# 按照形状进行网格化
 def coords_grid(shape, homogeneous=True):
-    """ grid of pixel coordinates """
+    """ grid of pixel coordinates 获取每个像素的网格坐标点"""
     xx, yy = tf.meshgrid(tf.range(shape[-1]), tf.range(shape[-2]))
 
-    xx = tf.cast(xx, tf.float32)
+    xx = tf.cast(xx, tf.float32) # 转换坐标
     yy = tf.cast(yy, tf.float32)
 
     if homogeneous:
@@ -21,10 +21,9 @@ def coords_grid(shape, homogeneous=True):
     new_shape = tf.concat(new_shape, axis=0)
     coords = tf.reshape(coords, new_shape)
 
-    tile = tf.concat((shape[:-2], [1,1,1]), axis=0)
-    coords = tf.tile(coords, tile)
+    tile = tf.concat((shape[:-2], [1,1,1]), axis=0) # 获取小块
+    coords = tf.tile(coords, tile) # 对坐标点张量进行扩张
     return coords
-
 
 def extract_and_reshape_intrinsics(intrinsics, shape=None):
     """ Extracts (fx, fy, cx, cy) from intrinsics matrix """
@@ -46,7 +45,7 @@ def extract_and_reshape_intrinsics(intrinsics, shape=None):
 
     return (fx, fy, cx, cy)
 
-# 将depthmap转换为点云
+# 将depthmap转换为点云,主要是根据相机参数还原原始的3D点云
 def backproject(depth, intrinsics, jacobian=False):
     """ backproject depth map to point cloud """
 
@@ -56,8 +55,8 @@ def backproject(depth, intrinsics, jacobian=False):
     x_shape = tf.shape(x)
     fx, fy, cx, cy = extract_and_reshape_intrinsics(intrinsics, x_shape)
     # 在这里矫正fx
-    Z = tf.identity(depth)
-    X = Z * (x - cx) / fx
+    Z = tf.identity(depth) # 获取全像素的真实深度
+    X = Z * (x - cx) / fx # 获取x坐标
     Y = Z * (y - cy) / fy
     points = tf.stack([X, Y, Z], axis=-1)
 
@@ -78,12 +77,12 @@ def backproject(depth, intrinsics, jacobian=False):
 
 def project(points, intrinsics, jacobian=False):
     
-    """ project point cloud onto image """
+    """ project point cloud onto image 将点云投影到图像上""" 
     X, Y, Z = tf.unstack(points, num=3, axis=-1)
-    Z = tf.maximum(Z, MIN_DEPTH)
+    Z = tf.maximum(Z, MIN_DEPTH) # 获取最大深度
 
-    x_shape = tf.shape(X)
-    fx, fy, cx, cy = extract_and_reshape_intrinsics(intrinsics, x_shape)
+    x_shape = tf.shape(X) # 获取x数据的长度
+    fx, fy, cx, cy = extract_and_reshape_intrinsics(intrinsics, x_shape) # 调整相机内参矩阵
 
     x = fx * (X / Z) + cx
     y = fy * (Y / Z) + cy

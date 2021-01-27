@@ -82,7 +82,7 @@ class ScanNet:
             np.random.shuffle(self.perm)
             for i in self.perm:
                 yield self.__getitem__(i)
-
+    # 加载扫描数据
     def _load_scan(self, scan):
         scan_path = os.path.join(self.dataset_path, scan)
         datum_file = os.path.join(scan_path, 'pickle-scene.pkl')

@@ -51,8 +51,8 @@ class MotionNetwork:
         self.mode = mode
         self.use_regressor = use_regressor
 
-        self.transform_history = []
-        self.coords_history = []
+        self.transform_history = [] # 转换历史
+        self.coords_history = []    # x,y坐标历史
         self.residual_history = []
         self.inds_history = []
         self.weights_history = []
@@ -94,7 +94,7 @@ class MotionNetwork:
 
         Tij = VideoSE3Transformation(matrix=pose_mat)
         Ts = Tij.append_identity()
-
+        # 添加位姿
         self.transform_history.append(Ts)
         self.residual_history.append(0.0)
 
@@ -216,24 +216,16 @@ class MotionNetwork:
         return flow, weight
 
 
-    def forward(
-            self, 
-            Ts, 
-            images, 
-            depths, 
-            intrinsics, 
-            inds=None, 
-            num_fixed=0, 
-            init=tf.constant(False)
-            ):
+    def forward(self, Ts, images, depths, intrinsics, inds=None, num_fixed=0, init=tf.constant(False)):
         # motion network performs projection operations in features space
+        # 相机位姿网络进行前向计算
         cfg = self.cfg
         batch = tf.shape(images)[0]
         num = tf.shape(images)[1]
         # 如果图片需要缩放，对其进行降采样，将其压缩到0-1
         if cfg.RESCALE_IMAGES:
             images = 2 * (images / 255.0) - 1.0
-
+        # 
         if inds is None:
             if self.mode == 'keyframe':
                 self.inds = self._keyframe_pairs_indicies(num)
@@ -258,7 +250,7 @@ class MotionNetwork:
             else:
                 if self.use_regressor:
                     Gs = self.pose_regressor_init(images)
-                    Ts = cond_transform(init, Gs, Ts)
+                    Ts = cond_transform(init, Gs, Ts) #转换坐标体系
 
             feats = self.extract_features(images)
             depths = tf.gather(depths_low, ii, axis=1) + EPS
@@ -305,7 +297,7 @@ class MotionNetwork:
         intrinsics = 4.0 * intrinsics_matrix_to_vec(intrinsics)
         return Ts, intrinsics
 
-
+    # 计算loss函数
     def compute_loss(self, Gs, depths, intrinsics, loss='l1', log_error=True):
         cfg = self.cfg
         batch, num = Gs.shape()
@@ -319,7 +311,7 @@ class MotionNetwork:
         total_loss = 0.0
         for i in range(len(self.transform_history)):
             Ts = self.transform_history[i]
-            Tij = Ts.gather(jj) * Ts.gather(ii).inv()
+            Tij = Ts.gather(jj) * Ts.gather(ii).inv() #
             Gij = Gs.gather(jj) * Gs.gather(ii).inv()
   
             intrinsics_pred = intrinsics
