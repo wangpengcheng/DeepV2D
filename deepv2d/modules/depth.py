@@ -114,6 +114,7 @@ class DepthNetwork(object):
         cfg = self.cfg
         # 进行线性插值，构造深度数据
         depths = tf.lin_space(cfg.MIN_DEPTH, cfg.MAX_DEPTH, cfg.COST_VOLUME_DEPTH) # 进行线性插值获取深度序列
+        # 
         intrinsics = intrinsics_vec_to_matrix(intrinsics / 4.0) # 将相机参数转换为矩阵
 
         with tf.variable_scope("stereo", reuse=self.reuse) as sc:
