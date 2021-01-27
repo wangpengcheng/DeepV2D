@@ -21,23 +21,23 @@ DEFAULT_INTERNAL = cfg.MOTION.INTERNAL
 
 
 def jac_local_perturb(pt, fill=False):
-    X, Y, Z = tf.split(pt, [1, 1, 1], axis=-1)
-    o, i = tf.zeros_like(X), tf.ones_like(X)
+    X, Y, Z = torch.split(pt, [1, 1, 1], axis=-1)
+    o, i = torch.zeros_like(X), torch.ones_like(X)
     if fill:
-        j1 = tf.concat([ i,  o,  o, o], axis=-1)
-        j2 = tf.concat([ o,  i,  o, o], axis=-1)
-        j3 = tf.concat([ o,  o,  i, o], axis=-1)
-        j4 = tf.concat([ o, -Z,  Y, o], axis=-1)
-        j5 = tf.concat([ Z,  o, -X, o], axis=-1)
-        j6 = tf.concat([-Y,  X,  o, o], axis=-1)
+        j1 = torch.cat([ i,  o,  o, o], axis=-1)
+        j2 = torch.cat([ o,  i,  o, o], axis=-1)
+        j3 = torch.cat([ o,  o,  i, o], axis=-1)
+        j4 = torch.cat([ o, -Z,  Y, o], axis=-1)
+        j5 = torch.cat([ Z,  o, -X, o], axis=-1)
+        j6 = torch.cat([-Y,  X,  o, o], axis=-1)
     else:
-        j1 = tf.concat([ i,  o,  o], axis=-1)
-        j2 = tf.concat([ o,  i,  o], axis=-1)
-        j3 = tf.concat([ o,  o,  i], axis=-1)
-        j4 = tf.concat([ o, -Z,  Y], axis=-1)
-        j5 = tf.concat([ Z,  o, -X], axis=-1)
-        j6 = tf.concat([-Y,  X,  o], axis=-1)
-    jac = tf.stack([j1, j2, j3, j4, j5, j6], axis=-1)
+        j1 = torch.cat([ i,  o,  o], axis=-1)
+        j2 = torch.cat([ o,  i,  o], axis=-1)
+        j3 = torch.cat([ o,  o,  i], axis=-1)
+        j4 = torch.cat([ o, -Z,  Y], axis=-1)
+        j5 = torch.cat([ Z,  o, -X], axis=-1)
+        j6 = torch.cat([-Y,  X,  o], axis=-1)
+    jac = torch.stack([j1, j2, j3, j4, j5, j6], axis=-1)
     return jac
 
 
@@ -54,7 +54,12 @@ def cond_transform(cond, T1, T2):
         T = T1.__class__(so3=so3, translation=translation, internal=T1.internal)
     
     return T
-
+def stop_gradients(val):
+    val.requires_grad = True
+def my_shape(val):
+    return torch.Tensor(list(val))
+def my_transpose(val1,val2):
+    return val1.permute(val2)
 
 class SE3:
     def __init__(self, upsilon=None, matrix=None, so3=None, translation=None, eq=None, internal=DEFAULT_INTERNAL):
@@ -82,7 +87,7 @@ class SE3:
         """ Transform set of points """
 
         if self.internal == 'matrix':
-            pt = tf.concat([pt, tf.ones_like(pt[...,:1])], axis=-1) # convert to homogenous
+            pt = torch.cat([pt, torch.ones_like(pt[...,:1])], axis=-1) # convert to homogenous
             pt = einsum(self.eq, self.G[..., :3, :], pt)
         
         elif self.internal == 'quaternion':
@@ -97,7 +102,7 @@ class SE3:
 
     def __mul__(self, other):
         if self.internal == 'matrix':
-            G = tf.matmul(self.G, other.G)
+            G = torch.matmul(self.G, other.G)
             return self.__class__(matrix=G, internal=self.internal)
 
         elif self.internal == 'quaternion':
@@ -115,31 +120,31 @@ class SE3:
         
     def concat(self, other, axis=0):
         if self.internal == 'matrix':
-            G = tf.concat([self.G, other.G], axis=axis)
+            G = torch.cat([self.G, other.G], axis=axis)
 
         elif self.internal == 'quaternion':
-            so3 = tf.concat([self.so3, other.so3], axis=axis)
-            t = tf.concat([self.translation, other.translation], axis=axis)
+            so3 = torch.cat([self.so3, other.so3], axis=axis)
+            t = torch.cat([self.translation, other.translation], axis=axis)
             return self.__class__(so3=so3, translation=t, internal=self.internal)
 
     def copy(self, stop_gradients=False):
 
         if self.internal == 'matrix':
             if stop_gradients:
-                return self.__class__(matrix=tf.stop_gradient(self.G), internal=self.internal)
+                return self.__class__(matrix=stop_gradient(self.G), internal=self.internal)
             else:
                 return self.__class__(matrix=self.G, internal=self.internal)
 
         elif self.internal == 'quaternion':
             if stop_gradients:
-                so3 = tf.stop_gradient(self.so3)
-                t = tf.stop_gradient(self.translation)
+                so3 = self.so3
+                t = stop_gradient(self.translation)
                 return self.__class__(so3=so3, translation=t, internal=self.internal)
             else:
                 return self.__class__(so3=self.so3, translation=self.translation, internal=self.internal)
 
     def to_vec(self):
-        return tf.concat([self.so3, self.translation], axis=-1)
+        return torch.cat([self.so3, self.translation], axis=-1)
         
     def inv(self):
         if self.internal == 'matrix':
@@ -155,19 +160,19 @@ class SE3:
             R = self.G[..., :3, :3]
             t = self.G[..., :3, 3]
             A11 = R
-            A12 = tf.matmul(hat(t), R)
-            A21 = tf.zeros_like(A11)
+            A12 = torch.matmul(hat(t), R)
+            A21 = torch.zeros_like(A11)
             A22 = R
 
         elif self.internal == 'quaternion':
             A11 = quaternion_to_matrix(self.so3)
-            A12 = tf.matmul(hat(self.translation), A11)
-            A21 = tf.zeros_like(A11)
+            A12 = torch.matmul(hat(self.translation), A11)
+            A21 = torch.zeros_like(A11)
             A22 = quaternion_to_matrix(self.so3)
 
-        Ax = tf.concat([
-            tf.concat([A11, A12], axis=-1),
-            tf.concat([A21, A22], axis=-1)
+        Ax = torch.cat([
+            torch.cat([A11, A12], axis=-1),
+            torch.cat([A21, A22], axis=-1)
         ], axis=-2)
 
         return Ax
@@ -176,23 +181,23 @@ class SE3:
         return se3_logm(self.so3, self.translation)
 
     def shape(self):
-        return tf.shape(self.so3)[:-1]
+        return (self.so3.shape)[:-1]
 
     def matrix(self, fill=True):
         if self.internal == 'matrix':
             return self.G
         elif self.internal == 'quaternion':
             R = quaternion_to_matrix(self.so3)
-            t = tf.expand_dims(self.translation,-1)
-            mat = tf.concat([R, t], axis=-1)
+            t = torch.unsqueeze(self.translation,-1)
+            mat = torch.cat([R, t], axis=-1)
 
-            se3_shape = tf.shape(self.so3)[:-1]
-            filler = tf.constant([0,0,0,1], dtype=tf.float32)
-            filler = tf.tile(filler[tf.newaxis], [tf.reduce_prod(se3_shape), 1])
-            filler = tf.reshape(filler, tf.concat([se3_shape, [1, 4]], axis=-1))
+            se3_shape = my_shape(self.so3)[:-1]
+            filler = torch.tensor([0,0,0,1], dtype=torch.float32)
+            filler = torch.repeat(filler[np.newaxis], [torch.prod(se3_shape), 1])
+            filler = torch.reshape(filler, torch.cat([se3_shape, [1, 4]], axis=-1))
 
             if fill:
-                mat = tf.concat([mat, filler], axis=-2)
+                mat = torch.cat([mat, filler], axis=-2)
 
             return mat
 
@@ -204,12 +209,12 @@ class SE3:
             return coords, pt_new
         if valid_mask:
             vmask = (pt[...,-1] > MIN_DEPTH) & (pt_new[...,-1] > MIN_DEPTH)
-            vmask = tf.cast(vmask, tf.float32)[..., tf.newaxis]
+            vmask = torch.FloatTensor(vmask, torch.float32)[..., np.newaxis]
             return coords, vmask
         return coords
     # 特征相机网络
     def induced_flow(self, depth, intrinsics, valid_mask=False):
-        coords0 = pops.coords_grid(tf.shape(depth), homogeneous=False)
+        coords0 = pops.coords_grid(my_shape(depth), homogeneous=False)
         if valid_mask:
             coords1, vmask = self.transform(depth, intrinsics, valid_mask=valid_mask)
             return coords1 - coords0, vmask
@@ -228,7 +233,7 @@ class EgoSE3Transformation(SE3):
         super(EgoSE3Transformation, self).__init__(upsilon, matrix, so3, translation)
 
     def __call__(self, pt, jacobian=False):
-        t = self.translation[:, tf.newaxis, tf.newaxis]
+        t = self.translation[:, np.newaxis, np.newaxis]
         return SE3(so3=self.so3, translation=t, eq='aij,a...j->a...i')(pt, jacobian=jacobian)
 
     def fit(self, target, weight, depth, intrinsics, num_iters=1):
@@ -237,7 +242,7 @@ class EgoSE3Transformation(SE3):
         weight = clip_dangerous_gradients(weight)
 
         X0 = pops.backproject(depth, intrinsics)
-        w = tf.expand_dims(weight, -1)
+        w = torch.unsqueeze(weight, -1)
 
         lm_lmbda = cfg.MOTION.LM_LMBDA
         ep_lmbda = cfg.MOTION.EP_LMBDA
@@ -249,7 +254,7 @@ class EgoSE3Transformation(SE3):
             x1, jproj = pops.project(X1, intrinsics, jacobian=True)
 
             v = (X0[...,-1] > MIN_DEPTH) &  (X1[...,-1] > MIN_DEPTH)
-            v = tf.cast(v, tf.float32)[..., tf.newaxis, tf.newaxis]
+            v = torch.FloatTensor(v, torch.float32)[..., np, np.newaxis]
             
             ### weighted gauss-newton update ###
             J = einsum('...ij,...jk->...ik', jproj, jtran)
@@ -257,7 +262,7 @@ class EgoSE3Transformation(SE3):
             b = einsum('a...i,a...->ai', v*w*J, target-x1)
 
             ### add dampening and apply increment ###
-            H += (ep_lmbda + lm_lmbda*H)*tf.eye(6)
+            H += (ep_lmbda + lm_lmbda*H)*torch.eye(6)
             delta_upsilon = cholesky_solve(H, b)
             
             dT = EgoSE3Transformation(upsilon=delta_upsilon)
@@ -267,10 +272,10 @@ class EgoSE3Transformation(SE3):
         self.translation = T.translation
 
     def to_dense(self, shape):
-        so3 = tf.reshape(self.so3, [-1, 1, 1, 4])
-        t = tf.reshape(self.translation, [-1, 1, 1, 3])
-        so3 = tf.tile(so3, [1, shape[0], shape[1], 1])
-        t = tf.tile(t, [1, shape[0], shape[1], 1])
+        so3 = torch.reshape(self.so3, [-1, 1, 1, 4])
+        t = torch.reshape(self.translation, [-1, 1, 1, 3])
+        so3 = torch.repeat(so3, [1, shape[0], shape[1], 1])
+        t = torch.repeat(t, [1, shape[0], shape[1], 1])
         return DenseSE3Transformation(so3=so3, translation=t)
 
 
@@ -287,23 +292,23 @@ class VideoSE3Transformation(SE3):
             ndim = len(pt.get_shape().as_list())
             t = self.translation
             for i in range(ndim-3):
-                t = t[:, :, tf.newaxis]
+                t = t[:, :, np.newaxis]
             return SE3(so3=self.so3, translation=t, eq="aijk,ai...k->ai...j")(pt, jacobian=jacobian)
 
     def gather(self, inds):
         if self.internal == 'matrix':
-            G = tf.gather(self.G, inds, axis=1)
+            G = torch.gather(self.G, inds, axis=1)
             return VideoSE3Transformation(matrix=G, internal=self.internal)
         elif self.internal == 'quaternion':
-            t = tf.gather(self.translation, inds, axis=1)
-            so3 = tf.gather(self.so3, inds, axis=1)
+            t = torch.gather(self.translation, inds, axis=1)
+            so3 = torch.gather(self.so3, inds, axis=1)
             return VideoSE3Transformation(so3=so3, translation=t, internal=self.internal)
 
     def shape(self):
         if self.internal == 'matrix':
-            my_shape = tf.shape(self.G)
+            my_shape = my_shape(self.G)
         elif self.internal == 'quaternion':
-            my_shape = tf.shape(self.so3)
+            my_shape = my_shape(self.so3)
         
         return (my_shape[0], my_shape[1])
 
@@ -311,19 +316,19 @@ class VideoSE3Transformation(SE3):
         """ Push identity transformation to start of collection """
         batch, frames = self.shape()
         if self.internal == 'matrix':
-            I = tf.eye(4, batch_shape=[batch, 1])
-            G = tf.concat([I, self.G], axis=1)
+            I = torch.eye(4, batch_shape=[batch, 1])
+            G = torch.cat([I, self.G], axis=1)
             return VideoSE3Transformation(matrix=G, internal=self.internal)
 
         elif self.internal == 'quaternion':
-            so3_id = tf.constant([1.0, 0.0, 0.0, 0.0], dtype=tf.float32)
-            t_id = tf.constant([0.0, 0.0, 0.0], dtype=tf.float32)
+            so3_id = torch.tensor([1.0, 0.0, 0.0, 0.0], dtype=torch.float32)
+            t_id = torch.tensor([0.0, 0.0, 0.0], dtype=torch.float32)
 
-            so3_id = tf.tile(tf.reshape(so3_id, [1, 1, 4]), [batch, 1, 1])
-            t_id = tf.tile(tf.reshape(t_id, [1, 1, 3]), [batch, 1, 1])
+            so3_id = torch.repeat(torch.reshape(so3_id, [1, 1, 4]), [batch, 1, 1])
+            t_id = torch.repeat(torch.reshape(t_id, [1, 1, 3]), [batch, 1, 1])
 
-            so3 = tf.concat([so3_id, self.so3], axis=1)
-            t = tf.concat([t_id, self.translation], axis=1)
+            so3 = torch.cat([so3_id, self.so3], axis=1)
+            t = torch.cat([t_id, self.translation], axis=1)
             return VideoSE3Transformation(so3=so3, translation=t, internal=self.internal)
 
     def keyframe_optim(self, 
@@ -346,7 +351,7 @@ class VideoSE3Transformation(SE3):
         weight = clip_dangerous_gradients(weight)
 
         X0 = pops.backproject(depth, intrinsics)
-        w = tf.expand_dims(weight, axis=-1)
+        w = torch.unsqueeze(weight, axis=-1)
 
         lm_lmbda = cfg.MOTION.LM_LMBDA
         ep_lmbda = cfg.MOTION.EP_LMBDA
@@ -358,22 +363,22 @@ class VideoSE3Transformation(SE3):
             x1, (jproj, jkvec) = pops.project(X1, intrinsics, jacobian=True)
 
             v = (X0[...,-1] > MIN_DEPTH) & (X1[...,-1] > MIN_DEPTH)
-            v = tf.cast(v, tf.float32)[..., tf.newaxis, tf.newaxis]
+            v = torch.FloatTensor(v, torch.float32)[..., np.newaxis, np.newaxis]
             
             ### weighted gauss-newton update ###
             J = einsum('...ij,...jk->...ik', jproj, jtran)
-            tf.add_to_collection("checkpoints", J)
+            #tf\.add_to_collection("checkpoints", J)
 
             H = einsum('ai...j,ai...k->aijk', v*w*J, J)
             b = einsum('ai...j,ai...->aij', v*w*J, target-x1)
 
-            tf.add_to_collection("checkpoints", H)
-            tf.add_to_collection("checkpoints", b)
+            #tf\.add_to_collection("checkpoints", H)
+            #tf\.add_to_collection("checkpoints", b)
 
             ### add dampening and apply increment ###
-            H += ep_lmbda*tf.eye(6) + lm_lmbda*H*tf.eye(6)
+            H += ep_lmbda*torch.eye(6) + lm_lmbda*H*torch.eye(6)
             delta_upsilon = cholesky_solve(H, b)
-            tf.add_to_collection("checkpoints", delta_upsilon)
+            #tf\.add_to_collection("checkpoints", delta_upsilon)
 
             T = T.increment(delta_upsilon)
 
@@ -421,7 +426,7 @@ class VideoSE3Transformation(SE3):
 
         targets = clip_dangerous_gradients(targets)
         weights = clip_dangerous_gradients(weights)
-        w = tf.expand_dims(weights, -1)
+        w = torch.unsqueeze(weights, -1)
 
         T = self.copy(stop_gradients=False)
         for i in range(num_iters):
@@ -434,13 +439,13 @@ class VideoSE3Transformation(SE3):
             X1, jtran = Tij(X0, jacobian=True)
             x1, (jproj, jkvec2) = pops.project(X1, intrinsics, jacobian=True)
 
-            residual_mag = tf.sqrt(tf.reduce_sum((targets - x1)**2, axis=-1))
+            residual_mag = torch.sqrt(torch.sum((targets - x1)**2, axis=-1))
             
             v = (X0[...,-1] > MIN_DEPTH) & \
                 (X1[...,-1] > MIN_DEPTH) & \
                 (residual_mag < MAX_RESIDUAL)
 
-            v = tf.cast(v, tf.float32)[..., tf.newaxis, tf.newaxis]
+            v = torch.FloatTensor(v, torch.float32)[..., np.newaxis, np.newaxis]
 
             # jacobians linearly related through adjoint
             Ji = einsum("...ij,...jk->...ik", jproj, jtran)
@@ -453,9 +458,9 @@ class VideoSE3Transformation(SE3):
             f = (intrinsics[:, 0,0] + intrinsics[:, 1,1]) / 2.0
             Jk = einsum('a...,a->a...', Jk, f)
 
-            tf.add_to_collection("checkpoints", Ji)
-            tf.add_to_collection("checkpoints", Jj)
-            tf.add_to_collection("checkpoints", Jk)
+            #tf\.add_to_collection("checkpoints", Ji)
+            #tf\.add_to_collection("checkpoints", Jj)
+            #tf\.add_to_collection("checkpoints", Jk)
 
             ### build the system Hx = b ###
             H11_ii = einsum('ai...j,ai...k->iajk', v*w*Ji, Ji)
@@ -464,22 +469,22 @@ class VideoSE3Transformation(SE3):
             H11_jj = einsum('ai...j,ai...k->iajk', v*w*Jj, Jj)
 
             h11_shape = [num, num, batch, dof, dof]
-            H11 = tf.scatter_nd(tf.stack([ii,ii], axis=-1), H11_ii, h11_shape) + \
-                  tf.scatter_nd(tf.stack([ii,jj], axis=-1), H11_ij, h11_shape) + \
-                  tf.scatter_nd(tf.stack([jj,ii], axis=-1), H11_ji, h11_shape) + \
-                  tf.scatter_nd(tf.stack([jj,jj], axis=-1), H11_jj, h11_shape)
+            H11 = tf.scatter_nd(torch.stack([ii,ii], axis=-1), H11_ii, h11_shape) + \
+                  tf.scatter_nd(torch.stack([ii,jj], axis=-1), H11_ij, h11_shape) + \
+                  tf.scatter_nd(torch.stack([jj,ii], axis=-1), H11_ji, h11_shape) + \
+                  tf.scatter_nd(torch.stack([jj,jj], axis=-1), H11_jj, h11_shape)
 
             b1_i = einsum('ai...j,ai...->iaj', v*w*Ji, targets-x1)
             b1_j = einsum('ai...j,ai...->iaj', v*w*Jj, targets-x1)
 
             b_shape = [num, batch, dof]
-            b1 =  tf.scatter_nd(tf.stack([ii], axis=-1), b1_i, b_shape) + \
-                  tf.scatter_nd(tf.stack([jj], axis=-1), b1_j, b_shape)
+            b1 =  tf.scatter_nd(torch.stack([ii], axis=-1), b1_i, b_shape) + \
+                  tf.scatter_nd(torch.stack([jj], axis=-1), b1_j, b_shape)
 
-            H11 = tf.reshape(tf.transpose(H11, [2,0,3,1,4]), [batch, num*dof, num*dof])
-            H11 += (ep_lmbda + lm_lmbda*H11)*tf.eye(dof*num)
+            H11 = torch.reshape(my_transpose(H11, [2,0,3,1,4]), [batch, num*dof, num*dof])
+            H11 += (ep_lmbda + lm_lmbda*H11)*torch.eye(dof*num)
 
-            b1 = tf.reshape(tf.transpose(b1, [1,0,2]), [batch, num*dof])
+            b1 = torch.reshape(my_transpose(b1, [1,0,2]), [batch, num*dof])
 
             # keep intrinsics matrix fixed
             if not include_intrinsics:
@@ -495,29 +500,29 @@ class VideoSE3Transformation(SE3):
                 H12_j = einsum('ai...j,ai...k->iajk', v*w*Jj, Jk)
 
                 h12_shape = [num, 1, batch, dof, 1]
-                H12 = tf.scatter_nd(tf.stack([ii, tf.zeros_like(ii)], axis=-1), H12_i, h12_shape) + \
-                    tf.scatter_nd(tf.stack([jj, tf.zeros_like(jj)], axis=-1), H12_j, h12_shape)
+                H12 = tf.scatter_nd(torch.stack([ii, torch.zeros_like(ii)], axis=-1), H12_i, h12_shape) + \
+                    tf.scatter_nd(torch.stack([jj, torch.zeros_like(jj)], axis=-1), H12_j, h12_shape)
 
                 H22 = einsum('ai...j,ai...k->ajk', v*w*Jk, Jk) 
                 b2 = einsum('a...j,a...->aj', v*w*Jk, targets-x1)
 
-                H12 = tf.reshape(tf.transpose(H12, [2,0,3,1,4]), [batch, num*dof, 1])
-                H21 = tf.transpose(H12, [0, 2, 1])
-                H22 = tf.reshape(H22, [batch, 1, 1])
+                H12 = torch.reshape(my_transpose(H12, [2,0,3,1,4]), [batch, num*dof, 1])
+                H21 = my_transpose(H12, [0, 2, 1])
+                H22 = torch.reshape(H22, [batch, 1, 1])
 
                 flm_lmbda = 0.001 # damping for focal length update
                 fep_lmbda = 100.0
-                H22 += (flm_lmbda * H22 + fep_lmbda) * tf.eye(1)
+                H22 += (flm_lmbda * H22 + fep_lmbda) * torch.eye(1)
 
-                H = tf.concat([
-                    tf.concat([H11, H12], axis=-1),
-                    tf.concat([H21, H22], axis=-1)], axis=-2)
+                H = torch.cat([
+                    torch.cat([H11, H12], axis=-1),
+                    torch.cat([H21, H22], axis=-1)], axis=-2)
 
-                b = tf.concat([b1, b2], axis=-1)
+                b = torch.cat([b1, b2], axis=-1)
                 
             # system is built, now solve it
-            tf.add_to_collection("checkpoints", H)
-            tf.add_to_collection("checkpoints", b)
+            #tf\.add_to_collection("checkpoints", H)
+            #tf\.add_to_collection("checkpoints", b)
 
             num_free = num - num_fixed
             H = H[:, dof*num_fixed:, dof*num_fixed:]
@@ -525,17 +530,17 @@ class VideoSE3Transformation(SE3):
 
             if include_intrinsics:
                 delta_update = cholesky_solve(H, b)
-                tf.add_to_collection("checkpoints", delta_update)
-                delta_upsilon, delta_intrinsics = tf.split(delta_update, [num_free*dof, 1], axis=-1)
+                #tf\.add_to_collection("checkpoints", delta_update)
+                delta_upsilon, delta_intrinsics = torch.split(delta_update, [num_free*dof, 1], axis=-1)
                 intrinsics = update_intrinsics(intrinsics, delta_intrinsics)
            
             else:
                 delta_upsilon = cholesky_solve(H, b)
-                tf.add_to_collection("checkpoints", delta_upsilon)
+                #tf\.add_to_collection("checkpoints", delta_upsilon)
 
-            delta_upsilon = tf.reshape(delta_upsilon, [batch, num_free, dof])
-            zeros_upsilon = tf.zeros([batch, num_fixed, dof])
-            delta_upsilon = tf.concat([zeros_upsilon, delta_upsilon], axis=1)
+            delta_upsilon = torch.reshape(delta_upsilon, [batch, num_free, dof])
+            zeros_upsilon = torch.zeros([batch, num_fixed, dof])
+            delta_upsilon = torch.cat([zeros_upsilon, delta_upsilon], axis=1)
             T = T.increment(delta_upsilon)
 
         # update
