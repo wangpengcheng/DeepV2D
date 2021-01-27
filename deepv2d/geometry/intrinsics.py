@@ -23,24 +23,24 @@ def intrinsics_matrix_to_vec(kmat):
 def update_intrinsics(intrinsics, delta_focal):
     # 将位姿信息转转为kvect
     kvec = intrinsics_matrix_to_vec(intrinsics)
-    fx, fy, cx, cy = torch.unbind(kvec, num=4, axis=-1)
+    fx, fy, cx, cy = torch.unbind(kvec, num=4, dim=-1)
     df = torch.squeeze(delta_focal, -1)
 
     # update the focal lengths
     fx = torch.exp(df) * fx
     fy = torch.exp(df) * fy
 
-    kvec = torch.stack([fx, fy, cx, cy], axis=-1)
+    kvec = torch.stack([fx, fy, cx, cy], dim=-1)
     kmat = intrinsics_vec_to_matrix(kvec)
     return kmat
 # 对深度进行重新缩放
 def rescale_depth(depth, downscale=4):
-    depth = torch.unsqueeze(depth, axis=0) # 将所有维度扩展
+    depth = torch.unsqueeze(depth, dim=0) # 将所有维度扩展
     j,n,w,h= depth.shape[:]
     w = int(w/downscale+0.5)
     h = int(h/downscale+0.5)
     depth = torch.nn.functional.interpolate(depth,size=[w,h],mode="nearest")
-    return torch.squeeze(depth, axis=0) # 对其进行维度压缩
+    return torch.squeeze(depth, dim=0) # 对其进行维度压缩
 
 def rescale_depth_and_intrinsics(depth, intrinsics, downscale=4):
     sc = torch.tensor([1.0/downscale, 1.0/downscale, 1.0], dtype=torch.float32) # 构建缩放矩阵
