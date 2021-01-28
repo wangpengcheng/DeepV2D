@@ -13,7 +13,7 @@ from utils import mem_util
 from modules.depth import DepthNetwork
 from modules.motion import MotionNetwork
 
-gpu_no = '0' # or '1'
+gpu_no = '0,1'
 os.environ["CUDA_VISIBLE_DEVICES"] = gpu_no
 
 MOTION_LR_FRACTION = 0.1
@@ -58,7 +58,7 @@ class DeepV2DTrainer(object):
             # 创建位姿估计网络
             motion_net = MotionNetwork(cfg.MOTION, bn_is_training=True, reuse=gpu_id>0)
 
-            with tf.device('/gpu:%d' % gpu_id):
+            with tf.device('/gpu:%d' % (gpu_id)):
                 # 获取深度信息
                 depth_input = tf.expand_dims(depth_filled, 1)
                 # 前向计算
@@ -153,7 +153,7 @@ class DeepV2DTrainer(object):
                 rnd = tf.random_uniform([], 0, 1)
                 depth_input = tf.cond(rnd<input_prob, lambda: depth_filled, lambda: depth_pred)
 
-            with tf.device('/gpu:%d' % gpu_id):
+            with tf.device('/gpu:%d' % (gpu_id)):
 
                 # motion inference
                 Ts, kvec = motion_net.forward(None, images, depth_input[:,tf.newaxis], intrinsics)
@@ -288,7 +288,7 @@ class DeepV2DTrainer(object):
         config.gpu_options.allow_growth = True
 
         # 配置可使用的显存比例
-        config.gpu_options.per_process_gpu_memory_fraction = 0.5
+        config.gpu_options.per_process_gpu_memory_fraction = 0.1
 
         # 在创建session的时候把config作为参数传进去
         sess = tf.InteractiveSession(config = config)

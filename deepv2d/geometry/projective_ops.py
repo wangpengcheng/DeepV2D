@@ -11,7 +11,7 @@ def coords_grid(shape, homogeneous=True):
 
     xx = tf.cast(xx, tf.float32) # 转换坐标
     yy = tf.cast(yy, tf.float32)
-
+   
     if homogeneous:
         coords = tf.stack([xx, yy, tf.ones_like(xx)], axis=-1)
     else:
@@ -20,7 +20,7 @@ def coords_grid(shape, homogeneous=True):
     new_shape = (tf.ones_like(shape[:-2]), shape[-2:], [-1])
     new_shape = tf.concat(new_shape, axis=0)
     coords = tf.reshape(coords, new_shape)
-
+   
     tile = tf.concat((shape[:-2], [1,1,1]), axis=0) # 获取小块
     coords = tf.tile(coords, tile) # 对坐标点张量进行扩张
     return coords
@@ -35,14 +35,17 @@ def extract_and_reshape_intrinsics(intrinsics, shape=None):
 
     if shape is not None:
         batch = tf.shape(fx)[:1]
+       
         fillr = tf.ones_like(shape[1:])
+       
         k_shape = tf.concat([batch, fillr], axis=0)
-
+        
         fx = tf.reshape(fx, k_shape)
+       
         fy = tf.reshape(fy, k_shape)
         cx = tf.reshape(cx, k_shape)
         cy = tf.reshape(cy, k_shape)
-
+    
     return (fx, fy, cx, cy)
 
 # 将depthmap转换为点云,主要是根据相机参数还原原始的3D点云
@@ -78,7 +81,12 @@ def backproject(depth, intrinsics, jacobian=False):
 def project(points, intrinsics, jacobian=False):
     
     """ project point cloud onto image 将点云投影到图像上""" 
+    print(points)
     X, Y, Z = tf.unstack(points, num=3, axis=-1)
+    print(X)
+    print(Y)
+    print(Z)
+
     Z = tf.maximum(Z, MIN_DEPTH) # 获取最大深度
 
     x_shape = tf.shape(X) # 获取x数据的长度

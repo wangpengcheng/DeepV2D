@@ -165,6 +165,7 @@ def _device_stats_dict(run_metadata):
   """Returns dictionary of device_name->[NodeExecStats, NodeExecStats...]"""
   result = {}
   for dev_stat in run_metadata.step_stats.dev_stats:
+    print("==={}".format(dev_stat.device))
     device_name = _simplify_device_name(dev_stat.device)
     result[device_name] = dev_stat.node_stats
 
