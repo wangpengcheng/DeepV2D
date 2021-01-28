@@ -106,22 +106,22 @@ def rotation_matrix_to_quaternion(R):
 
     x, y, z, w = tf.split(eigvecs[...,-1], [1,1,1,1], axis=-1)
     qvec = tf.concat([w, x, y, z], axis=-1)
-    qvec /= tf.sqrt(tf.reduce_sum(qvec**2, axis=-1, keepdims=True))
+    qvec /= tf.sqrt(tf.reduce_sum(input_tensor=qvec**2, axis=-1, keepdims=True))
 
     return qvec * tf.sign(w)
 
 def so3_expm_and_theta(omega):
     """ omega in \so3 """
-    theta_sq = tf.reduce_sum(omega**2, axis=-1)
+    theta_sq = tf.reduce_sum(input_tensor=omega**2, axis=-1)
     theta = tf.sqrt(theta_sq)
     half_theta = 0.5*theta
 
     ### small ###
-    imag_factor = tf.where(theta>MIN_THETA, 
+    imag_factor = tf.compat.v1.where(theta>MIN_THETA, 
         tf.sin(half_theta) / (theta + 1e-12), 
         0.5 - (1.0/48.0)*theta_sq + (1.0/3840.0)*theta_sq*theta_sq)
 
-    real_factor = tf.where(theta>MIN_THETA, tf.cos(half_theta),
+    real_factor = tf.compat.v1.where(theta>MIN_THETA, tf.cos(half_theta),
         1.0 - (1.0/8.0)*theta_sq + (1.0/384.0)*theta_sq*theta_sq)
 
     qw = real_factor
@@ -134,10 +134,10 @@ def so3_expm_and_theta(omega):
         
 def so3_logm_and_theta(so3):
     w, vec = tf.split(so3, [1,3], axis=-1)
-    squared_n = tf.reduce_sum(vec**2, axis=-1, keepdims=True)
+    squared_n = tf.reduce_sum(input_tensor=vec**2, axis=-1, keepdims=True)
     n = tf.sqrt(squared_n)
 
-    two_atan_nbyw_by_n = tf.where(n<MIN_THETA,
+    two_atan_nbyw_by_n = tf.compat.v1.where(n<MIN_THETA,
         2/w - w*squared_n / (w*w*w),
         2*tf.atan(n/w) / (n+1e-12))
 
@@ -153,17 +153,17 @@ def se3_expm(xi):
 
     theta = theta[...,tf.newaxis,tf.newaxis]
     theta = tf.tile(theta, 
-        tf.concat([tf.ones_like(tf.shape(q)[:-1]), [3,3]], axis=-1))
+        tf.concat([tf.ones_like(tf.shape(input=q)[:-1]), [3,3]], axis=-1))
 
     theta_sq = theta * theta
     Omega = hat(omega)
     Omega_sq = tf.matmul(Omega, Omega)
 
-    Vs = tf.eye(3, batch_shape=tf.shape(xi)[:-1]) + \
+    Vs = tf.eye(3, batch_shape=tf.shape(input=xi)[:-1]) + \
          (1-tf.cos(theta)) / (theta_sq + 1e-12) * Omega + \
          (theta - tf.sin(theta)) / (theta_sq*theta + 1e-12) * Omega_sq
 
-    V = tf.where(theta<MIN_THETA, quaternion_to_matrix(q), Vs)
+    V = tf.compat.v1.where(theta<MIN_THETA, quaternion_to_matrix(q), Vs)
     t = matdotv(V, tau)
     return q, t
 
@@ -174,17 +174,17 @@ def se3_logm(so3, t):
 
     theta = theta[...,tf.newaxis]
     theta = tf.tile(theta, 
-        tf.concat([tf.ones_like(tf.shape(omega)[:-1]), [3,3]], axis=-1))
+        tf.concat([tf.ones_like(tf.shape(input=omega)[:-1]), [3,3]], axis=-1))
     half_theta = 0.5*theta
 
-    Vinv_approx = tf.eye(3, batch_shape=tf.shape(omega)[:-1]) - \
+    Vinv_approx = tf.eye(3, batch_shape=tf.shape(input=omega)[:-1]) - \
         0.5*Omega + (1.0/12.0) * Omega_sq
 
-    Vinv_exact = tf.eye(3, batch_shape=tf.shape(omega)[:-1]) - \
+    Vinv_exact = tf.eye(3, batch_shape=tf.shape(input=omega)[:-1]) - \
         0.5*Omega + (1-theta*tf.cos(half_theta) / \
         (2*tf.sin(half_theta)+1e-12)) / (theta*theta + 1e-12) * Omega_sq
 
-    Vinv = tf.where(theta<MIN_THETA, Vinv_approx, Vinv_exact)
+    Vinv = tf.compat.v1.where(theta<MIN_THETA, Vinv_approx, Vinv_exact)
     tau = matdotv(Vinv, t)
 
     upsilon = tf.concat([tau, omega], axis=-1)
@@ -196,16 +196,16 @@ def se3_matrix_inverse(G):
     """ Invert SE3 matrix 
     se3维度变换
     """
-    inp_shape = tf.shape(G)
+    inp_shape = tf.shape(input=G)
     G = tf.reshape(G, [-1, 4, 4])
 
     R, t = G[:, :3, :3], G[:, :3, 3:]
-    R = tf.transpose(R, [0, 2, 1])
+    R = tf.transpose(a=R, perm=[0, 2, 1])
     t = -tf.matmul(R, t)
 
     filler = tf.constant([0.0, 0.0, 0.0, 1.0])
     filler = tf.reshape(filler, [1, 1, 4])
-    filler = tf.tile(filler, [tf.shape(G)[0], 1, 1])
+    filler = tf.tile(filler, [tf.shape(input=G)[0], 1, 1])
 
     Ginv = tf.concat([R, t], axis=-1)
     Ginv = tf.concat([Ginv, filler], axis=-2)
@@ -237,14 +237,14 @@ def se3_matrix_expm(upsilon_omega):
     """
 
     eps=1e-12
-    inp_shape = tf.shape(upsilon_omega)
+    inp_shape = tf.shape(input=upsilon_omega)
     out_shape = tf.concat([inp_shape[:-1], [4,4]], axis=-1)
 
     upsilon_omega = tf.reshape(upsilon_omega, [-1, 6])
-    batch = tf.shape(upsilon_omega)[0]
+    batch = tf.shape(input=upsilon_omega)[0]
     v, w = tf.split(upsilon_omega, [3, 3], axis=-1)
 
-    theta_sq = tf.reduce_sum(w**2, axis=1)
+    theta_sq = tf.reduce_sum(input_tensor=w**2, axis=1)
     theta_sq = tf.reshape(theta_sq, [-1, 1, 1])
 
     theta = tf.sqrt(theta_sq)
@@ -268,8 +268,8 @@ def se3_matrix_expm(upsilon_omega):
     V2 = I + ((1 - tf.cos(theta)) / (theta_sq + eps)) * wx + \
         ((theta - tf.sin(theta))/(theta_sq*theta + eps)) * wx_sq
 
-    R = tf.where(theta[:, 0, 0]<MIN_THETA, R1, R2)
-    V = tf.where(theta[:, 0, 0]<MIN_THETA, V1, V2)
+    R = tf.compat.v1.where(theta[:, 0, 0]<MIN_THETA, R1, R2)
+    V = tf.compat.v1.where(theta[:, 0, 0]<MIN_THETA, V1, V2)
 
     t = tf.matmul(V, tf.expand_dims(v, -1))
     fill = tf.constant([0, 0, 0, 1], dtype=tf.float32)

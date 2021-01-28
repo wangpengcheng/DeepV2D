@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 
 def gather_nd(image, indicies, batch_dims=0):
-    indicies_shape = tf.shape(indicies)
+    indicies_shape = tf.shape(input=indicies)
     batch_inds = [tf.range(indicies_shape[i]) for i in range(batch_dims)]
     batch_inds = tf.meshgrid(*batch_inds, indexing='ij')
     batch_inds = tf.stack(batch_inds, axis=-1)
@@ -26,7 +26,7 @@ def gather_nd(image, indicies, batch_dims=0):
 
 def bilinear_sampler(image, coords, batch_dims=1, return_valid=False):
     """ performs bilinear sampling using coords grid """
-    img_shape = tf.shape(image)
+    img_shape = tf.shape(input=image)
     coords_x, coords_y = tf.split(coords, [1, 1], axis=-1)
 
     x0 = tf.floor(coords_x)

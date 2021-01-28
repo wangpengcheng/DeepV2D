@@ -83,10 +83,10 @@ class Network(object):
         '''
         data_dict = np.load(data_path, encoding='latin1').item()
         for op_name in data_dict:
-            with tf.variable_scope(op_name, reuse=True):
+            with tf.compat.v1.variable_scope(op_name, reuse=True):
                 for param_name, data in iter(data_dict[op_name].items()):
                     try:
-                        var = tf.get_variable(param_name)
+                        var = tf.compat.v1.get_variable(param_name)
                         session.run(var.assign(data))
 
                     except ValueError:
@@ -124,7 +124,7 @@ class Network(object):
 
     def make_var(self, name, shape):
         '''Creates a new TensorFlow variable.'''
-        return tf.get_variable(name, shape, dtype = 'float32', trainable=self.trainable)
+        return tf.compat.v1.get_variable(name, shape, dtype = 'float32', trainable=self.trainable)
 
     def validate_padding(self, padding):
         '''Verifies that the padding is one of the supported ones.'''
@@ -150,15 +150,15 @@ class Network(object):
         c_i = input_data.get_shape()[-1]
 
         if (padding == 'SAME'):
-            input_data = tf.pad(input_data, [[0, 0], [(k_h - 1)//2, (k_h - 1)//2], [(k_w - 1)//2, (k_w - 1)//2], [0, 0]], "CONSTANT")
+            input_data = tf.pad(tensor=input_data, paddings=[[0, 0], [(k_h - 1)//2, (k_h - 1)//2], [(k_w - 1)//2, (k_w - 1)//2], [0, 0]], mode="CONSTANT")
 
         # Verify that the grouping parameter is valid
         assert c_i % group == 0
         assert c_o % group == 0
         # Convolution for a given input and kernel
-        convolve = lambda i, k: tf.nn.conv2d(i, k, [1, s_h, s_w, 1], padding='VALID')
+        convolve = lambda i, k: tf.nn.conv2d(input=i, filters=k, strides=[1, s_h, s_w, 1], padding='VALID')
 
-        with tf.variable_scope(name) as scope:
+        with tf.compat.v1.variable_scope(name) as scope:
             kernel = self.make_var('weights', shape=[k_h, k_w, c_i // group, c_o])
 
             if group == 1:
@@ -190,7 +190,7 @@ class Network(object):
     @layer
     def max_pool(self, input_data, k_h, k_w, s_h, s_w, name, padding=DEFAULT_PADDING):
         self.validate_padding(padding)
-        return tf.nn.max_pool(input_data,
+        return tf.nn.max_pool2d(input=input_data,
                               ksize=[1, k_h, k_w, 1],
                               strides=[1, s_h, s_w, 1],
                               padding=padding,
@@ -199,7 +199,7 @@ class Network(object):
     @layer
     def avg_pool(self, input_data, k_h, k_w, s_h, s_w, name, padding=DEFAULT_PADDING):
         self.validate_padding(padding)
-        return tf.nn.avg_pool(input_data,
+        return tf.nn.avg_pool2d(input=input_data,
                               ksize=[1, k_h, k_w, 1],
                               strides=[1, s_h, s_w, 1],
                               padding=padding,
@@ -224,7 +224,7 @@ class Network(object):
 
     @layer
     def fc(self, input_data, num_out, name, relu=True):
-        with tf.variable_scope(name) as scope:
+        with tf.compat.v1.variable_scope(name) as scope:
             input_shape = input_data.get_shape()
             if input_shape.ndims == 4:
                 # The input is spatial. Vectorize it first.
@@ -236,7 +236,7 @@ class Network(object):
                 feed_in, dim = (input_data, input_shape[-1].value)
             weights = self.make_var('weights', shape=[dim, num_out])
             biases = self.make_var('biases', [num_out])
-            op = tf.nn.relu_layer if relu else tf.nn.xw_plus_b
+            op = tf.compat.v1.nn.relu_layer if relu else tf.compat.v1.nn.xw_plus_b
             fc = op(feed_in, weights, biases, name=scope.name)
             return fc
 
@@ -248,7 +248,7 @@ class Network(object):
             # need to be explicitly squeezed, since they're not broadcast-able
             # in TensorFlow's NHWC ordering (unlike Caffe's NCHW).
             if input_shape[1] == 1 and input_shape[2] == 1:
-                input_data = tf.squeeze(input_data, squeeze_dims=[1, 2])
+                input_data = tf.squeeze(input_data, axis=[1, 2])
             else:
                 raise ValueError('Rank 2 tensor input expected for softmax!')
         return tf.nn.softmax(input_data, name)
@@ -256,23 +256,23 @@ class Network(object):
     @layer
     def batch_normalization(self, input_data, name, scale_offset=True, relu=False):
 
-        with tf.variable_scope(name) as scope:
+        with tf.compat.v1.variable_scope(name) as scope:
             shape = [input_data.get_shape()[-1]]
-            pop_mean = tf.get_variable("mean", shape, initializer = tf.constant_initializer(0.0), trainable=False)
-            pop_var = tf.get_variable("variance", shape, initializer = tf.constant_initializer(1.0), trainable=False)
+            pop_mean = tf.compat.v1.get_variable("mean", shape, initializer = tf.compat.v1.constant_initializer(0.0), trainable=False)
+            pop_var = tf.compat.v1.get_variable("variance", shape, initializer = tf.compat.v1.constant_initializer(1.0), trainable=False)
             epsilon = 1e-4
             decay = 0.999
             if scale_offset:
-                scale = tf.get_variable("scale", shape, initializer = tf.constant_initializer(1.0))
-                offset = tf.get_variable("offset", shape, initializer = tf.constant_initializer(0.0))
+                scale = tf.compat.v1.get_variable("scale", shape, initializer = tf.compat.v1.constant_initializer(1.0))
+                offset = tf.compat.v1.get_variable("offset", shape, initializer = tf.compat.v1.constant_initializer(0.0))
             else:
                 scale, offset = (None, None)
             if self.is_training:
-                batch_mean, batch_var = tf.nn.moments(input_data, [0, 1, 2])
+                batch_mean, batch_var = tf.nn.moments(x=input_data, axes=[0, 1, 2])
 
-                train_mean = tf.assign(pop_mean,
+                train_mean = tf.compat.v1.assign(pop_mean,
                                pop_mean * decay + batch_mean * (1 - decay))
-                train_var = tf.assign(pop_var,
+                train_var = tf.compat.v1.assign(pop_var,
                               pop_var * decay + batch_var * (1 - decay))
                 with tf.control_dependencies([train_mean, train_var]):
                     output = tf.nn.batch_normalization(input_data,
@@ -288,7 +288,7 @@ class Network(object):
 
     @layer
     def dropout(self, input_data, keep_prob, name):
-        return tf.nn.dropout(input_data, keep_prob, name=name)
+        return tf.nn.dropout(input_data, 1 - (keep_prob), name=name)
 
 
     def unpool_as_conv(self, size, input_data, id, stride = 1, ReLU = False, BN = True):
@@ -307,7 +307,7 @@ class Network(object):
         # Convolution B (2x3)
         # --------------------------------------------------
         layerName = "layer%s_ConvB" % (id)
-        padded_input_B = tf.pad(input_data, [[0, 0], [1, 0], [1, 1], [0, 0]], "CONSTANT")
+        padded_input_B = tf.pad(tensor=input_data, paddings=[[0, 0], [1, 0], [1, 1], [0, 0]], mode="CONSTANT")
         self.feed(padded_input_B)
         self.conv(2, 3, size[3], stride, stride, name = layerName, padding = 'VALID', relu = False)
         outputB = self.get_output()
@@ -315,7 +315,7 @@ class Network(object):
         # Convolution C (3x2)
         # --------------------------------------------------
         layerName = "layer%s_ConvC" % (id)
-        padded_input_C = tf.pad(input_data, [[0, 0], [1, 1], [1, 0], [0, 0]], "CONSTANT")
+        padded_input_C = tf.pad(tensor=input_data, paddings=[[0, 0], [1, 1], [1, 0], [0, 0]], mode="CONSTANT")
         self.feed(padded_input_C)
         self.conv(3, 2, size[3], stride, stride, name = layerName, padding = 'VALID', relu = False)
         outputC = self.get_output()
@@ -323,7 +323,7 @@ class Network(object):
         # Convolution D (2x2)
         # --------------------------------------------------
         layerName = "layer%s_ConvD" % (id)
-        padded_input_D = tf.pad(input_data, [[0, 0], [1, 0], [1, 0], [0, 0]], "CONSTANT")
+        padded_input_D = tf.pad(tensor=input_data, paddings=[[0, 0], [1, 0], [1, 0], [0, 0]], mode="CONSTANT")
         self.feed(padded_input_D)
         self.conv(2, 2, size[3], stride, stride, name = layerName, padding = 'VALID', relu = False)
         outputD = self.get_output()

@@ -34,8 +34,8 @@ def update_intrinsics(intrinsics, delta_focal):
 # 对深度进行重新缩放
 def rescale_depth(depth, downscale=4):
     depth = tf.expand_dims(depth, axis=-1) # 将所有维度扩展
-    new_shape = tf.shape(depth)[1:3] // downscale
-    depth = tf.image.resize_nearest_neighbor(depth, new_shape) # 进行插值和
+    new_shape = tf.shape(input=depth)[1:3] // downscale
+    depth = tf.image.resize(depth, new_shape, method=tf.image.ResizeMethod.NEAREST_NEIGHBOR) # 进行插值和
     return tf.squeeze(depth, axis=-1)
 
 def rescale_depth_and_intrinsics(depth, intrinsics, downscale=4):
@@ -45,9 +45,9 @@ def rescale_depth_and_intrinsics(depth, intrinsics, downscale=4):
     return depth, intrinsics
 
 def rescale_depths_and_intrinsics(depth, intrinsics, downscale=4):
-    batch, frames, height, width = [tf.shape(depth)[i] for i in range(4)] # 获取数据维度信息
+    batch, frames, height, width = [tf.shape(input=depth)[i] for i in range(4)] # 获取数据维度信息
     depth = tf.reshape(depth, [batch*frames, height, width]) # 将深度图，转换为三维的叠加产物，注意这里维度缩减了
     depth, intrinsics = rescale_depth_and_intrinsics(depth, intrinsics, downscale)
     depth = tf.reshape(depth,
-        tf.concat(([batch, frames], tf.shape(depth)[1:]), axis=0))
+        tf.concat(([batch, frames], tf.shape(input=depth)[1:]), axis=0))
     return depth, intrinsics

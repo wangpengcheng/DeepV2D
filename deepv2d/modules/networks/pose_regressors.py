@@ -23,7 +23,7 @@ def euler2mat(z, y, x):
     Returns:
       Rotation matrix corresponding to the euler angles -- size = [B, N, 3, 3]
     """
-    B = tf.shape(z)[0]
+    B = tf.shape(input=z)[0]
     N = 1
     z = tf.clip_by_value(z, -np.pi, np.pi)
     y = tf.clip_by_value(y, -np.pi, np.pi)
@@ -71,7 +71,7 @@ def pose_vec2mat(vec, use_filler=True):
       A transformation matrix -- [B, 4, 4]
     """
     # batch_size, _ = vec.get_shape().as_list()
-    batch_size = tf.shape(vec)[0]
+    batch_size = tf.shape(input=vec)[0]
     translation = tf.slice(vec, [0, 0], [-1, 3])
     translation = tf.expand_dims(translation, -1)
     rx = tf.slice(vec, [0, 3], [-1, 1])
@@ -93,42 +93,42 @@ def pose_regressor_stack(image_star, images, sc=2):
     image_star = tf.expand_dims(image_star, 1)
     images = tf.concat([image_star, images], axis=1)
 
-    images = tf.transpose(images, [0, 2, 3, 1, 4])
+    images = tf.transpose(a=images, perm=[0, 2, 3, 1, 4])
     images = tf.reshape(images, [batch, height, width, 3*(frames+1)])
 
     with tf.device('/cpu:0'):
-        inputs = tf.image.resize_area(images, [height//sc, width//sc])
+        inputs = tf.image.resize(images, [height//sc, width//sc], method=tf.image.ResizeMethod.AREA)
 
-    with tf.variable_scope('pose') as sc:
+    with tf.compat.v1.variable_scope('pose') as sc:
         with slim.arg_scope([slim.conv2d],
-                            weights_regularizer=slim.l2_regularizer(0.00005),
+                            weights_regularizer=tf.keras.regularizers.l2(0.5 * (0.00005)),
                             normalizer_fn=None,
                             activation_fn=tf.nn.relu):
 
             net = slim.conv2d(inputs, 32, [7, 7], stride=2)
-            tf.add_to_collection("checkpoints", net)
+            tf.compat.v1.add_to_collection("checkpoints", net)
 
             net = slim.conv2d(net, 32, [1, 7], stride=1)
             net = slim.conv2d(net, 32, [7, 1], stride=1)
             net = slim.conv2d(net, 64, [3, 3], stride=2)
-            tf.add_to_collection("checkpoints", net)
+            tf.compat.v1.add_to_collection("checkpoints", net)
 
             net = slim.conv2d(net, 64, [1, 5], stride=1)
             net = slim.conv2d(net, 64, [5, 1], stride=1)
             net = slim.conv2d(net, 128, [3, 3], stride=2)
-            tf.add_to_collection("checkpoints", net)
+            tf.compat.v1.add_to_collection("checkpoints", net)
 
             net = slim.conv2d(net, 128, [3, 3], stride=1)
             net = slim.conv2d(net, 256, [3, 3], stride=2)
-            tf.add_to_collection("checkpoints", net)
+            tf.compat.v1.add_to_collection("checkpoints", net)
 
             net = slim.conv2d(net, 256, [3, 3], stride=1)
             net = slim.conv2d(net, 256, [3, 3], stride=2)
-            tf.add_to_collection("checkpoints", net)
+            tf.compat.v1.add_to_collection("checkpoints", net)
 
             net = slim.conv2d(net, 256, [3, 3], stride=1)
             net = slim.conv2d(net, 256, [3, 3], stride=2)
-            tf.add_to_collection("checkpoints", net)
+            tf.compat.v1.add_to_collection("checkpoints", net)
 
             dims = net.get_shape().as_list()
             net = slim.conv2d(net, 512, [dims[1], dims[2]], padding='VALID')
@@ -136,7 +136,7 @@ def pose_regressor_stack(image_star, images, sc=2):
             pose_vec = 0.01*tf.reshape(pose_vec, [batch*frames, 6])
             pose_vec = clip_nan_gradients(pose_vec)
 
-            tf.add_to_collection("checkpoints", pose_vec)
+            tf.compat.v1.add_to_collection("checkpoints", pose_vec)
 
             # tf.summary.histogram("pose_vec", pose_vec)
 
@@ -151,38 +151,38 @@ def pose_regressor_indv(image1, image2, sc=2):
     inputs = tf.concat([image1, image2], axis=-1)
 
     with tf.device('/cpu:0'):
-        inputs = tf.image.resize_area(inputs, [ht//sc, wd//sc])
+        inputs = tf.image.resize(inputs, [ht//sc, wd//sc], method=tf.image.ResizeMethod.AREA)
 
-    with tf.variable_scope('pose') as sc:
+    with tf.compat.v1.variable_scope('pose') as sc:
         with slim.arg_scope([slim.conv2d],
-                            weights_regularizer=slim.l2_regularizer(0.00005),
+                            weights_regularizer=tf.keras.regularizers.l2(0.5 * (0.00005)),
                             normalizer_fn=None,
                             activation_fn=tf.nn.relu):
 
             net = slim.conv2d(inputs, 32, [7, 7], stride=2)
-            tf.add_to_collection("checkpoints", net)
+            tf.compat.v1.add_to_collection("checkpoints", net)
 
             net = slim.conv2d(net, 32, [1, 7], stride=1)
             net = slim.conv2d(net, 32, [7, 1], stride=1)
             net = slim.conv2d(net, 64, [3, 3], stride=2)
-            tf.add_to_collection("checkpoints", net)
+            tf.compat.v1.add_to_collection("checkpoints", net)
 
             net = slim.conv2d(net, 64, [1, 5], stride=1)
             net = slim.conv2d(net, 64, [5, 1], stride=1)
             net = slim.conv2d(net, 128, [3, 3], stride=2)
-            tf.add_to_collection("checkpoints", net)
+            tf.compat.v1.add_to_collection("checkpoints", net)
 
             net = slim.conv2d(net, 128, [3, 3], stride=1)
             net = slim.conv2d(net, 256, [3, 3], stride=2)
-            tf.add_to_collection("checkpoints", net)
+            tf.compat.v1.add_to_collection("checkpoints", net)
 
             net = slim.conv2d(net, 256, [3, 3], stride=1)
             net = slim.conv2d(net, 256, [3, 3], stride=2)
-            tf.add_to_collection("checkpoints", net)
+            tf.compat.v1.add_to_collection("checkpoints", net)
 
             net = slim.conv2d(net, 256, [3, 3], stride=1)
             net = slim.conv2d(net, 256, [3, 3], stride=2)
-            tf.add_to_collection("checkpoints", net)
+            tf.compat.v1.add_to_collection("checkpoints", net)
 
             dims = net.get_shape().as_list()
             net = slim.conv2d(net, 512, [dims[1], dims[2]], padding='VALID')
@@ -190,7 +190,7 @@ def pose_regressor_indv(image1, image2, sc=2):
             
             pose_vec = 0.01*tf.reshape(pose_vec, [-1, 6])
             pose_vec = clip_nan_gradients(pose_vec)
-            tf.add_to_collection("checkpoints", pose_vec)    
+            tf.compat.v1.add_to_collection("checkpoints", pose_vec)    
             # tf.summary.histogram("pose_vec", pose_vec)
 
             G = pose_vec2mat(pose_vec)
@@ -203,7 +203,7 @@ def pose_regressor_factory(image_star, images, cfg):
         G = pose_regressor_stack(image_star, images)
     
     else:
-        batch, frames, ht, wd = [tf.shape(images)[i] for i in range(4)]
+        batch, frames, ht, wd = [tf.shape(input=images)[i] for i in range(4)]
         ht = images.get_shape().as_list()[2]
         wd = images.get_shape().as_list()[3]
         image_dims = [batch*frames, ht, wd, 3]

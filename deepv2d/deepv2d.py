@@ -93,21 +93,21 @@ class DeepV2D:
         if self.use_fcrn:
             self._build_fcrn_graph() # 
         # 加载模型
-        self.saver = tf.train.Saver(tf.model_variables()) #构建存储模型
+        self.saver = tf.compat.v1.train.Saver(tf.compat.v1.model_variables()) #构建存储模型
 
     # 创建session
     def set_session(self, sess):
         self.sess = sess
-        sess.run(tf.global_variables_initializer())
+        sess.run(tf.compat.v1.global_variables_initializer())
         # 存储
         self.saver.restore(self.sess, self.ckpt)
 
         if self.use_fcrn:
             fcrn_vars = {}
-            for var in tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="FCRN"):
+            for var in tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.GLOBAL_VARIABLES, scope="FCRN"):
                 fcrn_vars[var.name.replace('FCRN/', '').replace(':0', '')] = var
 
-            fcrn_saver = tf.train.Saver(fcrn_vars)
+            fcrn_saver = tf.compat.v1.train.Saver(fcrn_vars)
             fcrn_saver.restore(sess, 'models/NYU_FCRN.ckpt')
 
 
@@ -117,22 +117,22 @@ class DeepV2D:
         """
         frames, ht, wd = self.image_dims
         # 输入数据占位，注意这里的输入是3张图片
-        self.images_placeholder = tf.placeholder(tf.float32, [frames, ht, wd, 3])
+        self.images_placeholder = tf.compat.v1.placeholder(tf.float32, [frames, ht, wd, 3])
         # 如果是关键帧模式frames值为1
         if self.mode == 'keyframe':
-            self.depths_placeholder = tf.placeholder(tf.float32, [1, ht, wd])
+            self.depths_placeholder = tf.compat.v1.placeholder(tf.float32, [1, ht, wd])
         else:
-            self.depths_placeholder = tf.placeholder(tf.float32, [frames, ht, wd])
+            self.depths_placeholder = tf.compat.v1.placeholder(tf.float32, [frames, ht, wd])
         # 位姿内存分配；每一个位姿都是4*4的一个矩阵
-        self.poses_placeholder = tf.placeholder(tf.float32, [frames, 4, 4])
+        self.poses_placeholder = tf.compat.v1.placeholder(tf.float32, [frames, 4, 4])
         # 相机内参矩阵一维数组
-        self.intrinsics_placeholder = tf.placeholder(tf.float32, [4])
-        self.init_placeholder = tf.placeholder(tf.bool, []) # bool 数据是否占位符号
+        self.intrinsics_placeholder = tf.compat.v1.placeholder(tf.float32, [4])
+        self.init_placeholder = tf.compat.v1.placeholder(tf.bool, []) # bool 数据是否占位符号
 
         # placeholders for storing graph adj_list and edges
         
-        self.edges_placeholder = tf.placeholder(tf.int32, [None, 2]) # 边缘函数
-        self.adj_placeholder = tf.placeholder(tf.int32, [None, None]) # adj函数
+        self.edges_placeholder = tf.compat.v1.placeholder(tf.int32, [None, 2]) # 边缘函数
+        self.adj_placeholder = tf.compat.v1.placeholder(tf.int32, [None, None]) # adj函数
     # 构建位姿估计网络
     def _build_motion_graph(self):
         self.motion_net = MotionNetwork(self.cfg.MOTION, mode=self.mode,
@@ -197,7 +197,7 @@ class DeepV2D:
         intrinsics = self.intrinsics_placeholder[tf.newaxis]
         intrinsics = intrinsics_vec_to_matrix(intrinsics)
 
-        depths_pad = tf.pad(depths, [[0,0],[0,0],[0,1],[0,1]], "CONSTANT")
+        depths_pad = tf.pad(tensor=depths, paddings=[[0,0],[0,0],[0,1],[0,1]], mode="CONSTANT")
 
         depths_grad = \
             (depths_pad[:, :, 1:, :-1] - depths_pad[:, :, :-1, :-1])**2 + \
@@ -207,7 +207,7 @@ class DeepV2D:
         valid = (depths < 5.0) & (depths_grad < 0.01)
 
         # depths, intrinsics = rescale_depths_and_intrinsics(depths, intrinsics, downscale=4)
-        batch, num, ht, wd = tf.unstack(tf.shape(depths), num=4)
+        batch, num, ht, wd = tf.unstack(tf.shape(input=depths), num=4)
 
         ii, jj = tf.meshgrid(tf.range(1), tf.range(0, num))
         ii = tf.reshape(ii, [-1]) # 将其变为一维度向量
@@ -229,7 +229,7 @@ class DeepV2D:
         X1 = tf.reshape(X1, [-1, 3]) #n*3个三维向量
         colors = tf.reshape(images, [-1, 3])
 
-        valid_inds = tf.where(tf.reshape(valid, [-1]))
+        valid_inds = tf.compat.v1.where(tf.reshape(valid, [-1]))
         valid_inds = tf.reshape(valid_inds, [-1])
 
         X1 = tf.gather(X1, valid_inds, axis=0)
@@ -246,7 +246,7 @@ class DeepV2D:
         poses = self.poses_placeholder[tf.newaxis]
         intrinsics = self.intrinsics_placeholder[tf.newaxis]
 
-        batch, num, ht, wd = tf.unstack(tf.shape(depths), num=4)
+        batch, num, ht, wd = tf.unstack(tf.shape(input=depths), num=4)
         Ts = VideoSE3Transformation(matrix=poses)
         intrinsics = intrinsics_vec_to_matrix(intrinsics) # 将相机参数转换为矩阵
 
@@ -283,8 +283,8 @@ class DeepV2D:
         intrinsics = intrinsics_vec_to_matrix(intrinsics) # 进行参数转换
         # 缩放深度信息和特征点信息
         depths, intrinsics = rescale_depths_and_intrinsics(depths, intrinsics, downscale=4)
-        ht = tf.cast(tf.shape(depths)[2], tf.float32)
-        wd = tf.cast(tf.shape(depths)[3], tf.float32)
+        ht = tf.cast(tf.shape(input=depths)[2], tf.float32)
+        wd = tf.cast(tf.shape(input=depths)[3], tf.float32)
 
         depths = tf.gather(depths, ii, axis=1) # 从depths的axis维根据ii的参数值获取切片
         Tij = Ts.gather(jj) * Ts.gather(ii).inv() # 进行位姿数据切片
@@ -292,27 +292,27 @@ class DeepV2D:
         flow = Tij.induced_flow(depths, intrinsics) # 计算流
         coords = Tij.transform(depths, intrinsics) # 进行坐标转换
 
-        flo_graph = tf.sqrt(tf.reduce_sum(flow**2, axis=-1))
-        flo_graph = tf.reduce_mean(flo_graph, [-1, -2])
+        flo_graph = tf.sqrt(tf.reduce_sum(input_tensor=flow**2, axis=-1))
+        flo_graph = tf.reduce_mean(input_tensor=flo_graph, axis=[-1, -2])
 
-        contained = tf.to_float(
+        contained = tf.cast(
             (coords[...,0] > 0.0) & (coords[...,0] < wd) & 
-            (coords[...,1] > 0.0) & (coords[...,1] < ht))
+            (coords[...,1] > 0.0) & (coords[...,1] < ht), dtype=tf.float32)
         # 在这里进行求取中间值
-        vis_graph = tf.reduce_mean(contained, [-1, -2])
+        vis_graph = tf.reduce_mean(input_tensor=contained, axis=[-1, -2])
         self.outputs['visibility'] = (flo_graph[0], vis_graph[0], flow) # 可见性
 
     def _build_fcrn_graph(self):
         """ Build single image initializion graph"""
         images = self.images_placeholder
-        batch, ht, wd, _ = tf.unstack(tf.shape(images), num=4)
+        batch, ht, wd, _ = tf.unstack(tf.shape(input=images), num=4)
 
-        with tf.variable_scope("FCRN") as scope:
+        with tf.compat.v1.variable_scope("FCRN") as scope:
             # crop out boarder and flip color channels
-            fcrn_input = tf.image.resize_area(images[:, 4:-4, 6:-6, ::-1], [228, 304])
+            fcrn_input = tf.image.resize(images[:, 4:-4, 6:-6, ::-1], [228, 304], method=tf.image.ResizeMethod.AREA)
             net = fcrn.ResNet50UpProj({'data': fcrn_input}, batch, 1, False)
             fcrn_output = tf.stop_gradient(net.get_output())
-            fcrn_output = tf.image.resize_bilinear(fcrn_output, [ht, wd])
+            fcrn_output = tf.image.resize(fcrn_output, [ht, wd], method=tf.image.ResizeMethod.BILINEAR)
 
         self.outputs['fcrn'] = tf.squeeze(fcrn_output, -1)
 

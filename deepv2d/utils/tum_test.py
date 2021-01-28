@@ -14,4 +14,3 @@ if __name__ == '__main__':
     # parser.add_argument('--max_difference', help='maximally allowed time difference for matching entries (default: 0.02)',default=0.02)
     args = parser.parse_args()
 
-   

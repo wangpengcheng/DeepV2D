@@ -13,17 +13,17 @@ def add_depth_summaries(gt, pr):
     gt = tf.reshape(gt, [-1])
     pr = tf.reshape(pr, [-1])
 
-    v = tf.where((gt>0.1) & (gt<10.0))
+    v = tf.compat.v1.where((gt>0.1) & (gt<10.0))
     gt = tf.gather(gt, v)
     pr = tf.gather(pr, v)
 
     thresh = tf.maximum(gt / pr, pr / gt)
-    delta = tf.reduce_mean(tf.to_float(thresh < 1.25))
-    abs_rel = tf.reduce_mean(tf.abs(gt-pr) / gt)
+    delta = tf.reduce_mean(input_tensor=tf.cast(thresh < 1.25, dtype=tf.float32))
+    abs_rel = tf.reduce_mean(input_tensor=tf.abs(gt-pr) / gt)
 
     with tf.device('/cpu:0'):
-        tf.summary.scalar("a1", delta)
-        tf.summary.scalar("rel", abs_rel)
+        tf.compat.v1.summary.scalar("a1", delta)
+        tf.compat.v1.summary.scalar("rel", abs_rel)
 
 
 class DepthNetwork(object):
@@ -34,7 +34,7 @@ class DepthNetwork(object):
         self.schedule = schedule
 
         self.summaries = {}
-        self.depths = tf.lin_space(cfg.MIN_DEPTH, cfg.MAX_DEPTH, cfg.COST_VOLUME_DEPTH)
+        self.depths = tf.linspace(cfg.MIN_DEPTH, cfg.MAX_DEPTH, cfg.COST_VOLUME_DEPTH)
 
         self.batch_norm_params = {
           'decay': .995,
@@ -50,13 +50,13 @@ class DepthNetwork(object):
     def encoder(self, inputs, reuse=False):
         """ 2D feature extractor """
         # 在第5个通道上进行分离
-        batch, frames, ht, wd, _ = tf.unstack(tf.shape(inputs), num=5)
+        batch, frames, ht, wd, _ = tf.unstack(tf.shape(input=inputs), num=5)
         inputs = tf.reshape(inputs, [batch*frames, ht, wd, 3]) # 调整输入维度为图片数量*高*宽*3
 
-        with tf.variable_scope("encoder") as sc: 
+        with tf.compat.v1.variable_scope("encoder") as sc: 
             with slim.arg_scope([slim.batch_norm], **self.batch_norm_params):
                 with slim.arg_scope([slim.conv2d],
-                                    weights_regularizer=slim.l2_regularizer(0.00005),
+                                    weights_regularizer=tf.keras.regularizers.l2(0.5 * (0.00005)),
                                     normalizer_fn=None,
                                     activation_fn=None,
                                     reuse=reuse):
@@ -84,18 +84,18 @@ class DepthNetwork(object):
         x = bnrelu(x)
         x = slim.conv3d(x, 32, [3, 3, 3], activation_fn=tf.nn.relu)
         x = slim.conv3d(x, 32, [3, 3, 3], activation_fn=tf.nn.relu)
-        tf.add_to_collection("checkpoints", x)
+        tf.compat.v1.add_to_collection("checkpoints", x)
 
         logits = slim.conv3d(x, 1, [1, 1, 1], activation_fn=None)
         logits = tf.squeeze(logits, axis=-1)
         # 日志
-        logits = tf.image.resize_bilinear(logits, self.input_dims)
+        logits = tf.image.resize(logits, self.input_dims, method=tf.image.ResizeMethod.BILINEAR)
         return logits
 
     def soft_argmax(self, prob_volume):
         """ Convert probability volume into point estimate of depth 转换概率体积为深度的点估计"""
         prob_volume = tf.nn.softmax(prob_volume, axis=-1)
-        pred = tf.reduce_sum(self.depths*prob_volume, axis= -1) # 对概率深度进行求和
+        pred = tf.reduce_sum(input_tensor=self.depths*prob_volume, axis= -1) # 对概率深度进行求和
         return pred # 返回深度估计值
     # 匹配网络avg方式下降
     def stereo_network_avg(self, 
@@ -113,10 +113,10 @@ class DepthNetwork(object):
 
         cfg = self.cfg
         # 进行线性插值，构造深度数据
-        depths = tf.lin_space(cfg.MIN_DEPTH, cfg.MAX_DEPTH, cfg.COST_VOLUME_DEPTH) # 进行线性插值获取深度序列
+        depths = tf.linspace(cfg.MIN_DEPTH, cfg.MAX_DEPTH, cfg.COST_VOLUME_DEPTH) # 进行线性插值获取深度序列
         intrinsics = intrinsics_vec_to_matrix(intrinsics / 4.0) # 将相机参数转换为矩阵
 
-        with tf.variable_scope("stereo", reuse=self.reuse) as sc:
+        with tf.compat.v1.variable_scope("stereo", reuse=self.reuse) as sc:
             # extract 2d feature maps from images and build cost volume # 进行编码，获取2d的图像信息
             # 进行图像编码
             fmaps = self.encoder(images)
@@ -126,26 +126,26 @@ class DepthNetwork(object):
             self.spreds = []
             with slim.arg_scope([slim.batch_norm], **self.batch_norm_params):
                 with slim.arg_scope([slim.conv3d],
-                                    weights_regularizer=slim.l2_regularizer(0.00005),
+                                    weights_regularizer=tf.keras.regularizers.l2(0.5 * (0.00005)),
                                     normalizer_fn=None,
                                     activation_fn=None):
 
-                    dim = tf.shape(volume)
+                    dim = tf.shape(input=volume)
                     volume = tf.reshape(volume, [dim[0]*dim[1], dim[2], dim[3], dim[4], 64])
 
                     x = slim.conv3d(volume, 32, [1, 1, 1])
-                    tf.add_to_collection("checkpoints", x)
+                    tf.compat.v1.add_to_collection("checkpoints", x)
 
                     # multi-view convolution
                     x = tf.add(x, conv3d(conv3d(x, 32), 32))
 
                     x = tf.reshape(x, [dim[0], dim[1], dim[2], dim[3], dim[4], 32])
-                    x = tf.reduce_mean(x, axis=1)
-                    tf.add_to_collection("checkpoints", x)
+                    x = tf.reduce_mean(input_tensor=x, axis=1)
+                    tf.compat.v1.add_to_collection("checkpoints", x)
 
                     self.pred_logits = []
                     for i in range(self.cfg.HG_COUNT):
-                        with tf.variable_scope("hg1_%d"%i):
+                        with tf.compat.v1.variable_scope("hg1_%d"%i):
                             x = hg.hourglass_3d(x, 4, 32)
                             self.pred_logits.append(self.stereo_head(x))
 
@@ -155,10 +155,10 @@ class DepthNetwork(object):
         """3D Matching Network with view concatenation"""
 
         cfg = self.cfg
-        depths = tf.lin_space(cfg.MIN_DEPTH, cfg.MAX_DEPTH, cfg.COST_VOLUME_DEPTH)
+        depths = tf.linspace(cfg.MIN_DEPTH, cfg.MAX_DEPTH, cfg.COST_VOLUME_DEPTH)
         intrinsics = intrinsics_vec_to_matrix(intrinsics / 4.0)
 
-        with tf.variable_scope("stereo", reuse=self.reuse) as sc:
+        with tf.compat.v1.variable_scope("stereo", reuse=self.reuse) as sc:
             # extract 2d feature maps from images and build cost volume
             fmaps = self.encoder(images)
             volume = operators.backproject_cat(Ts, depths, intrinsics, fmaps)
@@ -166,7 +166,7 @@ class DepthNetwork(object):
             self.spreds = []
             with slim.arg_scope([slim.batch_norm], **self.batch_norm_params):
                 with slim.arg_scope([slim.conv3d],
-                                    weights_regularizer=slim.l2_regularizer(0.00005),
+                                    weights_regularizer=tf.keras.regularizers.l2(0.5 * (0.00005)),
                                     normalizer_fn=None,
                                     activation_fn=None):
 
@@ -176,7 +176,7 @@ class DepthNetwork(object):
 
                     self.pred_logits = []
                     for i in range(self.cfg.HG_COUNT):
-                        with tf.variable_scope("hg1_%d"%i):
+                        with tf.compat.v1.variable_scope("hg1_%d"%i):
                             x = hg.hourglass_3d(x, 4, 48)
                             self.pred_logits.append(self.stereo_head(x))
 
@@ -211,13 +211,13 @@ class DepthNetwork(object):
         for i, logits in enumerate(self.pred_logits):
 
             pred = self.soft_argmax(logits)
-            pred = tf.image.resize_bilinear(pred[...,tf.newaxis], [h_gt, w_gt])
+            pred = tf.image.resize(pred[...,tf.newaxis], [h_gt, w_gt], method=tf.image.ResizeMethod.BILINEAR)
 
             pred = tf.squeeze(pred, axis=-1)
             gt = tf.squeeze(depth_gt, axis=-1)
 
-            valid = tf.to_float(gt>0.0)
-            s = 1.0 / (tf.reduce_mean(valid) + 1e-8)
+            valid = tf.cast(gt>0.0, dtype=tf.float32)
+            s = 1.0 / (tf.reduce_mean(input_tensor=valid) + 1e-8)
 
             gx = pred[:, :, 1:] - pred[:, :, :-1]
             gy = pred[:, 1:, :] - pred[:, :-1, :]
@@ -226,10 +226,10 @@ class DepthNetwork(object):
 
             # take l1 smoothness loss where gt depth is missing
             loss_smooth = \
-                tf.reduce_mean((1-vx)*tf.abs(gx)) + \
-                tf.reduce_mean((1-vy)*tf.abs(gy))
+                tf.reduce_mean(input_tensor=(1-vx)*tf.abs(gx)) + \
+                tf.reduce_mean(input_tensor=(1-vy)*tf.abs(gy))
 
-            loss_depth = s*tf.reduce_mean(valid*tf.abs(gt-pred))
+            loss_depth = s*tf.reduce_mean(input_tensor=valid*tf.abs(gt-pred))
             loss_i = self.cfg.TRAIN.SMOOTH_W * loss_smooth + loss_depth
 
             w = .5**(len(self.pred_logits)-i-1)

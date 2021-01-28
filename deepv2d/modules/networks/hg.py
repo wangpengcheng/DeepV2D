@@ -21,7 +21,7 @@ def hourglass_2d(x, n, dim, expand=64):
     up2 = upnn2d(low3, x)
 
     out = up2 + x
-    tf.add_to_collection("checkpoints", out)
+    tf.compat.v1.add_to_collection("checkpoints", out)
 
     return out
 
@@ -30,7 +30,7 @@ def hourglass_3d(x, n, dim, expand=48):
     dim2 = dim + expand
 
     x = x + conv3d(conv3d(x, dim), dim)
-    tf.add_to_collection("checkpoints", x)
+    tf.compat.v1.add_to_collection("checkpoints", x)
 
     pool1 = slim.max_pool3d(x, [2, 2, 2], padding='SAME')
 
@@ -44,6 +44,6 @@ def hourglass_3d(x, n, dim, expand=48):
     up2 = upnn3d(low3, x)
 
     out = up2 + x
-    tf.add_to_collection("checkpoints", out)
+    tf.compat.v1.add_to_collection("checkpoints", out)
 
     return out

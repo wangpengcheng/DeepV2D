@@ -29,14 +29,14 @@ def res_conv2d(x, dim, stride=1):
         x = slim.conv2d(x, dim, [1,1], stride=2)
 
     out = x + y # 将卷积数据进行叠加
-    tf.add_to_collection("checkpoints", out) # 将数据放入集合参数
+    tf.compat.v1.add_to_collection("checkpoints", out) # 将数据放入集合参数
 
     return out
 
 def upnn3d(x, y, sc=2):
     dim = x.get_shape().as_list()[-1]
-    bx, hx, wx, dx, _ = tf.unstack(tf.shape(x), num=5)
-    by, hy, wy, dy, _ = tf.unstack(tf.shape(y), num=5)
+    bx, hx, wx, dx, _ = tf.unstack(tf.shape(input=x), num=5)
+    by, hy, wy, dy, _ = tf.unstack(tf.shape(input=y), num=5)
 
     x1 = tf.reshape(tf.tile(x, [1,1,sc,sc,sc]), [bx, sc*hx, sc*wx, sc*dx, dim])
     if not (sc*hx==hy and sc*wx==wy):
@@ -46,8 +46,8 @@ def upnn3d(x, y, sc=2):
 # 进行向上分解
 def upnn2d(x, y, sc=2):
     dim = x.get_shape().as_list()[-1]
-    bx, hx, wx, _ = tf.unstack(tf.shape(x), num=4)
-    by, hy, wy, _ = tf.unstack(tf.shape(y), num=4)
+    bx, hx, wx, _ = tf.unstack(tf.shape(input=x), num=4)
+    by, hy, wy, _ = tf.unstack(tf.shape(input=y), num=4)
 
     x1 = tf.reshape(tf.tile(x, [1,1,sc,sc]), [bx, sc*hx, sc*wx, dim])
     if not (sc*hx==hy and sc*wx==wy):
@@ -60,11 +60,11 @@ def resize_like(inputs, ref):
     rH, rW = ref.get_shape()[1], ref.get_shape()[2]
     if iH == rH and iW == rW:
         return inputs
-    return tf.image.resize_nearest_neighbor(inputs, [rH.value, rW.value])
+    return tf.image.resize(inputs, [rH.value, rW.value], method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
 
 def resize_depth(depth, dim, min_depth=0):
-    depth = tf.image.resize_nearest_neighbor(depth[...,tf.newaxis], dim)
+    depth = tf.image.resize(depth[...,tf.newaxis], dim, method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
     if min_depth > 0:
-        depth = tf.where(depth<min_depth, min_depth*tf.ones_like(depth), depth)
+        depth = tf.compat.v1.where(depth<min_depth, min_depth*tf.ones_like(depth), depth)
 
     return tf.squeeze(depth, axis=-1)

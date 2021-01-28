@@ -4,7 +4,7 @@ import tensorflow as tf
 
 def count_param():       # 计算网络参数量
     total_parameters = 0
-    for v in tf.trainable_variables():
+    for v in tf.compat.v1.trainable_variables():
         shape = v.get_shape()
         variable_parameters = 1
         for dim in shape:
@@ -18,7 +18,7 @@ def count_flops(graph):
     Args:
         graph ([graph]): 模型参数，注意一定要 在sess.run(tf.global_variables_initializer())后加入
     """
-    flops = tf.profiler.profile(graph, options=tf.profiler.ProfileOptionBuilder.float_operation())
+    flops = tf.compat.v1.profiler.profile(graph, options=tf.compat.v1.profiler.ProfileOptionBuilder.float_operation())
     print('FLOPs: {}'.format(flops.total_float_ops))
 
 
@@ -28,6 +28,6 @@ def stats_graph(graph):
     Args:
         graph ([type]): [description]
     """
-    flops = tf.profiler.profile(graph, options=tf.profiler.ProfileOptionBuilder.float_operation())
-    params = tf.profiler.profile(graph, options=tf.profiler.ProfileOptionBuilder.trainable_variables_parameter())
+    flops = tf.compat.v1.profiler.profile(graph, options=tf.compat.v1.profiler.ProfileOptionBuilder.float_operation())
+    params = tf.compat.v1.profiler.profile(graph, options=tf.compat.v1.profiler.ProfileOptionBuilder.trainable_variables_parameter())
     print('\n FLOPs: {};    Trainable params: {} \n'.format(flops.total_float_ops, params.total_parameters))

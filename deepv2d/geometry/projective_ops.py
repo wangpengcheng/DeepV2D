@@ -34,7 +34,7 @@ def extract_and_reshape_intrinsics(intrinsics, shape=None):
     cy = intrinsics[:, 1, 2]
 
     if shape is not None:
-        batch = tf.shape(fx)[:1]
+        batch = tf.shape(input=fx)[:1]
         fillr = tf.ones_like(shape[1:])
         k_shape = tf.concat([batch, fillr], axis=0)
 
@@ -49,10 +49,10 @@ def extract_and_reshape_intrinsics(intrinsics, shape=None):
 def backproject(depth, intrinsics, jacobian=False):
     """ backproject depth map to point cloud """
 
-    coords = coords_grid(tf.shape(depth), homogeneous=True)
+    coords = coords_grid(tf.shape(input=depth), homogeneous=True)
     x, y, _ = tf.unstack(coords, num=3, axis=-1)
 
-    x_shape = tf.shape(x)
+    x_shape = tf.shape(input=x)
     fx, fy, cx, cy = extract_and_reshape_intrinsics(intrinsics, x_shape)
     # 在这里矫正fx
     Z = tf.identity(depth) # 获取全像素的真实深度
@@ -81,7 +81,7 @@ def project(points, intrinsics, jacobian=False):
     X, Y, Z = tf.unstack(points, num=3, axis=-1)
     Z = tf.maximum(Z, MIN_DEPTH) # 获取最大深度
 
-    x_shape = tf.shape(X) # 获取x数据的长度
+    x_shape = tf.shape(input=X) # 获取x数据的长度
     fx, fy, cx, cy = extract_and_reshape_intrinsics(intrinsics, x_shape) # 调整相机内参矩阵
 
     x = fx * (X / Z) + cx
@@ -90,8 +90,8 @@ def project(points, intrinsics, jacobian=False):
 
     if jacobian:
         o = tf.zeros_like(x) # used to fill in zeros
-        zinv1 = tf.where(Z <= MIN_DEPTH+.01, tf.zeros_like(Z), 1.0 / Z)
-        zinv2 = tf.where(Z <= MIN_DEPTH+.01, tf.zeros_like(Z), 1.0 / Z**2)
+        zinv1 = tf.compat.v1.where(Z <= MIN_DEPTH+.01, tf.zeros_like(Z), 1.0 / Z)
+        zinv2 = tf.compat.v1.where(Z <= MIN_DEPTH+.01, tf.zeros_like(Z), 1.0 / Z**2)
 
         # jacobian w.r.t (X, Y, Z)
         jacobian_points = tf.stack([

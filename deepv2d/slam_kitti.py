@@ -70,7 +70,7 @@ class DeepV2DSLAM_KITTI:
         self._build_reprojection_graph()
         self._build_point_cloud_graph()
 
-        self.saver = tf.train.Saver(tf.model_variables())
+        self.saver = tf.compat.v1.train.Saver(tf.compat.v1.model_variables())
 
     def set_session(self, sess):
         self.sess = sess
@@ -89,20 +89,20 @@ class DeepV2DSLAM_KITTI:
 
     def _create_placeholders(self):
         frames, ht, wd = self.image_dims
-        self.images_placeholder = tf.placeholder(tf.float32, [frames, ht, wd, 3])
+        self.images_placeholder = tf.compat.v1.placeholder(tf.float32, [frames, ht, wd, 3])
         if self.mode == 'keyframe':
-            self.depths_placeholder = tf.placeholder(tf.float32, [1, ht, wd])
+            self.depths_placeholder = tf.compat.v1.placeholder(tf.float32, [1, ht, wd])
         else:
-            self.depths_placeholder = tf.placeholder(tf.float32, [frames, ht, wd])
+            self.depths_placeholder = tf.compat.v1.placeholder(tf.float32, [frames, ht, wd])
 
-        self.poses_placeholder = tf.placeholder(tf.float32, [frames, 4, 4])
-        self.intrinsics_placeholder = tf.placeholder(tf.float32, [4])
+        self.poses_placeholder = tf.compat.v1.placeholder(tf.float32, [frames, 4, 4])
+        self.intrinsics_placeholder = tf.compat.v1.placeholder(tf.float32, [4])
 
         # placeholders for storing graph adj_list and edges
-        self.edges_placeholder = tf.placeholder(tf.int32, [None, 2])
-        self.adj_placeholder = tf.placeholder(tf.int32, [None, None])
-        self.fixed_placeholder = tf.placeholder(tf.int32, [])
-        self.init_placeholder = tf.placeholder(tf.bool, [])
+        self.edges_placeholder = tf.compat.v1.placeholder(tf.int32, [None, 2])
+        self.adj_placeholder = tf.compat.v1.placeholder(tf.int32, [None, None])
+        self.fixed_placeholder = tf.compat.v1.placeholder(tf.int32, [])
+        self.init_placeholder = tf.compat.v1.placeholder(tf.bool, [])
 
     def _build_motion_graph(self):
         """ Motion graph updates poses using depth as input """
@@ -150,7 +150,7 @@ class DeepV2DSLAM_KITTI:
         intrinsics = self.intrinsics_placeholder[tf.newaxis]
         intrinsics = intrinsics_vec_to_matrix(intrinsics)
 
-        depths_pad = tf.pad(depths, [[0,0],[0,0],[0,1],[0,1]], "CONSTANT")
+        depths_pad = tf.pad(tensor=depths, paddings=[[0,0],[0,0],[0,1],[0,1]], mode="CONSTANT")
 
         depths_grad = \
             (depths_pad[:, :, 1:, :-1] - depths_pad[:, :, :-1, :-1])**2 + \
@@ -159,7 +159,7 @@ class DeepV2DSLAM_KITTI:
         # don't use large depths for point cloud and ignore boundary regions
         valid = (depths < 3.0) & (depths_grad < 0.001)
 
-        batch, num, ht, wd = tf.unstack(tf.shape(depths), num=4)
+        batch, num, ht, wd = tf.unstack(tf.shape(input=depths), num=4)
         Ts = VideoSE3Transformation(matrix=poses)
         X0 = projective_ops.backproject(depths, intrinsics)
         
@@ -176,7 +176,7 @@ class DeepV2DSLAM_KITTI:
         X1 = tf.reshape(X1, [-1, 3])
         colors = tf.reshape(images, [-1, 3])
 
-        valid_inds = tf.where(tf.reshape(valid, [-1]))
+        valid_inds = tf.compat.v1.where(tf.reshape(valid, [-1]))
         valid_inds = tf.reshape(valid_inds, [-1])
 
         X1 = tf.gather(X1, valid_inds, axis=0)
@@ -192,7 +192,7 @@ class DeepV2DSLAM_KITTI:
         poses = self.poses_placeholder[tf.newaxis]
         intrinsics = self.intrinsics_placeholder[tf.newaxis]
 
-        batch, num, ht, wd = tf.unstack(tf.shape(depths), num=4)
+        batch, num, ht, wd = tf.unstack(tf.shape(input=depths), num=4)
         Ts = VideoSE3Transformation(matrix=poses)
         intrinsics = intrinsics_vec_to_matrix(intrinsics)
 

@@ -76,7 +76,7 @@ class DeepV2DSLAM:
         if self.use_fcrn:
             self._build_fcrn_graph()
 
-        self.saver = tf.train.Saver(tf.model_variables())
+        self.saver = tf.compat.v1.train.Saver(tf.compat.v1.model_variables())
 
     def set_session(self, sess):
         self.sess = sess
@@ -84,10 +84,10 @@ class DeepV2DSLAM:
 
         if self.use_fcrn:
             fcrn_vars = {}
-            for var in tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="FCRN"):
+            for var in tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.GLOBAL_VARIABLES, scope="FCRN"):
                 fcrn_vars[var.name.replace('FCRN/', '').replace(':0', '')] = var
 
-            fcrn_saver = tf.train.Saver(fcrn_vars)
+            fcrn_saver = tf.compat.v1.train.Saver(fcrn_vars)
             fcrn_saver.restore(sess, 'models/NYU_FCRN.ckpt')
 
     def start_visualization(self, cinematic=False, render_path=None, clear_points=False):
@@ -103,20 +103,20 @@ class DeepV2DSLAM:
 
     def _create_placeholders(self):
         frames, ht, wd = self.image_dims
-        self.images_placeholder = tf.placeholder(tf.float32, [frames, ht, wd, 3])
+        self.images_placeholder = tf.compat.v1.placeholder(tf.float32, [frames, ht, wd, 3])
         if self.mode == 'keyframe':
-            self.depths_placeholder = tf.placeholder(tf.float32, [1, ht, wd])
+            self.depths_placeholder = tf.compat.v1.placeholder(tf.float32, [1, ht, wd])
         else:
-            self.depths_placeholder = tf.placeholder(tf.float32, [frames, ht, wd])
+            self.depths_placeholder = tf.compat.v1.placeholder(tf.float32, [frames, ht, wd])
 
-        self.poses_placeholder = tf.placeholder(tf.float32, [frames, 4, 4])
-        self.intrinsics_placeholder = tf.placeholder(tf.float32, [4])
+        self.poses_placeholder = tf.compat.v1.placeholder(tf.float32, [frames, 4, 4])
+        self.intrinsics_placeholder = tf.compat.v1.placeholder(tf.float32, [4])
 
         # placeholders for storing graph adj_list and edges
-        self.edges_placeholder = tf.placeholder(tf.int32, [None, 2])
-        self.adj_placeholder = tf.placeholder(tf.int32, [None, None])
-        self.fixed_placeholder = tf.placeholder(tf.int32, [])
-        self.init_placeholder = tf.placeholder(tf.bool, [])
+        self.edges_placeholder = tf.compat.v1.placeholder(tf.int32, [None, 2])
+        self.adj_placeholder = tf.compat.v1.placeholder(tf.int32, [None, None])
+        self.fixed_placeholder = tf.compat.v1.placeholder(tf.int32, [])
+        self.init_placeholder = tf.compat.v1.placeholder(tf.bool, [])
 
     def _build_motion_graph(self):
         """ Motion graph updates poses using depth as input """
@@ -170,8 +170,8 @@ class DeepV2DSLAM:
         intrinsics = intrinsics_vec_to_matrix(intrinsics)
 
         depths, intrinsics = rescale_depths_and_intrinsics(depths, intrinsics, downscale=4)
-        ht = tf.cast(tf.shape(depths)[2], tf.float32)
-        wd = tf.cast(tf.shape(depths)[3], tf.float32)
+        ht = tf.cast(tf.shape(input=depths)[2], tf.float32)
+        wd = tf.cast(tf.shape(input=depths)[3], tf.float32)
 
         depths = tf.gather(depths, ii, axis=1)
         Tij = Ts.gather(jj) * Ts.gather(ii).inv()
@@ -183,30 +183,30 @@ class DeepV2DSLAM:
         rotation_mask = [1.0, 1.0, 1.0, 0.0, 0.0, 0.0]
         flow_translation = Tij.induced_flow(depths, intrinsics)
 
-        flo_graph = tf.sqrt(tf.reduce_sum(flow**2, axis=-1))
-        flo_graph = tf.reduce_mean(flo_graph, [-1, -2])
+        flo_graph = tf.sqrt(tf.reduce_sum(input_tensor=flow**2, axis=-1))
+        flo_graph = tf.reduce_mean(input_tensor=flo_graph, axis=[-1, -2])
 
-        pos_graph = tf.sqrt(tf.reduce_sum(flow_translation**2, axis=-1))
-        pos_graph = tf.reduce_mean(pos_graph, [-1, -2])
+        pos_graph = tf.sqrt(tf.reduce_sum(input_tensor=flow_translation**2, axis=-1))
+        pos_graph = tf.reduce_mean(input_tensor=pos_graph, axis=[-1, -2])
 
-        contained = tf.to_float(
+        contained = tf.cast(
             (coords[...,0] > 0.0) & (coords[...,0] < wd) & 
-            (coords[...,1] > 0.0) & (coords[...,1] < ht))
+            (coords[...,1] > 0.0) & (coords[...,1] < ht), dtype=tf.float32)
         
-        vis_graph = tf.reduce_mean(contained, [-1, -2])
+        vis_graph = tf.reduce_mean(input_tensor=contained, axis=[-1, -2])
         self.outputs['visibility'] = (flo_graph[0], vis_graph[0])
 
     def _build_fcrn_graph(self):
         """ Build single image initializion graph"""
         images = self.images_placeholder
-        batch, ht, wd, _ = tf.unstack(tf.shape(images), num=4)
+        batch, ht, wd, _ = tf.unstack(tf.shape(input=images), num=4)
 
-        with tf.variable_scope("FCRN") as scope:
+        with tf.compat.v1.variable_scope("FCRN") as scope:
             # crop out boarder and flip color channels
-            fcrn_input = tf.image.resize_area(images[:, 4:-4, 6:-6, ::-1], [228, 304])
+            fcrn_input = tf.image.resize(images[:, 4:-4, 6:-6, ::-1], [228, 304], method=tf.image.ResizeMethod.AREA)
             net = fcrn.ResNet50UpProj({'data': fcrn_input}, batch, 1, False)
             fcrn_output = tf.stop_gradient(net.get_output())
-            fcrn_output = tf.image.resize_bilinear(fcrn_output, [ht, wd])
+            fcrn_output = tf.image.resize(fcrn_output, [ht, wd], method=tf.image.ResizeMethod.BILINEAR)
 
         self.outputs['fcrn'] = tf.squeeze(fcrn_output, -1)
 
@@ -247,7 +247,7 @@ class DeepV2DSLAM:
         intrinsics = self.intrinsics_placeholder[tf.newaxis]
         intrinsics = intrinsics_vec_to_matrix(intrinsics)
 
-        depths_pad = tf.pad(depths, [[0,0],[0,0],[0,1],[0,1]], "CONSTANT")
+        depths_pad = tf.pad(tensor=depths, paddings=[[0,0],[0,0],[0,1],[0,1]], mode="CONSTANT")
 
         depths_grad = \
             (depths_pad[:, :, 1:, :-1] - depths_pad[:, :, :-1, :-1])**2 + \
@@ -256,7 +256,7 @@ class DeepV2DSLAM:
         # don't use large depths for point cloud and ignore boundary regions
         valid = (depths < 6.0) & (depths_grad < 0.05)
 
-        batch, num, ht, wd = tf.unstack(tf.shape(depths), num=4)
+        batch, num, ht, wd = tf.unstack(tf.shape(input=depths), num=4)
         Ts = VideoSE3Transformation(matrix=poses)
         X0 = projective_ops.backproject(depths, intrinsics)
         
@@ -275,7 +275,7 @@ class DeepV2DSLAM:
         X1 = tf.reshape(X1, [-1, 3])
         colors = tf.reshape(images, [-1, 3])
 
-        valid_inds = tf.where(tf.reshape(valid, [-1]))
+        valid_inds = tf.compat.v1.where(tf.reshape(valid, [-1]))
         valid_inds = tf.reshape(valid_inds, [-1])
 
         X1 = tf.gather(X1, valid_inds, axis=0)
@@ -291,7 +291,7 @@ class DeepV2DSLAM:
         poses = self.poses_placeholder[tf.newaxis]
         intrinsics = self.intrinsics_placeholder[tf.newaxis]
 
-        batch, num, ht, wd = tf.unstack(tf.shape(depths), num=4)
+        batch, num, ht, wd = tf.unstack(tf.shape(input=depths), num=4)
         Ts = VideoSE3Transformation(matrix=poses)
         intrinsics = intrinsics_vec_to_matrix(intrinsics)
 

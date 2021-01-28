@@ -47,5 +47,5 @@ def einsum(equation, *inputs):
 
     equation = equation.replace('...', ellipsis_axes)
     out = tf.einsum(equation, *inputs)
-    tf.add_to_collection("checkpoints", out)
+    tf.compat.v1.add_to_collection("checkpoints", out)
     return out

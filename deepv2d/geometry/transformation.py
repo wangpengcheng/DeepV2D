@@ -45,12 +45,12 @@ def cond_transform(cond, T1, T2):
     """ Return T1 if cond, else T2 """
     
     if T1.internal == 'matrix':
-        mat = tf.cond(cond, lambda: T1.matrix(), lambda: T2.matrix())
+        mat = tf.cond(pred=cond, true_fn=lambda: T1.matrix(), false_fn=lambda: T2.matrix())
         T = T1.__class__(matrix=mat, internal=T1.internal)
     
     elif T1.internal == 'quaternion':
-        so3 = tf.cond(cond, lambda: T1.so3, lambda: T2.so3)
-        translation = tf.cond(cond, lambda: T1.translation, lambda: T2.translation)
+        so3 = tf.cond(pred=cond, true_fn=lambda: T1.so3, false_fn=lambda: T2.so3)
+        translation = tf.cond(pred=cond, true_fn=lambda: T1.translation, false_fn=lambda: T2.translation)
         T = T1.__class__(so3=so3, translation=translation, internal=T1.internal)
     
     return T
@@ -176,7 +176,7 @@ class SE3:
         return se3_logm(self.so3, self.translation)
 
     def shape(self):
-        return tf.shape(self.so3)[:-1]
+        return tf.shape(input=self.so3)[:-1]
 
     def matrix(self, fill=True):
         if self.internal == 'matrix':
@@ -186,9 +186,9 @@ class SE3:
             t = tf.expand_dims(self.translation,-1)
             mat = tf.concat([R, t], axis=-1)
 
-            se3_shape = tf.shape(self.so3)[:-1]
+            se3_shape = tf.shape(input=self.so3)[:-1]
             filler = tf.constant([0,0,0,1], dtype=tf.float32)
-            filler = tf.tile(filler[tf.newaxis], [tf.reduce_prod(se3_shape), 1])
+            filler = tf.tile(filler[tf.newaxis], [tf.reduce_prod(input_tensor=se3_shape), 1])
             filler = tf.reshape(filler, tf.concat([se3_shape, [1, 4]], axis=-1))
 
             if fill:
@@ -209,7 +209,7 @@ class SE3:
         return coords
     # 特征相机网络
     def induced_flow(self, depth, intrinsics, valid_mask=False):
-        coords0 = pops.coords_grid(tf.shape(depth), homogeneous=False) # 获取相机网格坐标
+        coords0 = pops.coords_grid(tf.shape(input=depth), homogeneous=False) # 获取相机网格坐标
         if valid_mask:
             coords1, vmask = self.transform(depth, intrinsics, valid_mask=valid_mask)
             return coords1 - coords0, vmask
@@ -301,9 +301,9 @@ class VideoSE3Transformation(SE3):
 
     def shape(self):
         if self.internal == 'matrix':
-            my_shape = tf.shape(self.G)
+            my_shape = tf.shape(input=self.G)
         elif self.internal == 'quaternion':
-            my_shape = tf.shape(self.so3)
+            my_shape = tf.shape(input=self.so3)
         
         return (my_shape[0], my_shape[1])
 
@@ -362,18 +362,18 @@ class VideoSE3Transformation(SE3):
             
             ### weighted gauss-newton update ###
             J = einsum('...ij,...jk->...ik', jproj, jtran)
-            tf.add_to_collection("checkpoints", J)
+            tf.compat.v1.add_to_collection("checkpoints", J)
 
             H = einsum('ai...j,ai...k->aijk', v*w*J, J)
             b = einsum('ai...j,ai...->aij', v*w*J, target-x1)
 
-            tf.add_to_collection("checkpoints", H)
-            tf.add_to_collection("checkpoints", b)
+            tf.compat.v1.add_to_collection("checkpoints", H)
+            tf.compat.v1.add_to_collection("checkpoints", b)
 
             ### add dampening and apply increment ###
             H += ep_lmbda*tf.eye(6) + lm_lmbda*H*tf.eye(6)
             delta_upsilon = cholesky_solve(H, b)
-            tf.add_to_collection("checkpoints", delta_upsilon)
+            tf.compat.v1.add_to_collection("checkpoints", delta_upsilon)
 
             T = T.increment(delta_upsilon)
 
@@ -434,7 +434,7 @@ class VideoSE3Transformation(SE3):
             X1, jtran = Tij(X0, jacobian=True)
             x1, (jproj, jkvec2) = pops.project(X1, intrinsics, jacobian=True)
 
-            residual_mag = tf.sqrt(tf.reduce_sum((targets - x1)**2, axis=-1))
+            residual_mag = tf.sqrt(tf.reduce_sum(input_tensor=(targets - x1)**2, axis=-1))
             
             v = (X0[...,-1] > MIN_DEPTH) & \
                 (X1[...,-1] > MIN_DEPTH) & \
@@ -453,9 +453,9 @@ class VideoSE3Transformation(SE3):
             f = (intrinsics[:, 0,0] + intrinsics[:, 1,1]) / 2.0
             Jk = einsum('a...,a->a...', Jk, f)
 
-            tf.add_to_collection("checkpoints", Ji)
-            tf.add_to_collection("checkpoints", Jj)
-            tf.add_to_collection("checkpoints", Jk)
+            tf.compat.v1.add_to_collection("checkpoints", Ji)
+            tf.compat.v1.add_to_collection("checkpoints", Jj)
+            tf.compat.v1.add_to_collection("checkpoints", Jk)
 
             ### build the system Hx = b ###
             H11_ii = einsum('ai...j,ai...k->iajk', v*w*Ji, Ji)
@@ -476,10 +476,10 @@ class VideoSE3Transformation(SE3):
             b1 =  tf.scatter_nd(tf.stack([ii], axis=-1), b1_i, b_shape) + \
                   tf.scatter_nd(tf.stack([jj], axis=-1), b1_j, b_shape)
 
-            H11 = tf.reshape(tf.transpose(H11, [2,0,3,1,4]), [batch, num*dof, num*dof])
+            H11 = tf.reshape(tf.transpose(a=H11, perm=[2,0,3,1,4]), [batch, num*dof, num*dof])
             H11 += (ep_lmbda + lm_lmbda*H11)*tf.eye(dof*num)
 
-            b1 = tf.reshape(tf.transpose(b1, [1,0,2]), [batch, num*dof])
+            b1 = tf.reshape(tf.transpose(a=b1, perm=[1,0,2]), [batch, num*dof])
 
             # keep intrinsics matrix fixed
             if not include_intrinsics:
@@ -501,8 +501,8 @@ class VideoSE3Transformation(SE3):
                 H22 = einsum('ai...j,ai...k->ajk', v*w*Jk, Jk) 
                 b2 = einsum('a...j,a...->aj', v*w*Jk, targets-x1)
 
-                H12 = tf.reshape(tf.transpose(H12, [2,0,3,1,4]), [batch, num*dof, 1])
-                H21 = tf.transpose(H12, [0, 2, 1])
+                H12 = tf.reshape(tf.transpose(a=H12, perm=[2,0,3,1,4]), [batch, num*dof, 1])
+                H21 = tf.transpose(a=H12, perm=[0, 2, 1])
                 H22 = tf.reshape(H22, [batch, 1, 1])
 
                 flm_lmbda = 0.001 # damping for focal length update
@@ -516,8 +516,8 @@ class VideoSE3Transformation(SE3):
                 b = tf.concat([b1, b2], axis=-1)
                 
             # system is built, now solve it
-            tf.add_to_collection("checkpoints", H)
-            tf.add_to_collection("checkpoints", b)
+            tf.compat.v1.add_to_collection("checkpoints", H)
+            tf.compat.v1.add_to_collection("checkpoints", b)
 
             num_free = num - num_fixed
             H = H[:, dof*num_fixed:, dof*num_fixed:]
@@ -525,13 +525,13 @@ class VideoSE3Transformation(SE3):
 
             if include_intrinsics:
                 delta_update = cholesky_solve(H, b)
-                tf.add_to_collection("checkpoints", delta_update)
+                tf.compat.v1.add_to_collection("checkpoints", delta_update)
                 delta_upsilon, delta_intrinsics = tf.split(delta_update, [num_free*dof, 1], axis=-1)
                 intrinsics = update_intrinsics(intrinsics, delta_intrinsics)
            
             else:
                 delta_upsilon = cholesky_solve(H, b)
-                tf.add_to_collection("checkpoints", delta_upsilon)
+                tf.compat.v1.add_to_collection("checkpoints", delta_upsilon)
 
             delta_upsilon = tf.reshape(delta_upsilon, [batch, num_free, dof])
             zeros_upsilon = tf.zeros([batch, num_fixed, dof])

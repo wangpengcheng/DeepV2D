@@ -32,8 +32,8 @@ def solve(H, b, max_update=1.0):
         x = cholesky_solve(H, b)
 
         # replaces nans and clip large updates
-        bad_values = tf.is_nan(x)
-        x = tf.where(bad_values, tf.zeros_like(x), x)
+        bad_values = tf.math.is_nan(x)
+        x = tf.compat.v1.where(bad_values, tf.zeros_like(x), x)
         x = tf.clip_by_value(x, -max_update, max_update)
 
         x = tf.squeeze(x, -1)
