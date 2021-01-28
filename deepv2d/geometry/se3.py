@@ -190,7 +190,6 @@ def se3_logm(so3, t):
     upsilon = tf.concat([tau, omega], axis=-1)
     return upsilon
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 ### matrix functions ###
 
 def se3_matrix_inverse(G):

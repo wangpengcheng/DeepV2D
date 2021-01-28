@@ -22,6 +22,7 @@ cy = 255.3
 factor = 5000.0 # for the 16-bit PNG files
 intrinsics = np.array([fx, fy, cx, cy],dtype=np.float32)
 
+
 def get_TUM_data(data_path):
     """读取tum中的数据
 
@@ -49,11 +50,31 @@ def get_TUM_data(data_path):
     # 文件样例:
     # 1341841310.82 rgb/1341841310.821702.png 1341841310.82 depth/1341841310.822401.png 1341841310.81 -2.7366 0.1278 1.2413 0.7256 -0.5667 0.2209 -0.3217
     #
-    images,depths,poses = get_data_from_sum_file(data_file_path)
-    print(len(images))
-    images = [data_path+'/'+i for i in images ]
-    depths = [data_path+'/'+i for i in depths ]
-    return images,depths,poses
+    image_names,depths_names,poses_names = get_data_from_sum_file(data_file_path)
+
+    image_names = [data_path+'/'+i for i in image_names ]
+    depth_names = [data_path+'/'+i for i in depths_names ]
+    # 读取图像
+    images = []
+    for image_name in image_names:
+        image = cv2.imread(image_name)
+        image = cv2.resize(image, (640, 480))
+        images.append(image)
+    # 转换位姿信息
+    poses = []
+    for poses_name in poses_names:
+        pose_vec = poses_name
+        pose_mat = pose_vec2mat(pose_vec)
+        poses.append(np.linalg.inv(pose_mat))
+    # 读取深度
+    depths = []
+    for depth_name in depth_names:
+        # 读取深度信息
+        depth = cv2.imread(depth_name, cv2.IMREAD_ANYDEPTH)
+        depth = (depth.astype(np.float32))/factor
+        depths.append(depth)
+    
+    return images, depths, poses
 
 _EPS = numpy.finfo(float).eps * 4.0
 
@@ -139,6 +160,7 @@ class TUM_RGBD:
         return [self.n_frames, self.height, self.width]
     # 获取数据
     def __getitem__(self, index):
+        print("====:index:{}".format(index))
         data_blob = self.dataset_index[index]
         num_frames = data_blob['n_frames']
         num_samples = self.n_frames - 1
@@ -146,33 +168,16 @@ class TUM_RGBD:
         frameid = data_blob['id']
         keyframe_index = num_frames // 2 # 选取中间帧作为关键帧
 
-        inds = np.arange(num_frames)
-        inds = inds[~np.equal(inds, keyframe_index)]
-        
-        inds = np.random.choice(inds, num_samples, replace=False)
-        inds = [keyframe_index] + inds.tolist()
         # 读取图像
-        images = []
-        for i in inds:
-            print("images:{}".format(data_blob['images'][i]))
-            image = cv2.imread(data_blob['images'][i])
-            image = cv2.resize(image, (640, 480))
-            images.append(image)
-        # 转换位姿信息
-        poses = []
-        for i in inds:
-            pose_vec = data_blob['poses'][i]
-            pose_mat = pose_vec2mat(pose_vec)
-            poses.append(np.linalg.inv(pose_mat))
-        # 转换图像和深度信息
+        images = data_blob['images']
+        
+        poses = data_blob['poses']
+        # 转换图像和位姿信息
         images = np.stack(images, axis=0).astype(np.uint8)
         poses = np.stack(poses, axis=0).astype(np.float32)
         # 获取深度信息
-        depth_file = data_blob['depth']
-        # 读取深度信息
-        depth = cv2.imread(depth_file, cv2.IMREAD_ANYDEPTH)
-        
-        depth = (depth.astype(np.float32)) /factor
+        depth = data_blob['depth']
+
         filled = fill_depth(depth)
         
         K = data_blob['intrinsics']
@@ -210,11 +215,7 @@ class TUM_RGBD:
         depth_intrinsics = intrinsics.copy()
         color_intrinsics = intrinsics.copy()
         # 写入序列化数据
-        datum = images, depths, poses, color_intrinsics, depth_intrinsics
-        #pickle.dump(datum, open(datum_file, 'wb'))
-            
-        #else:
-        #    datum = pickle.load(open(datum_file, 'rb'))
+        self.datum = images, depths, poses, color_intrinsics, depth_intrinsics
 
         return datum
 
@@ -227,7 +228,7 @@ class TUM_RGBD:
             print("scan:{}".format(scan))
             # 访问数据文件夹，构造对应的数据
             images, depths, poses, color_intrinsics, depth_intrinsics = self._load_scan(scan)
-
+            # 加载数据
             for i in range(r, len(images)-r, skip):
                 # some poses in scannet are nans
                 if np.any(np.isnan(poses[i-r:i+r+1])):
@@ -240,7 +241,6 @@ class TUM_RGBD:
                 training_example['intrinsics'] = depth_intrinsics
                 training_example['n_frames'] = 2*r+1
                 training_example['id'] = data_id
-
                 self.dataset_index.append(training_example)
                 data_id += 1
 
