@@ -251,12 +251,12 @@ def prepare_inputs(images, poses, depth, filled, pred, intrinsics, ids):
 
     return images, poses, depth, filled, pred, intrinsics, ids
 
-
+# DB数据加载层
 class DBDataLayer:
     def __init__(self, db, batch_size=1, augument=False):
         self.db = db
-        self.batch_size = batch_size
-        training_generator = iter(self.db)
+        self.batch_size = batch_size # 设置batch——size
+        training_generator = iter(self.db) # 获取迭代器
         generator_data_type = (tf.uint8, tf.float32, tf.float32, tf.float32, tf.float32, tf.float32, tf.int32)
         training_set = tf.data.Dataset.from_generator(lambda: training_generator, generator_data_type)
         training_set = training_set.map(prepare_inputs)
@@ -266,9 +266,9 @@ class DBDataLayer:
         self.training_iterator = training_set.make_initializable_iterator()
         
     def next(self):
-        frames, height, width = self.db.shape()
+        frames, height, width = self.db.shape() # 单次迭代的数量
         images, poses, depth, filled, pred, intrinsics, ids = self.training_iterator.get_next()
-        
+        # 重新设置形状
         images.set_shape(tf.TensorShape([self.batch_size, frames, height, width, 3]))
         poses.set_shape(tf.TensorShape([self.batch_size, frames, 4, 4]))
         depth.set_shape(tf.TensorShape([self.batch_size, height, width, 1]))
@@ -276,10 +276,10 @@ class DBDataLayer:
         pred.set_shape(tf.TensorShape([self.batch_size, height, width, 1]))
         intrinsics.set_shape(tf.TensorShape([self.batch_size, 4]))
         ids.set_shape(tf.TensorShape([self.batch_size]))
-
+        # 进行数据转换
         images = tf.cast(images, tf.float32)
         return ids, images, poses, depth, filled, pred, intrinsics
-
+    # 初始化
     def init(self, sess):
         sess.run(self.training_iterator.initializer)
 

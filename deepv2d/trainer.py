@@ -30,14 +30,14 @@ class DeepV2DTrainer(object):
     def build_train_graph_stage1(self, cfg, num_gpus=1):
         # 读取基本参数
         id_batch, images_batch, poses_batch, gt_batch, filled_batch, pred_batch, intrinsics_batch = self.dl.next()
-        
+        # 对参数进行分割
         images_batch = tf.split(images_batch, num_gpus)
         poses_batch = tf.split(poses_batch, num_gpus)
         gt_batch = tf.split(gt_batch, num_gpus)
         filled_batch = tf.split(filled_batch, num_gpus)
         pred_batch = tf.split(pred_batch, num_gpus)
         intrinsics_batch = tf.split(intrinsics_batch, num_gpus)
-
+        # 执行调度器
         with tf.name_scope("training_schedule"):
             global_step = tf.Variable(0, name='global_step', trainable=False)
             lr = tf.train.exponential_decay(cfg.TRAIN.LR, global_step, 5000, 0.5, staircase=True)
@@ -117,15 +117,16 @@ class DeepV2DTrainer(object):
 
             stereo_optim = tf.train.RMSPropOptimizer(lr)
             motion_optim = tf.train.RMSPropOptimizer(MOTION_LR_FRACTION*lr)
-
+        # 进行数据读取
         id_batch, images_batch, poses_batch, gt_batch, filled_batch, pred_batch, intrinsics_batch = self.dl.next()
+        # 在这里进行数据分割
         images_batch = tf.split(images_batch, num_gpus)
         poses_batch = tf.split(poses_batch, num_gpus)
         gt_batch = tf.split(gt_batch, num_gpus)
         filled_batch = tf.split(filled_batch, num_gpus)
         pred_batch = tf.split(pred_batch, num_gpus)
         intrinsics_batch = tf.split(intrinsics_batch, num_gpus)
-
+        # 
         tower_motion_grads = []
         tower_stereo_grads = []
         tower_predictions = []
@@ -137,15 +138,16 @@ class DeepV2DTrainer(object):
             motion_net = MotionNetwork(cfg.MOTION, reuse=gpu_id>0)
             # 深度估计网络
             depth_net = DepthNetwork(cfg.STRUCTURE, schedule=schedule, reuse=gpu_id>0)
-
+            #数据分配
             images = images_batch[gpu_id]
             poses = poses_batch[gpu_id]
             depth_gt = gt_batch[gpu_id]
             depth_filled = filled_batch[gpu_id]
             depth_pred = pred_batch[gpu_id]
             intrinsics = intrinsics_batch[gpu_id]
-
+            # 将位姿转换为SE3,对应的空间变换矩阵
             Gs = VideoSE3Transformation(matrix=poses)
+            # 获取相关数据
             batch, frames, height, width, _ = images.get_shape().as_list()
 
             with tf.name_scope("depth_input"):
@@ -271,23 +273,25 @@ class DeepV2DTrainer(object):
 
         # 进行数据合并
         self.summary_op = tf.summary.merge_all()
-
+        # 进行模型存储
         saver = tf.train.Saver([var for var in tf.model_variables()], max_to_keep=10)
+        # 写入日志信息
         train_writer = tf.summary.FileWriter(cfg.LOG_DIR+'_stage_%s'%str(stage)) # 写入到数据训练文件中
-
+        # 进行初始化
         init_op = tf.group(tf.global_variables_initializer(),
                    tf.local_variables_initializer())
-
+        # 设置存储频率
         SUMMARY_FREQ = 10
+        # 设置日志频率
         LOG_FREQ = 100
+        # 设置checkpoint中间输出频率
         CHECKPOINT_FREQ = 5000
         # 定义TensorFlow配置
         config = tf.ConfigProto()
-
         # 配置GPU内存分配方式，按需增长，很关键
         config.gpu_options.allow_growth = True
 
-        # 配置可使用的显存比例
+        # 配置可使用的显存比例，为所有显存的80%
         config.gpu_options.per_process_gpu_memory_fraction = 0.8
 
         # 在创建session的时候把config作为参数传进去
@@ -307,19 +311,22 @@ class DeepV2DTrainer(object):
                 self.dl.init(sess)
 
             kwargs = {}
-
+            # 训练阶段大于2，两次训练都结束
             if stage >= 2:
+                # 位姿估计的所有变量
                 motion_vars = tf.get_collection(tf.GraphKeys.MODEL_VARIABLES, scope="motion")
+                # 创建存储
                 motion_saver = tf.train.Saver(motion_vars)
-
+                # 进行中间参数保存，保存的模型
                 if ckpt is not None:
                     motion_saver.restore(sess, ckpt)
-
+                # 存储的临时文件
                 if restore_ckpt is not None:
                     saver.restore(sess, restore_ckpt)
-
+            
+            # 运行时的loss
             running_loss = 0.0
-            # 开始步长
+            # 开始迭代并进行训练
             for step in range(1, max_steps):
 
                 kwargs = {}
@@ -328,25 +335,25 @@ class DeepV2DTrainer(object):
                 fetches['loss'] = self.total_loss
                 if self.write_op is not None:
                     fetches['write_op'] = self.write_op
-
+                # 进行关键信息存储
                 if step % SUMMARY_FREQ == 0:
                     fetches['summary'] = self.summary_op
-
+                # 执行命令,进行运算
                 result = sess.run(fetches, **kwargs)
 
                 if step % SUMMARY_FREQ == 0:
                     train_writer.add_summary(result['summary'], step)
 
                 if step % LOG_FREQ == 0:
-                    print('[stage=%d, %5d] loss: %.3f'%(stage, step, running_loss / LOG_FREQ))
+                    print('[stage=%d, %5d] loss: %.9f'%(stage, step, running_loss / LOG_FREQ))
                     running_loss = 0.0
-
+                # 存储模型文件
                 if step % CHECKPOINT_FREQ == 0:
                     checkpoint_file = os.path.join(cfg.CHECKPOINT_DIR, '_stage_%s.ckpt'%str(stage))
                     saver.save(sess, checkpoint_file, step)
-
+                # 进行loss计算
                 running_loss += result['loss']
-
+            # 存储最终模型文件
             checkpoint_file = os.path.join(cfg.CHECKPOINT_DIR, '_stage_%s.ckpt'%str(stage))
             saver.save(sess, checkpoint_file)
 
