@@ -1,4 +1,3 @@
-import tensorflow as tf
 import numpy as np
 from data_stream import kitti_utils
 from data_stream import util

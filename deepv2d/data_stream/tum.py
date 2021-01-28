@@ -7,7 +7,6 @@ import glob
 import random
 import pickle
 from geometry.transformation import *
-import tensorflow as tf
 from scipy import interpolate
 import argparse
 import random
@@ -50,7 +49,6 @@ def get_TUM_data(data_path):
     # 1341841310.82 rgb/1341841310.821702.png 1341841310.82 depth/1341841310.822401.png 1341841310.81 -2.7366 0.1278 1.2413 0.7256 -0.5667 0.2209 -0.3217
     #
     images,depths,poses = get_data_from_sum_file(data_file_path)
-    print(len(images))
     images = [data_path+'/'+i for i in images ]
     depths = [data_path+'/'+i for i in depths ]
     return images,depths,poses
@@ -145,7 +143,7 @@ class TUM_RGBD:
 
         frameid = data_blob['id']
         keyframe_index = num_frames // 2 # 选取中间帧作为关键帧
-
+        # 获取索引数组
         inds = np.arange(num_frames)
         inds = inds[~np.equal(inds, keyframe_index)]
         
