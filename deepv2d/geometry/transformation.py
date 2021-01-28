@@ -54,6 +54,7 @@ def cond_transform(cond, T1, T2):
         T = T1.__class__(so3=so3, translation=translation, internal=T1.internal)
     
     return T
+<<<<<<< HEAD
 def stop_gradients(val):
     val.requires_grad = True
 def my_shape(val):
@@ -61,6 +62,10 @@ def my_shape(val):
 def my_transpose(val1,val2):
     return val1.permute(val2)
 
+=======
+
+# SE3初始化
+>>>>>>> 317bed8ad3da1341c39a302c231c811b94fb32b7
 class SE3:
     def __init__(self, upsilon=None, matrix=None, so3=None, translation=None, eq=None, internal=DEFAULT_INTERNAL):
         self.eq = eq
@@ -144,8 +149,13 @@ class SE3:
                 return self.__class__(so3=self.so3, translation=self.translation, internal=self.internal)
 
     def to_vec(self):
+<<<<<<< HEAD
         return torch.cat([self.so3, self.translation], axis=-1)
         
+=======
+        return tf.concat([self.so3, self.translation], axis=-1)
+    # 
+>>>>>>> 317bed8ad3da1341c39a302c231c811b94fb32b7
     def inv(self):
         if self.internal == 'matrix':
             Ginv = se3_matrix_inverse(self.matrix())
@@ -200,10 +210,10 @@ class SE3:
                 mat = torch.cat([mat, filler], axis=-2)
 
             return mat
-
+    # 将深度图像，转换为(X，Y,Z)点云图
     def transform(self, depth, intrinsics, valid_mask=False, return3d=False):
-        pt = pops.backproject(depth, intrinsics)
-        pt_new = self.__call__(pt)
+        pt = pops.backproject(depth, intrinsics) # 根据深度和相机内参获取三维点云
+        pt_new = self.__call__(pt) # 获取新的三维点云图像
         coords = pops.project(pt_new, intrinsics)
         if return3d: 
             return coords, pt_new
@@ -214,12 +224,16 @@ class SE3:
         return coords
     # 特征相机网络
     def induced_flow(self, depth, intrinsics, valid_mask=False):
+<<<<<<< HEAD
         coords0 = pops.coords_grid(my_shape(depth), homogeneous=False)
+=======
+        coords0 = pops.coords_grid(tf.shape(depth), homogeneous=False) # 获取相机网格坐标
+>>>>>>> 317bed8ad3da1341c39a302c231c811b94fb32b7
         if valid_mask:
             coords1, vmask = self.transform(depth, intrinsics, valid_mask=valid_mask)
             return coords1 - coords0, vmask
         coords1 = self.transform(depth, intrinsics, valid_mask=valid_mask)
-        return coords1 - coords0
+        return coords1 - coords0 # 获取相机坐标差值
 
     def depth_change(self, depth, intrinsics):
         pt = pops.backproject(depth, intrinsics)
