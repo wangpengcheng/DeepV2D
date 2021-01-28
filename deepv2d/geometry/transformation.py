@@ -54,7 +54,7 @@ def cond_transform(cond, T1, T2):
         T = T1.__class__(so3=so3, translation=translation, internal=T1.internal)
     
     return T
-<<<<<<< HEAD
+
 def stop_gradients(val):
     val.requires_grad = True
 def my_shape(val):
@@ -62,10 +62,6 @@ def my_shape(val):
 def my_transpose(val1,val2):
     return val1.permute(val2)
 
-=======
-
-# SE3初始化
->>>>>>> 317bed8ad3da1341c39a302c231c811b94fb32b7
 class SE3:
     def __init__(self, upsilon=None, matrix=None, so3=None, translation=None, eq=None, internal=DEFAULT_INTERNAL):
         self.eq = eq
