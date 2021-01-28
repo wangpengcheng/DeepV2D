@@ -215,7 +215,7 @@ class TUM_RGBD:
         depth_intrinsics = intrinsics.copy()
         color_intrinsics = intrinsics.copy()
         # 写入序列化数据
-        self.datum = images, depths, poses, color_intrinsics, depth_intrinsics
+        datum = images, depths, poses, color_intrinsics, depth_intrinsics
 
         return datum
 

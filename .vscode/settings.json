@@ -1,4 +1,4 @@
 {
-    "python.pythonPath": "/home/node/.conda/envs/tensorflow-gpu/bin/python",
+    "python.pythonPath": "/home/ls/.conda/envs/tensorflow-gpu/bin/python",
     "git.ignoreLimitWarning": true
 }
