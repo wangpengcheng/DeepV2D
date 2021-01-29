@@ -251,6 +251,7 @@ class NYUv2:
         return timestamps, images
 
     def test_iterator(self, r=2, dt=0.5):
+        # 加载文件夹
         test_frames = np.loadtxt('nyu_test_files.txt', dtype=np.unicode_)
         for test_frame in test_frames:
             scene, image_id = test_frame.split('/')
