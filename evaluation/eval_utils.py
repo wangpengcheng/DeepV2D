@@ -68,6 +68,7 @@ def compute_pose_errors(gt, pr):
 
 
 def compute_depth_errors(gt, pr, min_depth=0.1, max_depth=10.0):
+   
     if isinstance(pr, list):
         scinv_list = []
         for i in range(len(gt)):
@@ -79,7 +80,6 @@ def compute_depth_errors(gt, pr, min_depth=0.1, max_depth=10.0):
 
     else:
         scinv = scale_invariant(gt, pr)
-
     # igore invalid depth values from evaluation
     v = (gt > min_depth) & (gt < max_depth)
     gt, pr = gt[v], pr[v]
