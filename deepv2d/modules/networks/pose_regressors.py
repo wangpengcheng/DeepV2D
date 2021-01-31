@@ -88,24 +88,29 @@ def pose_vec2mat(vec, use_filler=True):
 
 
 def pose_regressor_stack(image_star, images, sc=2):
-
+    # 获取维度数据,一般为1*8*640*480
     batch, frames, height, width, _ = images.get_shape().as_list()
+    # 进行数据扩充
     image_star = tf.expand_dims(image_star, 1)
+    # 连接关键帧数据
     images = tf.concat([image_star, images], axis=1)
-
+    # 进行帧交换，主要是0不动，由1x8x640x480x3 变为 1x640x480x8x3
     images = tf.transpose(images, [0, 2, 3, 1, 4])
+    # 冲新调整数据为:1x640*480*4*8；注意这里将通道中的数据进行了混合
     images = tf.reshape(images, [batch, height, width, 3*(frames+1)])
-
+    # 将图像尺寸缩放到原来的一半
     with tf.device('/cpu:0'):
         inputs = tf.image.resize_area(images, [height//sc, width//sc])
 
     with tf.variable_scope('pose') as sc:
+        # 为slime.conv2d设置目标默认值
         with slim.arg_scope([slim.conv2d],
                             weights_regularizer=slim.l2_regularizer(0.00005),
                             normalizer_fn=None,
                             activation_fn=tf.nn.relu):
-
+            # 二维卷积
             net = slim.conv2d(inputs, 32, [7, 7], stride=2)
+            # 将参数进行保存
             tf.add_to_collection("checkpoints", net)
 
             net = slim.conv2d(net, 32, [1, 7], stride=1)
@@ -132,25 +137,29 @@ def pose_regressor_stack(image_star, images, sc=2):
 
             dims = net.get_shape().as_list()
             net = slim.conv2d(net, 512, [dims[1], dims[2]], padding='VALID')
+            # 获取最终的位姿矩阵
             pose_vec = slim.conv2d(net, 6*frames, [1, 1], stride=1, activation_fn=None)
+            # 将位姿矩阵的值*0.01
             pose_vec = 0.01*tf.reshape(pose_vec, [batch*frames, 6])
+            # 计算相机位姿矩阵
             pose_vec = clip_nan_gradients(pose_vec)
 
             tf.add_to_collection("checkpoints", pose_vec)
 
-            # tf.summary.histogram("pose_vec", pose_vec)
+            #tf.summary.histogram("pose_vec", pose_vec)
 
             G = pose_vec2mat(pose_vec)
             return G
 
 
 def pose_regressor_indv(image1, image2, sc=2):
-
+    # 获取宽和高度
     ht = image1.get_shape().as_list()[1]
     wd = image2.get_shape().as_list()[2]
     inputs = tf.concat([image1, image2], axis=-1)
 
     with tf.device('/cpu:0'):
+        # 进行缩放
         inputs = tf.image.resize_area(inputs, [ht//sc, wd//sc])
 
     with tf.variable_scope('pose') as sc:
@@ -198,18 +207,32 @@ def pose_regressor_indv(image1, image2, sc=2):
 
 
 def pose_regressor_factory(image_star, images, cfg):
+    """ 
+      位姿回归工厂参数，主要是是用来计算位姿的梯度
+    Args:
+        image_star ([type]): 图片关键帧，一般为images里面的第一帧
+        images ([type]): 图片关键帧数组
+        cfg ([type]): 相关配置参数
 
-    if cfg.STACK_FRAMES:
+    Returns:
+        [type]: [description]
+    """
+
+    if cfg.STACK_FRAMES: # 一般为false
         G = pose_regressor_stack(image_star, images)
     
     else:
+        # 获取相机的
         batch, frames, ht, wd = [tf.shape(images)[i] for i in range(4)]
         ht = images.get_shape().as_list()[2]
         wd = images.get_shape().as_list()[3]
+        # 最终维度
         image_dims = [batch*frames, ht, wd, 3]
 
         image_star = tf.expand_dims(image_star, 1)
+        # 获取关键帧
         image1 = tf.tile(image_star, [1, frames, 1, 1, 1])
+        # 
         image1 = tf.reshape(image1, image_dims)
         image2 = tf.reshape(images, image_dims)
 

@@ -37,6 +37,19 @@ class MotionNetwork:
                  is_training=True,
                  mode='keyframe', 
                  scope='Motion'):
+        """[summary]
+
+        Args:
+            cfg ([type]): [description]
+            reuse (bool, optional): [description]. Defaults to False.
+            schedule ([type], optional): [description]. Defaults to None.
+            use_regressor (bool, optional): [是否使用位姿回归，输入位姿时，值为False就进行跳过]. Defaults to True.
+            is_calibrated (bool, optional): [description]. Defaults to True.
+            bn_is_training (bool, optional): [description]. Defaults to False.
+            is_training (bool, optional): [description]. Defaults to True.
+            mode (str, optional): [description]. Defaults to 'keyframe'.
+            scope (str, optional): [description]. Defaults to 'Motion'.
+        """
         
         self.cfg = cfg
         self.reuse = reuse
@@ -55,8 +68,8 @@ class MotionNetwork:
         self.coords_history = []    # x,y坐标历史
         self.residual_history = []
         self.inds_history = []
-        self.weights_history = []
-        self.intrinsics_history = []
+        self.weights_history = [] # 权重历史
+        self.intrinsics_history = [] # 相机参数历史
         self.summaries = []
 
         self.batch_norm_params = {
@@ -76,19 +89,39 @@ class MotionNetwork:
         return ii, jj
 
     def _keyframe_pairs_indicies(self, num):
+        """
+        获取相机参数关键节点
+
+        Args:
+            num ([type]): [description]
+
+        Returns:
+            [type]: [description]
+        """
         ii, jj = tf.meshgrid(tf.range(1), tf.range(1, num))
         ii = tf.reshape(ii, [-1])
         jj = tf.reshape(jj, [-1])
         return ii, jj
 
     def pose_regressor_init(self, images):
+        """
+        初始化相机位姿
+
+        Args:
+            images ([type]): [description]
+
+        Returns:
+            [type]: [description]
+        """
         cfg = self.cfg
+        #相机参数和帧数
         batch, frames = [tf.shape(images)[i] for i in range(2)]
 
         if not cfg.RESCALE_IMAGES:
             images = images / 255.0
-
+        # 获取关键帧和剩余帧
         keyframe, video = images[:, 0], images[:, 1:]
+        # 获取位姿矩阵
         pose_mat = pose_regressor_factory(keyframe, video, cfg)
         pose_mat = tf.reshape(pose_mat, [batch, frames-1, 4, 4])
 
@@ -134,6 +167,7 @@ class MotionNetwork:
         net = tf.reshape(net, [batch, frames, height//4, width//4, 64])
         return net
     
+    # 流光计算网络
     def flownet(self, fmap1, fmap2, reuse=False):
         inputs = tf.concat([fmap1, fmap2], axis=-1)
         batch, num, height, width = [tf.shape(inputs)[i] for i in range(4)]
@@ -215,7 +249,7 @@ class MotionNetwork:
         weight = tf.reshape(weight, [batch, num, height, width, 2])    
         return flow, weight
 
-
+    # 进行前向计算
     def forward(self, Ts, images, depths, intrinsics, inds=None, num_fixed=0, init=tf.constant(False)):
         # motion network performs projection operations in features space
         # 相机位姿网络进行前向计算
@@ -236,29 +270,32 @@ class MotionNetwork:
             self.inds = inds
 
         (ii, jj) = self.inds
+        # 将相机内参转换为矩阵
         intrinsics = intrinsics_vec_to_matrix(intrinsics)
 
         # if self.is_training and (not self.is_calibrated):
         #     perturbation = 0.1 * tf.random.normal([batch, 1])
         #     intrinsics = update_intrinsics(intrinsics, perturbation)
-
+        # 对深度图像进行缩放
         depths_low, intrinsics = rescale_depths_and_intrinsics(depths, intrinsics, downscale=4)
 
         with tf.variable_scope("motion", reuse=self.reuse) as sc:
             if Ts is None:
-                Ts = self.pose_regressor_init(images)
+                Ts = self.pose_regressor_init(images) # 初始化位姿计算
             else:
                 if self.use_regressor:
                     Gs = self.pose_regressor_init(images)
                     Ts = cond_transform(init, Gs, Ts) #转换坐标体系
-
+            # 扩展features
             feats = self.extract_features(images)
+            # 获取参数切片
             depths = tf.gather(depths_low, ii, axis=1) + EPS
-
+            # 获取特征切片
             feats1 = tf.gather(feats, ii, axis=1)
             feats2 = tf.gather(feats, jj, axis=1)
-
+            # 获取位姿切片
             Ti = Ts.gather(ii)
+            # 
             Tj = Ts.gather(jj)
             Tij = Tj * Ti.inv()
 
@@ -269,18 +306,21 @@ class MotionNetwork:
 
                 coords, vmask = Tij.transform(depths, intrinsics, valid_mask=True)
                 featsw = vmask * bilinear_sampler(feats2, coords, batch_dims=2)
-
+                # 查找此命名空间对应的变量
                 with tf.name_scope("residual"):
+                    # 计算流光
                     flow, weight = self.flownet(feats1, featsw, reuse=i>0)
                     self.weights_history.append(weight)
 
                     target = flow + coords
                     weight = vmask * tf.nn.sigmoid(weight)
 
-
+                # 
                 with tf.name_scope("PnP"):
                     if (self.mode == 'keyframe') and self.is_calibrated:
+                        # 初始化关键帧值
                         Tij = Tij.keyframe_optim(target, weight, depths, intrinsics)
+                        # 获取新的位姿信息
                         Ts = Tij.append_identity() # set keyframe pose to identity
 
                     else:
@@ -289,11 +329,12 @@ class MotionNetwork:
                         Tij = Ts.gather(jj) * Ts.gather(ii).inv() # relative poses
                     
                     coords, vmask1 = Tij.transform(depths, intrinsics, valid_mask=True)
+                    # 添加历史
                     self.transform_history.append(Ts)
                     self.residual_history.append(vmask*vmask1*(coords-target))
 
                 self.intrinsics_history.append(intrinsics_matrix_to_vec(intrinsics))
-
+        # 将相机参数扩展4倍
         intrinsics = 4.0 * intrinsics_matrix_to_vec(intrinsics)
         return Ts, intrinsics
 
@@ -342,8 +383,11 @@ class MotionNetwork:
                 pass
 
         # encourage larger weights
+        # 进行loss计算
         ws = tf.stack(self.weights_history, axis=0)
+        
         weights_loss = compute_weights_reg_loss(ws)
+
         total_loss += self.cfg.TRAIN.WEIGHT_REG * weights_loss
 
         return total_loss

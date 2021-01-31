@@ -71,6 +71,7 @@ __C.STRUCTURE.TRAIN = edict()
 __C.STRUCTURE.TRAIN.SMOOTH_W = 0.02
 
 __C.MOTION = edict()
+__C.MOTION.USE_MOTION = True # 是否使用相机位姿估计网络
 # stack frames when estimating camera motion
 __C.MOTION.STACK_FRAMES = False
 

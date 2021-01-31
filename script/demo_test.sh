@@ -1,0 +1,1 @@
+python demos/demo_v2d.py --model=models/nyu.ckpt --sequence=data/demos/nyu_2 --n_iters=1
