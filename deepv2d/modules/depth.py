@@ -10,17 +10,24 @@ from geometry.intrinsics import *
 from special_ops import operators
 
 def add_depth_summaries(gt, pr):
+    """添加深度信息
+
+    Args:
+        gt ([type]): [description]
+        pr ([type]): [description]
+    """
     gt = tf.reshape(gt, [-1])
     pr = tf.reshape(pr, [-1])
-
+    # 筛选出非0.1~10.0的数据
     v = tf.where((gt>0.1) & (gt<10.0))
+    # 获取筛选后的数据
     gt = tf.gather(gt, v)
     pr = tf.gather(pr, v)
 
     thresh = tf.maximum(gt / pr, pr / gt)
     delta = tf.reduce_mean(tf.to_float(thresh < 1.25))
     abs_rel = tf.reduce_mean(tf.abs(gt-pr) / gt)
-
+    # 存储数据
     with tf.device('/cpu:0'):
         tf.summary.scalar("a1", delta)
         tf.summary.scalar("rel", abs_rel)
@@ -28,6 +35,14 @@ def add_depth_summaries(gt, pr):
 
 class DepthNetwork(object):
     def __init__(self, cfg, schedule=None, is_training=True, reuse=False):
+        """
+        深度估计网络，初始化参数
+        Args:
+            cfg ([type]): 配置类对象
+            schedule ([type], optional): 训练进程调度器. Defaults to None.
+            is_training (bool, optional): 是否正在训练，主要用分别，训练和推理两个阶段. Defaults to True.
+            reuse (bool, optional): 是否重复. Defaults to False.
+        """
         self.cfg = cfg
         self.reuse = reuse
         self.is_training = is_training
@@ -49,21 +64,24 @@ class DepthNetwork(object):
     # 编码部分，主要用来获取图像的2d特征信息
     def encoder(self, inputs, reuse=False):
         """ 2D feature extractor """
-        # 在第5个通道上进行分离
+        # 在第5个通道上进行分离，获取数据
         batch, frames, ht, wd, _ = tf.unstack(tf.shape(inputs), num=5)
+        # 将其降低维度为4维 假设数据为1*5*640*480*3
         inputs = tf.reshape(inputs, [batch*frames, ht, wd, 3]) # 调整输入维度为图片数量*高*宽*3
 
-        with tf.variable_scope("encoder") as sc: 
-            with slim.arg_scope([slim.batch_norm], **self.batch_norm_params):
-                with slim.arg_scope([slim.conv2d],
+        with tf.variable_scope("encoder") as sc: #创建编码命名空间
+            with slim.arg_scope([slim.batch_norm], **self.batch_norm_params):# 保存所有BN层的参数
+                with slim.arg_scope([slim.conv2d], # 保存所有卷积层的参数
                                     weights_regularizer=slim.l2_regularizer(0.00005),
                                     normalizer_fn=None,
                                     activation_fn=None,
                                     reuse=reuse):
                     # 2d卷积网络 -- 这里可以拆成3个3*3的小网络，同时将输入图像betch更改为3
+
+                    # 数据进行卷积，32*7*7的卷积，步长为2，大小将变为32*1*5*320*240*3
                     net = slim.conv2d(inputs, 32, [7, 7], stride=2) # slim.conv2d = cov2d+relu
 
-                    net = res_conv2d(net, 32, 1) # 卷积
+                    net = res_conv2d(net, 32, 1) # 
                     net = res_conv2d(net, 32, 1)
                     net = res_conv2d(net, 32, 1)
                     net = res_conv2d(net, 64, 2)

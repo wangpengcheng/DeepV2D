@@ -1,5 +1,5 @@
-#if GOOGLE_CUDA
-
+//#if GOOGLE_CUDA
+#if 1
 #define EIGEN_USE_GPU
 
 #include <stdio.h>
