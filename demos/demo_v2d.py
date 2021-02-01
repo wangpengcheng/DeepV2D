@@ -121,8 +121,12 @@ def main(args):
                 temp_images = np.stack(temp_images, axis=0).astype(np.uint8)
                 temp_poses = np.stack(temp_poses, axis=0).astype(np.float32)
                 #print("pose",temp_poses[0])
+                time_start=time.time()
                 # 进行推理
                 depths = deepv2d.inference(temp_images,temp_poses,temp_intrinsics)
+                time_end=time.time()
+                print('time cost',time_end-time_start,'ms')
+                
                 key_frame_depth=depths[0]
                 key_frame_image = temp_images[int(frames_len/2)]
                 

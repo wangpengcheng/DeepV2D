@@ -414,7 +414,6 @@ class DeepV2D:
         self.poses,  intrinsics,  weights = self.sess.run(outputs, feed_dict=feed_dict) 
 
         if not self.cfg.MOTION.IS_CALIBRATED:
-            print("pose:",self.poses)
             print("intrinsics (fx, fy, cx, cy): ", self.intrinsics)
 
     def update_depths(self, itr=0):

@@ -31,7 +31,7 @@ def conv2d(x, dim, stride=1, bn=True):
 
     Args:
         x ([type]): 输入数据
-        dim ([type]): 维度，一般为卷积核数量，
+        dim ([type]): 维度，一般为卷积核数量，一般为输出维度
         stride (int, optional): 步长. Defaults to 1.
         bn (bool, optional): 是否使用BN层. Defaults to True.
 
@@ -71,13 +71,15 @@ def upnn3d(x, y, sc=2):
         x1 = x1[:, :hy, :wy]
 
     return x1
-# 进行向上分解
+# 进行向上分解，主要进行上采样
 def upnn2d(x, y, sc=2):
     dim = x.get_shape().as_list()[-1]
     bx, hx, wx, _ = tf.unstack(tf.shape(x), num=4)
     by, hy, wy, _ = tf.unstack(tf.shape(y), num=4)
 
-    x1 = tf.reshape(tf.tile(x, [1,1,sc,sc]), [bx, sc*hx, sc*wx, dim])
+    x1 = tf.reshape(
+        tf.tile(x, [1,1,sc,sc]), # 进行数据扩张，将 最后两个维度扩充sc倍，一般为原来的2倍
+        [bx, sc*hx, sc*wx, dim])
     if not (sc*hx==hy and sc*wx==wy):
         x1 = x1[:, :hy, :wy]
 

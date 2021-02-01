@@ -66,6 +66,9 @@ __C.STRUCTURE.MODE = 'avg'
 # number of stacked 3D hourglass modules to use
 __C.STRUCTURE.HG_COUNT = 2
 
+# number of stacked 2D hourglass modules to use
+__C.STRUCTURE.HG_2D_COUNT = 2
+
 __C.STRUCTURE.TRAIN = edict()
 # small smoothing loss over missing depth values
 __C.STRUCTURE.TRAIN.SMOOTH_W = 0.02

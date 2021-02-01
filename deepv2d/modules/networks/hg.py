@@ -5,21 +5,28 @@ slim = tf.contrib.slim
 from .layer_ops import *
     
 # 沙漏网络2d
+# 这里分为了两个分支网络，在两次卷积之后进入分支道路，进行卷积，主要应该是为了抗拒，尺度变换，估计抗模糊能力有限
 def hourglass_2d(x, n, dim, expand=64):
-    dim2 = dim + expand
+    
+    # 获取输出维度64+64
+    dim2 = dim + expand # 没迭代一次维度增加64
+    # 进行两次二维卷积 大小不变，维度变为64s
     x = x + conv2d(conv2d(x, dim), dim)
-
+    #进行池化,主要是为了抗拒过敏；输出大小变为原来的一半4*60*80*64
     pool1 = slim.max_pool2d(x, [2, 2], padding='SAME')
-
+    # 再进行卷积，大小不变维度变为128,生成low1 4*60*80*128
     low1 = conv2d(pool1, dim2)
+    # 重复进行卷积，
     if n>1:
-        low2 = hourglass_2d(low1, n-1, dim2)
+        low2 = hourglass_2d(low1, n-1, dim2) # 注意这里返回值和low相似，是x的一半
     else:
         low2 = conv2d(low1, dim2)
-
+    # 输出维度(h-2*n)(w-2*n)*128
+    # 再次进行卷积4*60*80*64
     low3 = conv2d(low2, dim)
-    up2 = upnn2d(low3, x)
-
+    # 对卷积结果进上采样，保持和x原来一样的维度,主要是对池化后的数据进行重新填充
+    up2 = upnn2d(low3, x) # 进行扩充，值为原来的一倍
+    # 将获取的其它维度的信息进行叠加，主要是缩放8之后的特征叠加
     out = up2 + x
     tf.add_to_collection("checkpoints", out)
 
