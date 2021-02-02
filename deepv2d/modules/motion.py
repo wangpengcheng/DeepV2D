@@ -53,7 +53,7 @@ class MotionNetwork:
 
         self.transform_history = [] # 转换历史
         self.coords_history = []    # x,y坐标历史
-        self.residual_history = []
+        self.residual_history = [] # 
         self.inds_history = []
         self.weights_history = []
         self.intrinsics_history = []
