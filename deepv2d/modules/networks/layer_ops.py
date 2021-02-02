@@ -44,10 +44,22 @@ def conv2d(x, dim, stride=1, bn=True):
         return slim.conv2d(tf.nn.relu(x), dim, [3, 3], stride=stride)
 # 2维度卷积，主要是 (BN层->relu->slim.conv2d)*2；数据的输出是slim.conv2d(x)+conv2d(x),保证
 def res_conv2d(x, dim, stride=1):
+    """resnet的卷积层：
+    
+    详细见: https://blog.csdn.net/sunny_yeah_/article/details/89430124
+    Args:
+        x ([type]): [description]
+        dim ([type]): [description]
+        stride (int, optional): [description]. Defaults to 1.
+
+    Returns:
+        [type]: [description]
+    """
     # 如果卷积步长为1则进行正常卷积
     if stride==1:
         y = conv2d(conv2d(x, dim), dim)
     else:
+        # 这里是resnet卷积
         # 注意卷积步长为2时，长宽缩小为原来的一般
         # 否则将卷积步长设置为2，
         y = conv2d(conv2d(x, dim), dim, stride=2)
