@@ -10,7 +10,9 @@ def hourglass_2d(x, n, dim, expand=64):
     
     # 获取输出维度64+64
     dim2 = dim + expand # 没迭代一次维度增加64
-    # 进行两次二维卷积 大小不变，维度变为64s
+    # 进行两次二维卷积 大小不变，维度变为64；注意这里的残差特性
+
+    # 第一级残差网络
     x = x + conv2d(conv2d(x, dim), dim)
     #进行池化,主要是为了抗拒过敏；输出大小变为原来的一半4*60*80*64
     pool1 = slim.max_pool2d(x, [2, 2], padding='SAME')
@@ -27,6 +29,7 @@ def hourglass_2d(x, n, dim, expand=64):
     # 对卷积结果进上采样，保持和x原来一样的维度,主要是对池化后的数据进行重新填充
     up2 = upnn2d(low3, x) # 进行扩充，值为原来的一倍
     # 将获取的其它维度的信息进行叠加，主要是缩放8之后的特征叠加
+    # 2级残差
     out = up2 + x
     tf.add_to_collection("checkpoints", out)
 
