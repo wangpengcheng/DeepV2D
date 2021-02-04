@@ -27,7 +27,7 @@ def conv3d(x, dim, stride=1, bn=True):
         return slim.conv3d(tf.nn.relu(x), dim, [3, 3, 3], stride=stride)
 # 二维卷积
 def conv2d(x, dim, stride=1, bn=True):
-    """[summary]
+    """二维卷积
 
     Args:
         x ([type]): 输入数据
@@ -42,6 +42,28 @@ def conv2d(x, dim, stride=1, bn=True):
         return slim.conv2d(bnrelu(x), dim, [3, 3], stride=stride) # 注意这里指定的卷积核的大小都是3*3的大小，可以将其转变为两个3*1
     else:
         return slim.conv2d(tf.nn.relu(x), dim, [3, 3], stride=stride)
+def conv2d_1x1(x, dim, stride=1, bn=True):
+    # https://blog.csdn.net/weixin_44695969/article/details/102997574
+    if bn:
+        return slim.conv2d(bnrelu(x), dim, [1, 1], stride=stride) # 注意这里指定的卷积核的大小都是3*3的大小，可以将其转变为两个3*1
+    else:
+        return slim.conv2d(tf.nn.relu(x), dim, [1, 1], stride=stride)
+
+def fast_res_conv2d(x,dim,stride=1):
+    if stride==1:
+        y = conv2d_1x1(x,dim)
+        y = conv2d(x,dim)
+        y = conv2d_1x1(x,dim)
+    else:
+        y = conv2d_1x1(x,dim, stride=2)
+        y = conv2d(x,dim, stride=2)
+        y = conv2d_1x1(x,dim, stride=2)
+        # 使用单核进行卷积，大小和原来一样 将x进行转变
+        x = slim.conv2d(x, dim, [1,1], stride=2)
+    out = x + y # 将卷积数据进行叠加
+    tf.add_to_collection("checkpoints", out) # 将数据放入集合参数
+    return out
+
 # 2维度卷积，主要是 (BN层->relu->slim.conv2d)*2；数据的输出是slim.conv2d(x)+conv2d(x),保证
 def res_conv2d(x, dim, stride=1):
     """resnet的卷积层：

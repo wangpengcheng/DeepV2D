@@ -18,8 +18,9 @@
             "args": [
                 "--cfg=cfgs/tum.yaml",
                 "--name=tmu_model",
-                "--dataset_dir=data/tum",
-                "--restore=checkpoints/tum/tmu_model/_stage_2.ckpt"
+                // "--restore=checkpoints/tum/tmu_model/_stage_2.ckpt",
+                "--dataset_dir=data/tum"
+                
             ],
             "console": "integratedTerminal"
         }

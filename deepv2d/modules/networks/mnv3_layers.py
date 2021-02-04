@@ -255,7 +255,7 @@ def squeeze_excitation_layer(input, out_dim, ratio, layer_name):
         # 均值池化
         squeeze = global_avg(input)
         # 全连接层
-        excitation = Fully_connected(squeeze, units=out_dim / ratio, layer_name=layer_name+'_excitation1')
+        excitation = Fully_connected(squeeze, units=out_dim/ratio, layer_name=layer_name+'_excitation1')
         # 激活层
         excitation = relu6(excitation)
         # 全连接层
@@ -271,7 +271,7 @@ def squeeze_excitation_layer(input, out_dim, ratio, layer_name):
 
 def mnv3_block(input, k_s, expansion_ratio, output_dim, stride, is_train, name, bias=True, shortcut=True, h_swish=False, ratio=16, se=False):
     """
-    mobilenet v3基础模块
+    mobilenet v3基础瓶颈模块
     Args:
         input ([type]): 输入数据
         k_s ([type]): 卷积核的大小
@@ -326,7 +326,7 @@ def mnv3_block(input, k_s, expansion_ratio, output_dim, stride, is_train, name, 
         if shortcut and stride == 1:
             # 进行添加工作
             in_dim = int(input.get_shape().as_list()[-1])
-            # 
+            # 获取网络维度
             net_dim = int(net.get_shape().as_list()[-1])
             if in_dim == net_dim:
                 net += input

@@ -82,36 +82,55 @@ class DepthNetwork(object):
                                     normalizer_fn=None,
                                     activation_fn=None,
                                     reuse=reuse):
-                    # input 4*480*640*3
-                    # 2d卷积网络 -- 这里可以拆成3个3*3的小网络，同时将输入图像betch更改为3
-                    # 数据进行卷积，32*7*7的卷积，步长为2，大小将变为4*240*320*32
-                    net = slim.conv2d(inputs, 32, [7, 7], stride=2) # slim.conv2d = cov2d+relu #1
-                    # 卷积操作变为 4*240*320*32
-                    net = res_conv2d(net, 32, 1) #2 
-                    # 4*240*320*32
-                    net = res_conv2d(net, 32, 1) #2 
-                    # 4*240*320*32
-                    net = res_conv2d(net, 32, 1) #2 
-                    # 4*120*160*64
-                    net = res_conv2d(net, 64, 2) #3 
-                    # 4*160*120*64
-                    net = res_conv2d(net, 64, 1) #2 
-                    # 4*160*120*64
-                    net = res_conv2d(net, 64, 1) #2 
-                    # 4*160*120*64
-                    net = res_conv2d(net, 64, 1) #2 
-                    # 16层conv
-                    for i in range(self.cfg.HG_2D_COUNT):
-                        with tf.variable_scope("2d_hg1_%d"%i):
-                            # 沙漏网络,4*120*160*128
-                            net = hg.hourglass_2d(net, 4, 64)
-                    # # 沙漏网络,4*120*160*128
-                    # net = hg.hourglass_2d(net, 4, 64) # 52
-                    # # 沙漏网络，4*140*160*64
-                    # net = hg.hourglass_2d(net, 4, 64) # 52
+                    
+                    if self.cfg.USE_FAST_RESNET :
+                        net = slim.conv2d(inputs, 32, [5, 5], stride=2)
+                        # 4*240*320*32
+                        net = fast_res_conv2d(net, 32, 1) #2 
+                        # 4*240*320*32
+                        net = fast_res_conv2d(net, 32, 1) #2 
+                        # 4*120*160*64
+                        net = fast_res_conv2d(net, 64, 2) #3 
+                        # 4*160*120*64
+                        net = fast_res_conv2d(net, 64, 1) #2 
+                        # 4*160*120*64
+                        net = fast_res_conv2d(net, 64, 1) #2 
+                        # 16层conv
+                        for i in range(self.cfg.HG_2D_COUNT):
+                            with tf.variable_scope("2d_hg1_%d"%i):
+                                # 沙漏网络,4*120*160*128
+                                net = hg.fast_hourglass_2d(net, 4, 64)
+                    else:
+                        # input 4*480*640*3
+                        # 2d卷积网络 -- 这里可以拆成3个3*3的小网络，同时将输入图像betch更改为3
+                        # 数据进行卷积，32*7*7的卷积，步长为2，大小将变为4*240*320*32
+                        net = slim.conv2d(inputs, 32, [7, 7], stride=2) # slim.conv2d = cov2d+relu #1
+                        # 卷积操作变为 4*240*320*32
+                        net = res_conv2d(net, 32, 1) #2 
+                        # 4*240*320*32
+                        net = res_conv2d(net, 32, 1) #2 
+                        # 4*240*320*32
+                        net = res_conv2d(net, 32, 1) #2 
+                        # 4*120*160*64
+                        net = res_conv2d(net, 64, 2) #3 
+                        # 4*160*120*64
+                        net = res_conv2d(net, 64, 1) #2 
+                        # 4*160*120*64
+                        net = res_conv2d(net, 64, 1) #2 
+                        # 4*160*120*64
+                        net = res_conv2d(net, 64, 1) #2 
+                        # 16层conv
+                        for i in range(self.cfg.HG_2D_COUNT):
+                            with tf.variable_scope("2d_hg1_%d"%i):
+                                # 沙漏网络,4*120*160*128
+                                net = hg.hourglass_2d(net, 4, 64)
+                        # # 沙漏网络,4*120*160*128
+                        # net = hg.hourglass_2d(net, 4, 64) # 52
+                        # # 沙漏网络，4*120*160*64
+                        # net = hg.hourglass_2d(net, 4, 64) # 52
 
-                    # 卷积网络 4*120*160*32
-                    embd = slim.conv2d(net, 32, [1, 1]) # 1
+                        # 卷积网络 4*120*160*32
+                        embd = slim.conv2d(net, 32, [1, 1]) # 1
         # 重新进行缩放 1*4*120*160*32
         embd = tf.reshape(embd, [batch, frames, ht//4, wd//4, 32])
         return embd
