@@ -178,7 +178,7 @@ class ScanNet:
             # then sample remaining 6 frames uniformly
             dt = imageid_2 - imageid_1
             s = 3
-
+            # 选取最近的6帧图像
             for i in [0, dt, -3*s, -2*s, -s, s, 2*s, 3*s]:
                 otherid = min(max(1, i+imageid_1), num_frames-1)
                 # 拼接图片名称

@@ -46,6 +46,9 @@ def pose_distance(G):
 
 
 class DeepV2D:
+    """
+    推理测试主要类
+    """
     def __init__(self, 
                  cfg,
                  ckpt, 
@@ -76,7 +79,7 @@ class DeepV2D:
         # 创建预定于变量
         self._create_placeholders()
         # 创建位姿估计网络
-        self._build_motion_graph()
+        #self._build_motion_graph()
         # 创建深度网络
         self._build_depth_graph()
         # 构建深度映射图
@@ -188,6 +191,9 @@ class DeepV2D:
             )
         # 更新深度图
         self.outputs['depths'] = depths
+        self.outputs['poses'] = tf.squeeze(Ts.matrix(), 0)
+        self.outputs['intrinsics'] = intrinsics[0]
+
     # 创建点云图
     def _build_point_cloud_graph(self):
         """Use poses and depth maps to create point cloud"""
@@ -361,7 +367,7 @@ class DeepV2D:
 
         else:
             if self.mode == 'keyframe':
-                images = np.stack([self.images[0]] * self.images.shape[0], axis=0) # 将第一张图片复制8次，构建临时空变量
+                images = np.stack([self.images[0]] * self.images.shape[0], axis=0) # 升级维度复制
                 poses = np.stack([np.eye(4)] * self.images.shape[0], axis=0) #复制8次单位矩阵
                 # 在这里进行初始赋值
                 feed_dict = {
@@ -404,14 +410,22 @@ class DeepV2D:
             self.init_placeholder: (itr==0),
             self.intrinsics_placeholder: self.intrinsics}
             
-        # execute pose subgraph
+        # execute pose subgraph，主要获取，姿势信息和相机参数
         outputs = [self.outputs['poses'], self.outputs['intrinsics'], self.outputs['weights']]
-        self.poses, self.intrinsics, self.weights = self.sess.run(outputs, feed_dict=feed_dict) # 在这里进行推理和训练
+        # 在这里进行推理和训练
+        #self.poses, self.intrinsics, self.weights = self.sess.run(outputs, feed_dict=feed_dict) 
+        self.poses,  intrinsics,  weights = self.sess.run(outputs, feed_dict=feed_dict) 
 
         if not self.cfg.MOTION.IS_CALIBRATED:
             print("intrinsics (fx, fy, cx, cy): ", self.intrinsics)
 
     def update_depths(self, itr=0):
+        """[summary]
+
+        Args:
+            itr (int, optional): [description]. Defaults to 0.
+        """
+        # 获取图像长度
         n = self.images.shape[0]
         inds_list = []
 
@@ -424,6 +438,7 @@ class DeepV2D:
             self.depths = self.sess.run(self.outputs['depths'], feed_dict=feed_dict)
 
         else:
+            # 进行迭代
             for i in range(n):
                 inds = np.arange(n).tolist()
                 inds.remove(i)
@@ -464,11 +479,11 @@ class DeepV2D:
         keyframe_depth = self.depths[0]
 
         image_depth = vis.create_image_depth_figure(keyframe_image, keyframe_depth)
-        cv2.imwrite('depth.png', image_depth[:, image_depth.shape[1]//2:])
-        cv2.imshow('image_depth', image_depth/255.0)
+        cv2.imwrite('depth.png', image_depth)
+        #cv2.imshow('image_depth', image_depth/255.0)
         
-        print("Press any key to cotinue")
-        cv2.waitKey()
+        # print("Press any key to cotinue")
+        #cv2.waitKey()
 
         # use depth map to create point cloud
         point_cloud, point_colors = self.sess.run(self.outputs['point_cloud'], feed_dict=feed_dict)
@@ -476,8 +491,22 @@ class DeepV2D:
         print("Press q to exit")
         vis.visualize_prediction(point_cloud, point_colors, self.poses)
 
-    # call基本函数
-    def __call__(self, images, intrinsics=None, iters=5, viz=False):
+    def inference(self, images, poses,intrinsics=None, iters=2, viz=False):
+        self.images = images
+        self.poses = poses
+        self.intrinsics = intrinsics
+        # 进行数据绑定
+        feed_dict = {
+                self.images_placeholder: self.images,
+                self.poses_placeholder: self.poses,
+                self.intrinsics_placeholder: self.intrinsics
+            }
+        # 开始执行推理
+        self.depths = self.sess.run(self.outputs['depths'], feed_dict=feed_dict)
+
+        return self.depths
+    # call基本函数,用来执行推理
+    def __call__(self, images, intrinsics=None, iters=2, viz=False):
         n_frames = len(images) # 8张图像
         self.images = np.stack(images, axis=0) # 将所有图片进行维度叠加
 
@@ -502,8 +531,8 @@ class DeepV2D:
         for i in range(iters):
             print("start iterator {}".format(i))
             time_start=time.time()
-            self.update_poses(i)    # 计算位姿
-            self.update_depths()
+            #self.update_poses(i)    # 计算位姿
+            self.update_depths()    # 计算深度
             time_end=time.time()
             print('time cost',time_end-time_start,'ms')
         if viz:

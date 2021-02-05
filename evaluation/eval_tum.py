@@ -12,12 +12,17 @@ import argparse
 import glob
 
 import vis
+
 from core import config
 from data_stream.tum import TUM_RGBD
 from deepv2d import DeepV2D
 
+
 import eval_utils
 
+
+gpu_no = '1' # or '1'
+os.environ["CUDA_VISIBLE_DEVICES"] = gpu_no
 
 def write_to_folder(images, intrinsics, test_id):
     dest = os.path.join("tum/%06d" % test_id)
@@ -36,8 +41,22 @@ def make_predictions(args):
 
     cfg = config.cfg_from_file(args.cfg)
     deepv2d = DeepV2D(cfg, args.model, use_fcrn=True, mode=args.mode)
+    # 进行初始化
+    # init_op = tf.group(tf.global_variables_initializer(),
+    #         tf.local_variables_initializer())
+
+    # 定义TensorFlow配置
+    my_config = tf.ConfigProto()
+    # 配置GPU内存分配方式，按需增长，很关键
+    my_config.gpu_options.allow_growth = True
+    # 配置可使用的显存比例，为所有显存的80%
+    my_config.gpu_options.per_process_gpu_memory_fraction = 0.5
+    # 在创建session的时候把config作为参数传进去
+    sess = tf.InteractiveSession(config = my_config)
+    
     # 开启运行
     with tf.Session() as sess:
+        #sess.run(init_op)
         # 设置session
         deepv2d.set_session(sess)
         # 设置预测模型

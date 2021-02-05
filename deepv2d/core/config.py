@@ -50,7 +50,7 @@ __C.TRAIN.LR_DECAY = 0.9
 __C.TRAIN.REGRESSOR_INIT = False
 __C.TRAIN.RENORM = True
 __C.TRAIN.CLIP_GRADS = True
-
+__C.TRAIN.USE_FAST_RESNET = True
 __C.TRAIN.DEPTH_WEIGHT = 1.0
 
 __C.STRUCTURE = edict()
@@ -66,11 +66,17 @@ __C.STRUCTURE.MODE = 'avg'
 # number of stacked 3D hourglass modules to use
 __C.STRUCTURE.HG_COUNT = 2
 
+# number of stacked 2D hourglass modules to use
+__C.STRUCTURE.HG_2D_COUNT = 2
+
+__C.STRUCTURE.USE_FAST_RESNET = True # 是否使用快速卷积
+
 __C.STRUCTURE.TRAIN = edict()
 # small smoothing loss over missing depth values
 __C.STRUCTURE.TRAIN.SMOOTH_W = 0.02
 
 __C.MOTION = edict()
+__C.MOTION.USE_MOTION = True # 是否使用相机位姿估计网络
 # stack frames when estimating camera motion
 __C.MOTION.STACK_FRAMES = False
 
