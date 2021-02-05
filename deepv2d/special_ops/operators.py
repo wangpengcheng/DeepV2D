@@ -102,6 +102,7 @@ def backproject_avg(Ts, depths, intrinsics, fmaps, adj_list=None):
         coords2 = tf.transpose(coords2, [0, 1, 3, 4, 2, 5])
         # 对应fmap,的坐标点上，进行双阶线性采样；获取比较准确的坐标样本，作为图像特征值
         fvol1 = bilinear_sampler(fmap1, coords1, batch_dims=2)
+        # 双阶段线性采样
         fvol2 = bilinear_sampler(fmap2, coords2, batch_dims=2)
         # 计算特征值
         volume = tf.concat([fvol1, fvol2], axis=-1)

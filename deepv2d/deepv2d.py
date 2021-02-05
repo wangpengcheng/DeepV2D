@@ -79,7 +79,7 @@ class DeepV2D:
         # 创建预定于变量
         self._create_placeholders()
         # 创建位姿估计网络
-        self._build_motion_graph()
+        #self._build_motion_graph()
         # 创建深度网络
         self._build_depth_graph()
         # 构建深度映射图
@@ -191,6 +191,9 @@ class DeepV2D:
             )
         # 更新深度图
         self.outputs['depths'] = depths
+        self.outputs['poses'] = tf.squeeze(Ts.matrix(), 0)
+        self.outputs['intrinsics'] = intrinsics[0]
+
     # 创建点云图
     def _build_point_cloud_graph(self):
         """Use poses and depth maps to create point cloud"""
@@ -528,7 +531,7 @@ class DeepV2D:
         for i in range(iters):
             print("start iterator {}".format(i))
             time_start=time.time()
-            self.update_poses(i)    # 计算位姿
+            #self.update_poses(i)    # 计算位姿
             self.update_depths()    # 计算深度
             time_end=time.time()
             print('time cost',time_end-time_start,'ms')

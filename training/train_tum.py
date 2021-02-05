@@ -14,10 +14,14 @@ import argparse
 from core import config
 from trainer import DeepV2DTrainer
 
+
 from data_stream.tum import TUM_RGBD
 
 def main(args):
+    os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
+    gpu_no = '1' # or '1'
+    os.environ["CUDA_VISIBLE_DEVICES"] = gpu_no
     cfg = config.cfg_from_file(args.cfg)
     # 
     log_dir = os.path.join('logs/tum', args.name)

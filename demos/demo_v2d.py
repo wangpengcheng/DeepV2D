@@ -18,6 +18,10 @@ from deepv2d import vis
 from core import config
 from deepv2d import DeepV2D
 
+
+gpu_no = '1' # or '1'
+os.environ["CUDA_VISIBLE_DEVICES"] = gpu_no
+
 fx = 517.3
 fy = 516.5
 cx = 318.6
@@ -93,8 +97,19 @@ def main(args):
     #build the DeepV2D graph
     # 构建深度推理图
     deepv2d = DeepV2D(cfg, args.model, use_fcrn=args.fcrn, is_calibrated=is_calibrated, mode=args.mode)
+    
+    # 定义TensorFlow配置
+    config = tf.ConfigProto()
+    # 配置GPU内存分配方式，按需增长，很关键
+    config.gpu_options.allow_growth = True
+    # 配置可使用的显存比例，为所有显存的80%
+    config.gpu_options.per_process_gpu_memory_fraction = 0.5
+    # 在创建session的时候把config作为参数传进去
+    sess = tf.InteractiveSession(config = config)
 
     with tf.Session() as sess:
+
+
         deepv2d.set_session(sess)
         summary_writer = tf.summary.FileWriter('./log/', sess.graph)
         #加载图像和相机位姿初始值
