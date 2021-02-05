@@ -70,7 +70,7 @@ if __name__ == '__main__':
     parser.add_argument('--cfg', default='cfgs/tum.yaml', help='path to yaml config file')
     parser.add_argument('--restore', help='checkpoint to restore')
     parser.add_argument('--num_gpus', type=int, default=1, help='number of gpus to use for training')
-    parser.add_argument('--r', type=int, default=4, help='frame radius') # 帧半径
+    parser.add_argument('--r', type=int, default=2, help='frame radius') # 帧半径
     args = parser.parse_args()
 
     main(args)

@@ -125,7 +125,7 @@ def pose_vec2mat(pvec, use_filler=True):
 class TUM_RGBD:
     """主要用来进行数据的加载与查找
     """
-    def __init__(self, dataset_path, test=False, n_frames=4, r=6):
+    def __init__(self, dataset_path, test=False, n_frames=5, r=2):
         self.dataset_path = dataset_path
         self.n_frames = n_frames
         self.height = 480
@@ -149,11 +149,12 @@ class TUM_RGBD:
         frameid = data_blob['id']
         
         keyframe_index = num_frames // 2 # 选取中间帧作为关键帧
-
+        # 创建关键帧
         inds = np.arange(num_frames)
         inds = inds[~np.equal(inds, keyframe_index)]
         
         inds = np.random.choice(inds, num_samples, replace=False)
+        # 将关键帧提取到开头
         inds = [keyframe_index] + inds.tolist()
         # 读取图像
         images = []
