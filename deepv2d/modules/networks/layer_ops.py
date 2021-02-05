@@ -25,6 +25,13 @@ def conv3d(x, dim, stride=1, bn=True):
         return slim.conv3d(bnrelu(x), dim, [3, 3, 3], stride=stride)
     else:
         return slim.conv3d(tf.nn.relu(x), dim, [3, 3, 3], stride=stride)
+
+def conv3d_1x1(x, dim, stride=1, bn=True):
+    if bn:
+        return slim.conv3d(bnrelu(x), dim, [1, 1, 1], stride=stride)
+    else:
+        return slim.conv3d(tf.nn.relu(x), dim, [1, 1, 1], stride=stride)
+
 # 二维卷积
 def conv2d(x, dim, stride=1, bn=True):
     """二维卷积
