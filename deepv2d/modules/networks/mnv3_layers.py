@@ -294,7 +294,7 @@ def mnv3_block(input, k_s, expansion_ratio, output_dim, stride, is_train, name, 
         bottleneck_dim = expansion_ratio#round(expansion_ratio*input.get_shape().as_list()[-1])
         print(bottleneck_dim)
         # 1x1卷积调整通道数，通道数上升
-        net = conv_1x1(input, bottleneck_dim, name='pw', bias=bias)
+        net = conv_1x1(input, bottleneck_dim, name='pw', bias=bias) # 1 1*1
         # norm 标准层
         net = batch_norm(net, train=is_train, name='pw_bn')
         if h_swish:
@@ -302,9 +302,9 @@ def mnv3_block(input, k_s, expansion_ratio, output_dim, stride, is_train, name, 
         else:
             net = relu6(net)
         # 深度可分离卷积
-        net = dwise_conv(net, k_w=k_s, k_h=k_s, strides=[1, stride, stride, 1], name='dw', bias=bias)
+        net = dwise_conv(net, k_w=k_s, k_h=k_s, strides=[1, stride, stride, 1], name='dw', bias=bias) # 2 
         # batch_norm 标准层
-        net = batch_norm(net, train=is_train, name='dw_bn')
+        net = batch_norm(net, train=is_train, name='dw_bn') 
         # 是否使用高质量卷积
         if h_swish:
             net = hard_swish(net)
@@ -315,11 +315,11 @@ def mnv3_block(input, k_s, expansion_ratio, output_dim, stride, is_train, name, 
             # 获取通道数目
             channel = int(np.shape(net)[-1])
             # 注意力机制网络层
-            net = squeeze_excitation_layer(net,out_dim=channel, ratio=ratio, layer_name='se_block')
+            net = squeeze_excitation_layer(net,out_dim=channel, ratio=ratio, layer_name='se_block') # 2
 
         # pw & linear
         # 1x1卷积提升通道数目
-        net = conv_1x1(net, output_dim, name='pw_linear', bias=bias)
+        net = conv_1x1(net, output_dim, name='pw_linear', bias=bias) #3
         net = batch_norm(net, train=is_train, name='pw_linear_bn')
 
         # element wise add, only for stride==1

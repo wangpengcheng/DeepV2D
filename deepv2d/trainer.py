@@ -356,8 +356,8 @@ class DeepV2DTrainer(object):
                 self.dl.init(sess)
 
             kwargs = {}
-            # 训练阶段大于2，两次训练都结束
-            if stage >= 2:
+            # 训练阶段大于2，两次训练都结束,保存姿态网络数据
+            if stage >= 2 and cfg.MOTION.USE_MOTION:
                 # 位姿估计的所有变量
                 motion_vars = tf.get_collection(tf.GraphKeys.MODEL_VARIABLES, scope="motion")
                 # 创建存储

@@ -74,6 +74,7 @@ def fast_hourglass_2d(x, n, dim, expand=64):
     # 2级残差
     out = up2 + x
     tf.add_to_collection("checkpoints", out)
+    return out
 
 
 # 3d 沙漏网络

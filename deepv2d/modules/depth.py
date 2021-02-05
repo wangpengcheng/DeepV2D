@@ -100,6 +100,8 @@ class DepthNetwork(object):
                             with tf.variable_scope("2d_hg1_%d"%i):
                                 # 沙漏网络,4*120*160*128
                                 net = hg.fast_hourglass_2d(net, 4, 64)
+                        # 卷积网络 4*120*160*32
+                        embd = slim.conv2d(net, 32, [1, 1]) # 1
                     else:
                         # input 4*480*640*3
                         # 2d卷积网络 -- 这里可以拆成3个3*3的小网络，同时将输入图像betch更改为3
