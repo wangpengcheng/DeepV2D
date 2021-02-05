@@ -275,24 +275,24 @@ def mnv3_block(input, k_s, expansion_ratio, output_dim, stride, is_train, name, 
     Args:
         input ([type]): 输入数据
         k_s ([type]): 卷积核的大小
-        expansion_ratio ([type]): 扩展率
+        expansion_ratio ([type]): 扩展大小，主要进行通道扩展
         output_dim ([type]): 输出维度
-        stride ([type]): 
+        stride ([type]): 步长
         is_train (bool): 是否训练
         name ([type]): 名称
         bias (bool, optional): 是否使用添加. Defaults to True.
         shortcut (bool, optional): [description]. Defaults to True.
         h_swish (bool, optional): [description]. Defaults to False.
         ratio (int, optional): [description]. Defaults to 16.
-        se (bool, optional): [description]. Defaults to False.
+        se (bool, optional): 是否使用注意力机制. Defaults to False.
 
     Returns:
         [type]: [description]
     """
     with tf.name_scope(name), tf.variable_scope(name):
         # pw
-        bottleneck_dim = expansion_ratio#round(expansion_ratio*input.get_shape().as_list()[-1])
-        print(bottleneck_dim)
+        bottleneck_dim = expansion_ratio #round(expansion_ratio*input.get_shape().as_list()[-1])
+
         # 1x1卷积调整通道数，通道数上升
         net = conv_1x1(input, bottleneck_dim, name='pw', bias=bias) # 1 1*1
         # norm 标准层

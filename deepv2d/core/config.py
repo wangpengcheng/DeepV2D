@@ -50,7 +50,6 @@ __C.TRAIN.LR_DECAY = 0.9
 __C.TRAIN.REGRESSOR_INIT = False
 __C.TRAIN.RENORM = True
 __C.TRAIN.CLIP_GRADS = True
-__C.TRAIN.USE_FAST_RESNET = True
 __C.TRAIN.DEPTH_WEIGHT = 1.0
 
 __C.STRUCTURE = edict()
@@ -62,6 +61,11 @@ __C.STRUCTURE.RESCALE_IMAGES = False
 
 # type of view aggregation to use (either 'avg' or 'concat')
 __C.STRUCTURE.MODE = 'avg'
+
+# 改进模型的类型，现在有:resnet fast_resnet、mobilenet
+__C.STRUCTURE.ENCODER_MODE = 'resnet'
+# 编码改进模型
+__C.STRUCTURE.ENCODER_MODE = 'resnet'
 
 # number of stacked 3D hourglass modules to use
 __C.STRUCTURE.HG_COUNT = 2

@@ -4,7 +4,8 @@ slim = tf.contrib.slim
 
 from .networks import hg
 from .networks.layer_ops import *
-
+# 导入mobile net模块
+from .networks.mnv3_layers import *
 from geometry.transformation import *
 from geometry.intrinsics import *
 from special_ops import operators
@@ -52,7 +53,7 @@ class DepthNetwork(object):
         self.reuse = reuse
         self.is_training = is_training
         self.schedule = schedule
-
+        self.spreds = []
         self.summaries = {}
         # 在这里进行深度的初始化，主要是依靠线性插值
         self.depths = tf.lin_space(cfg.MIN_DEPTH, cfg.MAX_DEPTH, cfg.COST_VOLUME_DEPTH)
@@ -67,8 +68,8 @@ class DepthNetwork(object):
           'is_training': self.is_training,
         }
 
-    # 编码部分，主要用来获取图像的2d特征信息
-    def encoder(self, inputs, reuse=False):
+                
+    def resnet_encoder(self, inputs, reuse=False):
         """ 2D feature extractor """
         # 在第5个通道上进行分离，获取数据
         batch, frames, ht, wd, _ = tf.unstack(tf.shape(inputs), num=5)
@@ -83,30 +84,114 @@ class DepthNetwork(object):
                                     activation_fn=None,
                                     reuse=reuse):
                     
-                    if self.cfg.USE_FAST_RESNET :
-                        net = slim.conv2d(inputs, 32, [5, 5], stride=2)
+                        # input 4*480*640*3
+                        # 2d卷积网络 -- 这里可以拆成3个3*3的小网络，同时将输入图像betch更改为3
+                        # 数据进行卷积，32*7*7的卷积，步长为2，大小将变为4*240*320*32
+                        net = slim.conv2d(inputs, 32, [7, 7], stride=2)# slim.conv2d = cov2d+relu #1
+                        # 卷积操作变为 4*240*320*32
+                        net = res_conv2d(net, 32, 1) #2 
                         # 4*240*320*32
-                        net = fast_res_conv2d(net, 32, 1) #2 
+                        net = res_conv2d(net, 32, 1) #2 
                         # 4*240*320*32
-                        net = fast_res_conv2d(net, 32, 1) #2 
+                        net = res_conv2d(net, 32, 1) #2 
                         # 4*120*160*64
-                        net = fast_res_conv2d(net, 64, 2) #3 
+                        net = res_conv2d(net, 64, 2) #3 
                         # 4*160*120*64
-                        net = fast_res_conv2d(net, 64, 1) #2 
+                        net = res_conv2d(net, 64, 1) #2 
                         # 4*160*120*64
-                        net = fast_res_conv2d(net, 64, 1) #2 
+                        net = res_conv2d(net, 64, 1) #2 
+                        # 4*160*120*64
+                        net = res_conv2d(net, 64, 1) #2 
                         # 16层conv
                         for i in range(self.cfg.HG_2D_COUNT):
                             with tf.variable_scope("2d_hg1_%d"%i):
                                 # 沙漏网络,4*120*160*128
-                                net = hg.fast_hourglass_2d(net, 4, 64)
+                                net = hg.hourglass_2d(net, 4, 64)
+                        # # 沙漏网络,4*120*160*128
+                        # net = hg.hourglass_2d(net, 4, 64) # 52
+                        # # 沙漏网络，4*120*160*64
+                        # net = hg.hourglass_2d(net, 4, 64) # 52
+
                         # 卷积网络 4*120*160*32
                         embd = slim.conv2d(net, 32, [1, 1]) # 1
-                    else:
+        # 重新进行缩放 1*4*120*160*32
+        embd = tf.reshape(embd, [batch, frames, ht//4, wd//4, 32])
+        return embd
+    
+    def fast_resnet_coder(self, inputs, reuse=False):
+        """
+        使用1+3+1 的resnet卷积基本单元，每层网络深度加深1层，计算量减少一半左右
+        Args:
+            inputs ([type]): [description]
+            reuse (bool, optional): [description]. Defaults to False.
+
+        Returns:
+            [type]: [description]
+        """
+        """ 2D feature extractor """
+        # 在第5个通道上进行分离，获取数据
+        batch, frames, ht, wd, _ = tf.unstack(tf.shape(inputs), num=5)
+        # 将其降低维度为4维 假设数据为1*4*480*640*3->4*480*640*3
+        inputs = tf.reshape(inputs, [batch*frames, ht, wd, 3]) # 调整输入维度为图片数量*高*宽*3
+        with tf.variable_scope("encoder") as sc: #创建编码命名空间
+            with slim.arg_scope([slim.batch_norm], **self.batch_norm_params):# 保存所有BN层的参数
+                with slim.arg_scope([slim.conv2d], # 保存所有卷积层的参数
+                                    weights_regularizer=slim.l2_regularizer(0.00005),
+                                    normalizer_fn=None,
+                                    activation_fn=None,
+                                    reuse=reuse):
+                    # 这里将7*7卷积换成三个3*3卷积
+                    net = conv2d(inputs, 32, stride=2)
+                    net = conv2d(inputs, 32, stride=1)
+                    net = conv2d(inputs, 32, stride=1)
+                    # 4*240*320*32
+                    net = fast_res_conv2d(net, 32, 1) #2 
+                    # 4*240*320*32
+                    net = fast_res_conv2d(net, 32, 1) #2 
+                    # 4*120*160*64
+                    net = fast_res_conv2d(net, 64, 2) #3 
+                    # 4*160*120*64
+                    net = fast_res_conv2d(net, 64, 1) #2 
+                    # 4*160*120*64
+                    net = fast_res_conv2d(net, 64, 1) #2 
+                    # 16层conv
+                    for i in range(self.cfg.HG_2D_COUNT):
+                        with tf.variable_scope("2d_hg1_%d"%i):
+                            # 这里使用改进的快速2d沙漏网络
+                            net = hg.fast_res_hourglass_2d(net, 4, 64)
+                    # 卷积网络 4*120*160*32
+                    embd = slim.conv2d(net, 32, [1, 1]) # 1
+        # 重新进行缩放 1*4*120*160*32
+        embd = tf.reshape(embd, [batch, frames, ht//4, wd//4, 32])
+        return embd
+    def mobilenet_encoder(self, inputs, reuse=False):
+        """
+        mobilenet 基本编码单元
+        Args:
+            inputs ([type]): [description]
+            reuse (bool, optional): [description]. Defaults to False.
+
+        Returns:
+            [type]: [description]
+        """
+        """ 2D feature extractor """
+        # 在第5个通道上进行分离，获取数据
+        batch, frames, ht, wd, _ = tf.unstack(tf.shape(inputs), num=5)
+        # 将其降低维度为4维 假设数据为1*4*480*640*3->4*480*640*3
+        inputs = tf.reshape(inputs, [batch*frames, ht, wd, 3]) # 调整输入维度为图片数量*高*宽*3
+
+        with tf.variable_scope("encoder") as sc: #创建编码命名空间
+            with slim.arg_scope([slim.batch_norm], **self.batch_norm_params):# 保存所有BN层的参数
+                with slim.arg_scope([slim.conv2d], # 保存所有卷积层的参数
+                                    weights_regularizer=slim.l2_regularizer(0.00005),
+                                    normalizer_fn=None,
+                                    activation_fn=None,
+                                    reuse=reuse):
+                    
                         # input 4*480*640*3
-                        # 2d卷积网络 -- 这里可以拆成3个3*3的小网络，同时将输入图像betch更改为3
-                        # 数据进行卷积，32*7*7的卷积，步长为2，大小将变为4*240*320*32
-                        net = slim.conv2d(inputs, 32, [7, 7], stride=2) # slim.conv2d = cov2d+relu #1
+                        # 输入特征提取，尺度缩放为一半
+                        net = conv2d_block(inputs, 16, 3, 2, is_train, name='conv1_1',h_swish=True)  # size/2
+
                         # 卷积操作变为 4*240*320*32
                         net = res_conv2d(net, 32, 1) #2 
                         # 4*240*320*32
@@ -137,6 +222,80 @@ class DepthNetwork(object):
         embd = tf.reshape(embd, [batch, frames, ht//4, wd//4, 32])
         return embd
 
+
+    # 编码部分，主要用来获取图像的2d特征信息
+    def encoder(self, inputs, reuse=False):
+        """
+        编码器，根据配置文件执行对应的编码操作
+        Args:
+            inputs ([type]): 输入数据
+            reuse (bool, optional): [description]. Defaults to False.
+
+        Returns:
+            [type]: [description]
+        """
+        if self.cfg.ENCODER_MODE == 'resnet':
+            return self.resnet_encoder(inputs, reuse)
+        elif self.cfg.ENCODER_MODE == 'fast_resnet':
+            return self.fast_resnet_encoder(inputs, reuse)
+        elif self.cfg.ENCODER_MODE == 'mobilenet':
+            return self.mobilenet_encoder(inputs, reuse)
+        else:
+            print("cfg.FAST_MODE is error value:{}".format(self.cfg.FAST_MODE)) 
+
+    def resnet_decoder(self, volume):
+         """
+        后端解码模块
+        Args:
+            volume ([type]): decoder 主要特征部分
+        """
+        
+        with slim.arg_scope([slim.batch_norm], **self.batch_norm_params):
+            with slim.arg_scope([slim.conv3d],
+                                weights_regularizer=slim.l2_regularizer(0.00005),
+                                normalizer_fn=None,
+                                activation_fn=None):
+                # 获取数据维度batch ,frams,w,h,dim,6
+                dim = tf.shape(volume)
+                    # 将其维度进行强制转换 3*120*160*32*64
+                volume = tf.reshape(volume, [dim[0]*dim[1], dim[2], dim[3], dim[4], 64])
+                    # 进行三维特征卷积，卷积核大小为
+                x = slim.conv3d(volume, 32, [1, 1, 1])
+                    # 添加变量
+                tf.add_to_collection("checkpoints", x)
+
+                # multi-view convolution
+                # 多视角卷积
+                x = tf.add(x, conv3d(conv3d(x, 32), 32))
+                # 重新整理输出为32维度
+                x = tf.reshape(x, [dim[0], dim[1], dim[2], dim[3], dim[4], 32])
+                # 沿着frame方向对所有帧求取平均值,1*120*160*32*32
+                x = tf.reduce_mean(x, axis=1)
+                tf.add_to_collection("checkpoints", x)
+                self.pred_logits = []
+                # 3维度特征金字塔提取
+                for i in range(self.cfg.HG_COUNT):
+                    with tf.variable_scope("hg1_%d"%i):
+                        # 3d沙漏卷积，进行特征卷积，1*120*160*32*32
+                        x = hg.hourglass_3d(x, 4, 32)
+                        # 将金字塔的结果进行输入
+                        self.pred_logits.append(self.stereo_head(x))
+            
+    def decoder(self, volume):
+        """
+        后端解码模块
+        Args:
+            volume ([type]): decoder 主要特征部分
+        """
+        if self.cfg.DECODER_MODE == 'resnet':
+            return self.resnet_decoder(inputs, reuse)
+        elif self.cfg.DECODER_MODE == 'fast_resnet':
+            return self.fast_resnet_decoder(inputs, reuse)
+        elif self.cfg.DECODER_MODE == 'mobilenet':
+            return self.mobilenet_decoder(inputs, reuse)
+        else:
+            print("cfg.FAST_MODE is error value:{}".format(self.cfg.FAST_MODE)) 
+
     def stereo_head(self, x):
         """ Predict probability volume from hg features hg 的特征概率"""
         x = bnrelu(x)
@@ -157,6 +316,7 @@ class DepthNetwork(object):
         # 计算特征概率合并图，1*480*640*32
         pred = tf.reduce_sum(self.depths*prob_volume, axis= -1) # 对概率深度进行求和
         return pred # 返回深度估计值
+
     # 匹配网络avg方式下降
     def stereo_network_avg(self, 
         Ts, 
@@ -182,40 +342,9 @@ class DepthNetwork(object):
             fmaps = self.encoder(images)
             # 反投影，获取对应坐标对上的反向投影插值
             volume = operators.backproject_avg(Ts, depths, intrinsics, fmaps, adj_list)
-
-            self.spreds = []
-            with slim.arg_scope([slim.batch_norm], **self.batch_norm_params):
-                with slim.arg_scope([slim.conv3d],
-                                    weights_regularizer=slim.l2_regularizer(0.00005),
-                                    normalizer_fn=None,
-                                    activation_fn=None):
-                    # 获取数据维度batch ,frams,w,h,dim,6
-                    dim = tf.shape(volume)
-                    # 将其维度进行强制转换 3*120*160*32*64
-                    volume = tf.reshape(volume, [dim[0]*dim[1], dim[2], dim[3], dim[4], 64])
-                    # 进行三维特征卷积，卷积核大小为
-                    x = slim.conv3d(volume, 32, [1, 1, 1])
-                    # 添加变量
-                    tf.add_to_collection("checkpoints", x)
-
-                    # multi-view convolution
-                    # 多视角卷积
-                    x = tf.add(x, conv3d(conv3d(x, 32), 32))
-                    # 重新整理输出为32维度
-                    x = tf.reshape(x, [dim[0], dim[1], dim[2], dim[3], dim[4], 32])
-                    # 沿着frame方向对所有帧求取平均值,1*120*160*32*32
-                    x = tf.reduce_mean(x, axis=1)
-                    tf.add_to_collection("checkpoints", x)
-
-                    self.pred_logits = []
-                    # 3维度特征金字塔提取
-                    for i in range(self.cfg.HG_COUNT):
-                        with tf.variable_scope("hg1_%d"%i):
-                            # 3d沙漏卷积，进行特征卷积，1*120*160*32*32
-                            x = hg.hourglass_3d(x, 4, 32)
-                            # 将金字塔的结果进行输入
-                            self.pred_logits.append(self.stereo_head(x))
-
+            # 进行编码模块
+            self.decoder(volume)
+        # 返回最终产生的结果
         return self.soft_argmax(self.pred_logits[-1])
 
     def stereo_network_cat(self, Ts, images, intrinsics):
@@ -240,7 +369,6 @@ class DepthNetwork(object):
 
                     x = slim.conv3d(volume, 48, [3, 3, 3])
                     x = tf.add(x, conv3d(conv3d(x, 48), 48))
-
                     self.pred_logits = []
                     for i in range(self.cfg.HG_COUNT):
                         with tf.variable_scope("hg1_%d"%i):

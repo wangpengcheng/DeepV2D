@@ -35,9 +35,9 @@ def hourglass_2d(x, n, dim, expand=64):
 
     return out
 
-def fast_hourglass_2d(x, n, dim, expand=64):
+def fast_res_hourglass_2d(x, n, dim, expand=64):
     """
-    快速沙漏网络
+    快速沙漏网络，去除了一个映射通道
     Args:
         x ([type]): [description]
         n ([type]): [description]
