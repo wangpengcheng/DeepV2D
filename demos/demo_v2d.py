@@ -19,7 +19,7 @@ from core import config
 from deepv2d import DeepV2D
 
 
-gpu_no = '1' # or '1'
+gpu_no = '0' # or '1'
 os.environ["CUDA_VISIBLE_DEVICES"] = gpu_no
 
 fx = 517.3
@@ -99,16 +99,15 @@ def main(args):
     deepv2d = DeepV2D(cfg, args.model, use_fcrn=args.fcrn, is_calibrated=is_calibrated, mode=args.mode)
     
     # 定义TensorFlow配置
-    config = tf.ConfigProto()
+    my_config = tf.ConfigProto()
     # 配置GPU内存分配方式，按需增长，很关键
-    config.gpu_options.allow_growth = True
+    my_config.gpu_options.allow_growth = True
     # 配置可使用的显存比例，为所有显存的80%
-    config.gpu_options.per_process_gpu_memory_fraction = 0.5
+    my_config.gpu_options.per_process_gpu_memory_fraction = 0.5
     # 在创建session的时候把config作为参数传进去
-    sess = tf.InteractiveSession(config = config)
+    sess = tf.InteractiveSession(config = my_config)
 
     with tf.Session() as sess:
-
 
         deepv2d.set_session(sess)
         summary_writer = tf.summary.FileWriter('./log/', sess.graph)
@@ -125,7 +124,6 @@ def main(args):
         # 根据相机是否标定，来执行函数
         if is_pose:
             images ,poses,intrinsics = load_sorted_test_sequence(args.sequence,args.inference_file_name)
-            print(poses)
             # 根据数据进行迭代，根据前面n帧的内容，推断最后帧的内容,注意这里推理的是中间关键帧的内容
             iter_number = int(len(images)/frames_len)
             # 遍历进行

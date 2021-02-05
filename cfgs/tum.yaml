@@ -16,7 +16,7 @@ MOTION:
     DELTA: [0.02, 0.02, 0.02, 0.02, 0.02, 0.02]
 STRUCTURE:
   MODE: avg
-  ENCODER_MODE: resnet # resnet fast_resnet mobilenet
+  ENCODER_MODE: fast_resnet # resnet fast_resnet mobilenet
   DECODER_MODE: resnet # resnet fast_resnet mobilenet
   MAX_DEPTH: 10.0
   MIN_DEPTH: 0.2

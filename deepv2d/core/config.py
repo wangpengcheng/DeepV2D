@@ -65,7 +65,7 @@ __C.STRUCTURE.MODE = 'avg'
 # 改进模型的类型，现在有:resnet fast_resnet、mobilenet
 __C.STRUCTURE.ENCODER_MODE = 'resnet'
 # 编码改进模型
-__C.STRUCTURE.ENCODER_MODE = 'resnet'
+__C.STRUCTURE.DECODER_MODE = 'resnet'
 
 # number of stacked 3D hourglass modules to use
 __C.STRUCTURE.HG_COUNT = 2

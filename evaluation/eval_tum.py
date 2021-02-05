@@ -21,7 +21,7 @@ from deepv2d import DeepV2D
 import eval_utils
 
 
-gpu_no = '1' # or '1'
+gpu_no = '0' # or '1'
 os.environ["CUDA_VISIBLE_DEVICES"] = gpu_no
 
 def write_to_folder(images, intrinsics, test_id):

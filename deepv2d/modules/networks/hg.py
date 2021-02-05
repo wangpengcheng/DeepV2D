@@ -61,7 +61,7 @@ def fast_res_hourglass_2d(x, n, dim, expand=64):
     low1 = conv2d(pool1, dim2)
     # 重复进行卷积，
     if n>1:
-        low2 = fast_hourglass_2d(low1, n-1, dim2) # 注意这里返回值和low相似，是x的一半
+        low2 = fast_res_hourglass_2d(low1, n-1, dim2) # 注意这里返回值和low相似，是x的一半
     else:
         low2 = conv2d(low1, dim2)
 

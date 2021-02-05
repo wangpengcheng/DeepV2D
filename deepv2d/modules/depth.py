@@ -118,7 +118,7 @@ class DepthNetwork(object):
         embd = tf.reshape(embd, [batch, frames, ht//4, wd//4, 32])
         return embd
     
-    def fast_resnet_coder(self, inputs, reuse=False):
+    def fast_resnet_encoder(self, inputs, reuse=False):
         """
         使用1+3+1 的resnet卷积基本单元，每层网络深度加深1层，计算量减少一半左右
         Args:
@@ -140,10 +140,9 @@ class DepthNetwork(object):
                                     normalizer_fn=None,
                                     activation_fn=None,
                                     reuse=reuse):
-                    # 这里将7*7卷积换成三个3*3卷积
+                    # 这里将7*7卷积换成2个3*3卷积
                     net = conv2d(inputs, 32, stride=2)
-                    net = conv2d(inputs, 32, stride=1)
-                    net = conv2d(inputs, 32, stride=1)
+                    net = conv2d(inputs, 32, stride=2)
                     # 4*240*320*32
                     net = fast_res_conv2d(net, 32, 1) #2 
                     # 4*240*320*32
@@ -158,12 +157,13 @@ class DepthNetwork(object):
                     for i in range(self.cfg.HG_2D_COUNT):
                         with tf.variable_scope("2d_hg1_%d"%i):
                             # 这里使用改进的快速2d沙漏网络
-                            net = hg.fast_res_hourglass_2d(net, 4, 64)
+                            net = hg.fast_res_hourglass_2d(net, 3, 64)
                     # 卷积网络 4*120*160*32
                     embd = slim.conv2d(net, 32, [1, 1]) # 1
         # 重新进行缩放 1*4*120*160*32
         embd = tf.reshape(embd, [batch, frames, ht//4, wd//4, 32])
         return embd
+
     def mobilenet_encoder(self, inputs, reuse=False):
         """
         mobilenet 基本编码单元
@@ -191,7 +191,6 @@ class DepthNetwork(object):
                         # input 4*480*640*3
                         # 输入特征提取，尺度缩放为一半
                         net = conv2d_block(inputs, 16, 3, 2, is_train, name='conv1_1',h_swish=True)  # size/2
-
                         # 卷积操作变为 4*240*320*32
                         net = res_conv2d(net, 32, 1) #2 
                         # 4*240*320*32
@@ -244,12 +243,12 @@ class DepthNetwork(object):
             print("cfg.FAST_MODE is error value:{}".format(self.cfg.FAST_MODE)) 
 
     def resnet_decoder(self, volume):
-         """
+        """
         后端解码模块
         Args:
             volume ([type]): decoder 主要特征部分
         """
-        
+
         with slim.arg_scope([slim.batch_norm], **self.batch_norm_params):
             with slim.arg_scope([slim.conv3d],
                                 weights_regularizer=slim.l2_regularizer(0.00005),
@@ -277,9 +276,10 @@ class DepthNetwork(object):
                 for i in range(self.cfg.HG_COUNT):
                     with tf.variable_scope("hg1_%d"%i):
                         # 3d沙漏卷积，进行特征卷积，1*120*160*32*32
-                        x = hg.hourglass_3d(x, 4, 32)
+                        x = hg.hourglass_3d(x, 3, 32)
                         # 将金字塔的结果进行输入
                         self.pred_logits.append(self.stereo_head(x))
+        return self.soft_argmax(self.pred_logits[-1])
             
     def decoder(self, volume):
         """
@@ -288,11 +288,11 @@ class DepthNetwork(object):
             volume ([type]): decoder 主要特征部分
         """
         if self.cfg.DECODER_MODE == 'resnet':
-            return self.resnet_decoder(inputs, reuse)
+            return self.resnet_decoder(volume)
         elif self.cfg.DECODER_MODE == 'fast_resnet':
-            return self.fast_resnet_decoder(inputs, reuse)
+            return self.fast_resnet_decoder(volume)
         elif self.cfg.DECODER_MODE == 'mobilenet':
-            return self.mobilenet_decoder(inputs, reuse)
+            return self.mobilenet_decoder(volume)
         else:
             print("cfg.FAST_MODE is error value:{}".format(self.cfg.FAST_MODE)) 
 
