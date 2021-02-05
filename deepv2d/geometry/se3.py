@@ -5,12 +5,8 @@ SO3 and SE3 operations, exponentials and logarithms adapted from Sophus
 import numpy as np
 import torch 
 from utils.einsum import *
-<<<<<<< HEAD
-
-=======
 import os
 from tensorflow.python.framework import function
->>>>>>> 317bed8ad3da1341c39a302c231c811b94fb32b7
 
 
 MIN_THETA = 1e-4
@@ -197,17 +193,11 @@ def se3_logm(so3, t):
 ### matrix functions ###
 
 def se3_matrix_inverse(G):
-<<<<<<< HEAD
-    """ Invert SE3 matrix """
-    inp_shape = G.shape
-    G = torch.reshape(G, [-1, 4, 4])
-=======
     """ Invert SE3 matrix 
     se3维度变换
     """
     inp_shape = tf.shape(G)
     G = tf.reshape(G, [-1, 4, 4])
->>>>>>> 317bed8ad3da1341c39a302c231c811b94fb32b7
 
     R, t = G[:, :3, :3], G[:, :3, 3:]
     R = torch.transpose(R, [0, 2, 1])
