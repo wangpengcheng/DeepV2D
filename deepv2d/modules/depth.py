@@ -106,7 +106,7 @@ class DepthNetwork(object):
                         for i in range(self.cfg.HG_2D_COUNT):
                             with tf.variable_scope("2d_hg1_%d"%i):
                                 # 沙漏网络,4*120*160*128
-                                net = hg.hourglass_2d(net, 4, 64)
+                                net = hg.hourglass_2d(net,cfg.HG_2D_DEPTH_COUNT, 64)
                         # # 沙漏网络,4*120*160*128
                         # net = hg.hourglass_2d(net, 4, 64) # 52
                         # # 沙漏网络，4*120*160*64
@@ -160,7 +160,7 @@ class DepthNetwork(object):
                     for i in range(self.cfg.HG_2D_COUNT):
                         with tf.variable_scope("2d_hg1_%d"%i):
                             # 这里使用改进的快速2d沙漏网络
-                            net = hg.fast_res_hourglass_2d(net, 2, 64)
+                            net = hg.fast_res_hourglass_2d(net,cfg.HG_2D_DEPTH_COUNT, 64)
                     # 卷积网络 4*60*80*32
                     embd = slim.conv2d(net, 32, [1, 1]) # 1
         # 重新进行缩放 1*4*120*160*32
@@ -212,7 +212,7 @@ class DepthNetwork(object):
                         for i in range(self.cfg.HG_2D_COUNT):
                             with tf.variable_scope("2d_hg1_%d"%i):
                                 # 沙漏网络,4*120*160*128
-                                net = hg.hourglass_2d(net, 4, 64)
+                                net = hg.hourglass_2d(net, cfg.HG_2D_DEPTH_COUNT, 64)
                         # # 沙漏网络,4*120*160*128
                         # net = hg.hourglass_2d(net, 4, 64) # 52
                         # # 沙漏网络，4*120*160*64
@@ -279,7 +279,7 @@ class DepthNetwork(object):
                 for i in range(self.cfg.HG_COUNT):
                     with tf.variable_scope("hg1_%d"%i):
                         # 3d沙漏卷积，进行特征卷积，1*120*160*32*32
-                        x = hg.hourglass_3d(x, 4, 32)
+                        x = hg.hourglass_3d(x, cfg.HG_DEPTH_COUNT, 32)
                         # 将金字塔的结果进行输入
                         self.pred_logits.append(self.stereo_head(x))
 
@@ -318,7 +318,7 @@ class DepthNetwork(object):
                 for i in range(self.cfg.HG_COUNT):
                     with tf.variable_scope("hg1_%d"%i):
                         # 3d沙漏卷积，进行特征卷积，1*120*160*32*32
-                        x = hg.hourglass_3d(x, 2, 32)
+                        x = hg.hourglass_3d(x, cfg.HG_DEPTH_COUNT, 32)
                         # 将金字塔的结果进行输入
                         self.pred_logits.append(self.fast_stereo_head(x))
 

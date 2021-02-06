@@ -102,17 +102,17 @@ def compute_depth_errors(gt, pr, min_depth=0.1, max_depth=10.0):
 
     sq_rel1 = np.mean(((gt - pr)**2) / gt)
     sq_rel2 = np.mean(((gt - pr)**2) / gt**2)
-
+    # https://blog.csdn.net/qq_34923437/article/details/109048229
     depth_errors = {
-        "sc-inv": scinv,
+        "sc-inv": scinv, # 相对误差
         "a10": a10,
         "a1": a1,
         "a2": a2,
         "a3": a3,
-        "rmse": rmse,
-        "log_rmse": rmse_log,
-        "rel": abs_rel,
-        "sq_rel1": sq_rel1,
+        "rmse": rmse, # 中值误差均方根
+        "log_rmse": rmse_log, # 中值误差均方根 对数
+        "rel": abs_rel, # 
+        "sq_rel1": sq_rel1, # 开根均值误差
         "sq_rel2": sq_rel2,
         "log10": log10}
 

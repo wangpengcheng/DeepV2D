@@ -129,8 +129,8 @@ class TUM_RGBD:
         self.dataset_path = dataset_path
         self.resize = resize
         self.n_frames = n_frames
-        self.height = 480*self.resize
-        self.width = 640*self.resize
+        self.height = int(480*self.resize)
+        self.width = int(640*self.resize)
         self.is_test = test
         self.build_dataset_index(r=r)
         
@@ -261,7 +261,7 @@ class TUM_RGBD:
         for image_name in images_names:
             print("read image file:{}".format(image_name))
             image = cv2.imread(image_name)
-            image = cv2.resize(image, (int(self.width), int(self.height)))
+            image = cv2.resize(image, (self.width, self.height))
             self.images.append(image)
             self.images_map[image_name]= i
             i=i+1
@@ -283,6 +283,7 @@ class TUM_RGBD:
             # 读取深度信息
             depth = cv2.imread(depth_name, cv2.IMREAD_ANYDEPTH)
             depth = cv2.resize(depth, (int(self.width), int(self.height)))
+
             depth = (depth.astype(np.float32))/factor
 
             self.depths.append(depth)
