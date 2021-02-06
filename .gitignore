@@ -11,3 +11,4 @@ tmp
 *.tfrecords
 *.pkl
 data/
+.vscode/settings.json

@@ -57,7 +57,7 @@ def load_test_sequence(path, n_frames=-1):
     # 返回图像信息，相机内参
     return images, intrinsics
 
-def load_sorted_test_sequence(data_path, inference_file_name):
+def load_sorted_test_sequence(data_path, inference_file_name, scale):
 
     image_names,depths_names,pre_poses = get_data_from_sum_file(inference_file_name)
     
@@ -67,14 +67,15 @@ def load_sorted_test_sequence(data_path, inference_file_name):
     for image_name in image_names:
         print("load image:{}".format(image_name))
         image = cv2.imread(image_name)
-        image = cv2.resize(image, (320, 240))
+        image = cv2.resize(image, (int(640*scale), int(480*scale)))
         images.append(image)
     poses = []
     for pre_pose in pre_poses:
         pose_mat = pose_vec2mat(pre_pose)
         poses.append(np.linalg.inv(pose_mat))
-    
-    return images, poses, intrinsics
+    # 注意这里的相机内参缩放
+    my_intrinsics = intrinsics*scale 
+    return images, poses, my_intrinsics
 
 def main(args):
 
@@ -124,7 +125,7 @@ def main(args):
             stats_graph(graph)
         # 根据相机是否标定，来执行函数
         if is_pose:
-            images ,poses,intrinsics = load_sorted_test_sequence(args.sequence,args.inference_file_name)
+            images ,poses,intrinsics = load_sorted_test_sequence(args.sequence,args.inference_file_name,cfg.INPUT.RESIZE)
             # 根据数据进行迭代，根据前面n帧的内容，推断最后帧的内容,注意这里推理的是中间关键帧的内容
             iter_number = int(len(images)/frames_len)
             # 遍历进行
@@ -134,7 +135,7 @@ def main(args):
                 temp_intrinsics = intrinsics.copy()
                 temp_images = np.stack(temp_images, axis=0).astype(np.uint8)
                 temp_poses = np.stack(temp_poses, axis=0).astype(np.float32)
-                #print("pose",temp_poses[0])
+                # print("pose",temp_poses[0])
                 time_start=time.time()
                 # 进行推理
                 depths = deepv2d.inference(temp_images,temp_poses,temp_intrinsics)

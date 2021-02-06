@@ -75,6 +75,12 @@ __C.STRUCTURE.HG_COUNT = 2
 # number of stacked 2D hourglass modules to use
 __C.STRUCTURE.HG_2D_COUNT = 2
 
+
+# 设置沙漏网络递归层数
+__C.STRUCTURE.HG_DEPTH_COUNT = 2
+# 
+__C.STRUCTURE.HG_2D_DEPTH_COUNT = 2
+
 __C.STRUCTURE.USE_FAST_RESNET = True # 是否使用快速卷积
 
 __C.STRUCTURE.TRAIN = edict()
