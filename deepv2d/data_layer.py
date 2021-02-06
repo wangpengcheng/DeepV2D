@@ -189,12 +189,12 @@ class DataLayer(object):
 
 def scale(id, images, poses, depth_gt, filled, pred, intrinsics):
     """ Random scale augumentation """
-
     if len(cfg.INPUT.SCALES) > 1:
         scales = tf.constant(cfg.INPUT.SCALES)
         scale_ix = tf.random.uniform([], 0, len(cfg.INPUT.SCALES), dtype=tf.int32)
 
         s = tf.gather(scales, scale_ix)
+        print(s)
         ht = cfg.INPUT.HEIGHT
         wd = cfg.INPUT.WIDTH
 
@@ -268,6 +268,7 @@ class DBDataLayer:
     def next(self):
         frames, height, width = self.db.shape() # 单次迭代的数量
         images, poses, depth, filled, pred, intrinsics, ids = self.training_iterator.get_next()
+       # images, poses, depth, filled, pred, intrinsics, ids = prepare_inputs(images, poses, depth, filled, pred, intrinsics, ids)
         # 重新设置形状
         images.set_shape(tf.TensorShape([self.batch_size, frames, height, width, 3]))
         poses.set_shape(tf.TensorShape([self.batch_size, frames, 4, 4]))

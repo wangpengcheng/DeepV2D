@@ -21,7 +21,7 @@ from deepv2d import DeepV2D
 import eval_utils
 
 
-gpu_no = '0' # or '1'
+gpu_no = '1' # or '1'
 os.environ["CUDA_VISIBLE_DEVICES"] = gpu_no
 
 def write_to_folder(images, intrinsics, test_id):
@@ -40,7 +40,7 @@ def write_to_folder(images, intrinsics, test_id):
 def make_predictions(args):
 
     cfg = config.cfg_from_file(args.cfg)
-    deepv2d = DeepV2D(cfg, args.model, use_fcrn=True, mode=args.mode)
+    deepv2d = DeepV2D(cfg, args.model, use_fcrn=False, mode=args.mode)
     # 进行初始化
     # init_op = tf.group(tf.global_variables_initializer(),
     #         tf.local_variables_initializer())
@@ -63,13 +63,14 @@ def make_predictions(args):
         depth_predictions, pose_predictions = [], []
         depth_groundtruth, pose_groundtruth = [], []
         # 构建数据加载器
-        db = TUM_RGBD(args.dataset_dir,test=True,n_frames=4, r=2)
+        db = TUM_RGBD(cfg.INPUT.RESIZE, args.dataset_dir,test=True,n_frames=4, r=2)
         #提取数据集
         for test_id, test_blob in enumerate(db.test_set_iterator()):
             # 获取图像和相机位姿
             images, intrinsics = test_blob['images'], test_blob['intrinsics']
+            print(images.shape)
             # 进行推理
-            depth_pred, poses_pred = deepv2d(images, intrinsics,iters=2)
+            depth_pred, poses_pred = deepv2d(images, intrinsics, iters=1)
 
             # use keyframe depth for evaluation
             depth_predictions.append(depth_pred[0])
@@ -130,8 +131,8 @@ def evaluate(groundtruth, predictions):
     print(("{:>1}, "*len(depth_results)).format(*depth_results.keys()))
     print(("{:10.4f}, "*len(depth_results)).format(*depth_results.values()))
 
-    print(("{:>16}, "*len(pose_results)).format(*pose_results.keys()))
-    print(("{:16.4f}, "*len(pose_results)).format(*pose_results.values()))
+    #print(("{:>16}, "*len(pose_results)).format(*pose_results.keys()))
+    #print(("{:16.4f}, "*len(pose_results)).format(*pose_results.values()))
 
 
 if __name__ == '__main__':

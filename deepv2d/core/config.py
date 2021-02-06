@@ -35,9 +35,11 @@ __C.INPUT.FRAMES = 9
 __C.INPUT.HEIGHT = 480
 __C.INPUT.WIDTH = 640
 __C.INPUT.SAMPLES = 3
+# 加载图像缩放按钮
+__C.INPUT.RESIZE = 1.0
 
 # random scale augumentation
-__C.INPUT.SCALES = [1.0]
+__C.INPUT.SCALES = [2.0]
 
 # training parameters
 __C.TRAIN.ITERS = [20000, 120000]

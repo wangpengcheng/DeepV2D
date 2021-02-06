@@ -124,6 +124,7 @@ class DeepV2DTrainer(object):
             motion_optim = tf.train.RMSPropOptimizer(MOTION_LR_FRACTION*lr)
         # 进行数据读取
         id_batch, images_batch, poses_batch, gt_batch, filled_batch, pred_batch, intrinsics_batch = self.dl.next()
+        print("image shape:{}".format(images_batch))
         # 在这里进行数据分割
         images_batch = tf.split(images_batch, num_gpus)
         poses_batch = tf.split(poses_batch, num_gpus)

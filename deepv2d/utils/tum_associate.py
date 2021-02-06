@@ -88,6 +88,7 @@ def tum_associate(first_file,second_file,three_file,order_file,offset=0.0,max_di
     fo.close()
 
 def get_data_from_sum_file(order_file):
+    print(order_file)
     # # 图像数据
     images = np.loadtxt(order_file, delimiter=' ', dtype=np.unicode_,usecols=(1,))
     # 深度数据

@@ -125,13 +125,15 @@ def pose_vec2mat(pvec, use_filler=True):
 class TUM_RGBD:
     """主要用来进行数据的加载与查找
     """
-    def __init__(self, dataset_path, test=False, n_frames=5, r=2):
+    def __init__(self, resize, dataset_path, test=False, n_frames=5, r=2):
         self.dataset_path = dataset_path
+        self.resize = resize
         self.n_frames = n_frames
-        self.height = 480
-        self.width = 640
+        self.height = 480*self.resize
+        self.width = 640*self.resize
         self.is_test = test
         self.build_dataset_index(r=r)
+        
     # 获取数据长度
     def __len__(self):
         return len(self.dataset_index)
@@ -228,6 +230,9 @@ class TUM_RGBD:
 
             # 访问数据文件夹，构造对应的数据
             images, depths, poses, color_intrinsics, depth_intrinsics = self._load_scan(scan)
+            color_intrinsics = color_intrinsics*self.resize 
+            depth_intrinsics = depth_intrinsics*self.resize
+            print("hellp: {}".format(color_intrinsics[0]))
             # 构建索引表
             self.build_data_map(images,depths,poses)
             # 加载数据
@@ -256,7 +261,7 @@ class TUM_RGBD:
         for image_name in images_names:
             print("read image file:{}".format(image_name))
             image = cv2.imread(image_name)
-            image = cv2.resize(image, (640, 480))
+            image = cv2.resize(image, (int(self.width), int(self.height)))
             self.images.append(image)
             self.images_map[image_name]= i
             i=i+1
@@ -277,7 +282,9 @@ class TUM_RGBD:
             print("read image file:{}".format(depth_name))
             # 读取深度信息
             depth = cv2.imread(depth_name, cv2.IMREAD_ANYDEPTH)
+            depth = cv2.resize(depth, (int(self.width), int(self.height)))
             depth = (depth.astype(np.float32))/factor
+
             self.depths.append(depth)
             self.depths_map[depth_name]=i
             i=i+1

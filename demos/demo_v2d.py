@@ -19,7 +19,7 @@ from core import config
 from deepv2d import DeepV2D
 
 
-gpu_no = '0' # or '1'
+gpu_no = '1' # or '1'
 os.environ["CUDA_VISIBLE_DEVICES"] = gpu_no
 
 fx = 517.3
@@ -58,6 +58,7 @@ def load_test_sequence(path, n_frames=-1):
     return images, intrinsics
 
 def load_sorted_test_sequence(data_path, inference_file_name):
+
     image_names,depths_names,pre_poses = get_data_from_sum_file(inference_file_name)
     
     image_names = [data_path+'/'+i for i in image_names ]
@@ -66,14 +67,14 @@ def load_sorted_test_sequence(data_path, inference_file_name):
     for image_name in image_names:
         print("load image:{}".format(image_name))
         image = cv2.imread(image_name)
-        image = cv2.resize(image, (640, 480))
+        image = cv2.resize(image, (320, 240))
         images.append(image)
     poses = []
     for pre_pose in pre_poses:
         pose_mat = pose_vec2mat(pre_pose)
         poses.append(np.linalg.inv(pose_mat))
     
-    return images,poses,intrinsics
+    return images, poses, intrinsics
 
 def main(args):
 

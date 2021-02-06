@@ -279,7 +279,7 @@ class DepthNetwork(object):
                 for i in range(self.cfg.HG_COUNT):
                     with tf.variable_scope("hg1_%d"%i):
                         # 3d沙漏卷积，进行特征卷积，1*120*160*32*32
-                        x = hg.hourglass_3d(x, 3, 32)
+                        x = hg.hourglass_3d(x, 4, 32)
                         # 将金字塔的结果进行输入
                         self.pred_logits.append(self.stereo_head(x))
 
@@ -433,14 +433,14 @@ class DepthNetwork(object):
 
 
     def forward(self, poses, images, intrinsics, idx=None):
-
+        
         images = 2 * (images / 255.0) - 1.0 # 将其映射到0-1
         
         ht = images.get_shape().as_list()[2] # 高度 
         wd = images.get_shape().as_list()[3] # 宽度
         
         self.input_dims = [ht, wd] # 获取输入信息
-
+        print("ht:{}, wd: {}".format(ht,wd))
         # perform per-view average pooling 使用均值池化层模式
         if self.cfg.MODE == 'avg':
             spred = self.stereo_network_avg(poses, images, intrinsics, idx)

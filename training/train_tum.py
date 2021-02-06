@@ -41,7 +41,7 @@ def main(args):
     cfg.CHECKPOINT_DIR = checkpoint_dir
     cfg.TMP_DIR = tmp_dir
 
-    db = TUM_RGBD(args.dataset_dir, r=args.r)
+    db = TUM_RGBD(cfg.INPUT.RESIZE, args.dataset_dir, r=args.r)
 
     solver = DeepV2DTrainer(cfg)
     ckpt = None
