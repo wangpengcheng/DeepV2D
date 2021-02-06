@@ -129,8 +129,8 @@ class TUM_RGBD:
         self.dataset_path = dataset_path
         self.resize = resize
         self.n_frames = n_frames
-        self.height = 480*self.resize
-        self.width = 640*self.resize
+        self.height = int(480*self.resize)
+        self.width = int(640*self.resize)
         self.is_test = test
         self.build_dataset_index(r=r)
         
