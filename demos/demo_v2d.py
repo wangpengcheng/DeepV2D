@@ -19,7 +19,7 @@ from core import config
 from deepv2d import DeepV2D
 
 
-gpu_no = '1' # or '1'
+gpu_no = '0' # or '1'
 os.environ["CUDA_VISIBLE_DEVICES"] = gpu_no
 
 fx = 517.3

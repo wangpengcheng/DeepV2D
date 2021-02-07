@@ -338,7 +338,7 @@ class DeepV2DTrainer(object):
         config.gpu_options.allow_growth = True
 
         # 配置可使用的显存比例，为所有显存的80%
-        config.gpu_options.per_process_gpu_memory_fraction = 0.8
+        config.gpu_options.per_process_gpu_memory_fraction = 0.9
 
         # 在创建session的时候把config作为参数传进去
         sess = tf.InteractiveSession(config = config)
