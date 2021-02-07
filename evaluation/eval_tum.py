@@ -106,7 +106,7 @@ def evaluate(groundtruth, predictions):
         # 计算深度信息
         depth_metrics = eval_utils.compute_depth_errors(depth_groundtruth[i], depth_predictions[i])
         # 计算位姿矩阵
-        pose_metrics = eval_utils.compute_pose_errors(pose_groundtruth[i], pose_predictions[i])
+        #pose_metrics = eval_utils.compute_pose_errors(pose_groundtruth[i], pose_predictions[i])
 
         if i == 0:
             for pkey in pose_metrics:

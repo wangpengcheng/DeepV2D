@@ -293,7 +293,7 @@ def mnv3_block(input, k_s, expansion_ratio, output_dim, stride, is_train, name, 
         # pw
         bottleneck_dim = expansion_ratio #round(expansion_ratio*input.get_shape().as_list()[-1])
 
-        # 1x1卷积调整通道数，通道数上升
+        # 1x1卷积调整通道
         net = conv_1x1(input, bottleneck_dim, name='pw', bias=bias) # 1 1*1
         # norm 标准层
         net = batch_norm(net, train=is_train, name='pw_bn')

@@ -113,7 +113,7 @@ def compute_depth_errors(gt, pr, min_depth=0.1, max_depth=10.0):
         "log_rmse": rmse_log, # 中值误差均方根 对数
         "rel": abs_rel, # 
         "sq_rel1": sq_rel1, # 开根均值误差
-        "sq_rel2": sq_rel2,
+        "sq_rel2": sq_rel2, # 
         "log10": log10}
 
     return depth_errors
