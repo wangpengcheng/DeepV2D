@@ -9,12 +9,12 @@ from geometry.transformation import *
 from utils.memory_saving_gradients import gradients
 from utils.average_grads import average_gradients
 from utils import mem_util
+from utils.my_utils import set_gpus
 
 from modules.depth import DepthNetwork
 from modules.motion import MotionNetwork
 
-gpu_no = '0' # or '1'
-os.environ["CUDA_VISIBLE_DEVICES"] = gpu_no
+
 
 MOTION_LR_FRACTION = 0.1
 
@@ -332,16 +332,8 @@ class DeepV2DTrainer(object):
         LOG_FREQ = 100
         # 设置checkpoint中间输出频率
         CHECKPOINT_FREQ = 5000
-        # 定义TensorFlow配置
-        config = tf.ConfigProto()
-        # 配置GPU内存分配方式，按需增长，很关键
-        config.gpu_options.allow_growth = True
 
-        # 配置可使用的显存比例，为所有显存的80%
-        config.gpu_options.per_process_gpu_memory_fraction = 0.9
-
-        # 在创建session的时候把config作为参数传进去
-        sess = tf.InteractiveSession(config = config)
+        sess = set_gpus(cfg)
 
         with tf.Session() as sess:
             sess.run(init_op)
