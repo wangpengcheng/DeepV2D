@@ -186,7 +186,8 @@ class DepthNetwork(object):
         batch, frames, ht, wd, _ = tf.unstack(tf.shape(inputs), num=5)
         # 将其降低维度为4维 假设数据为1*4*480*640*3->4*480*640*3
         inputs = tf.reshape(inputs, [batch*frames, ht, wd, 3]) # 调整输入维度为图片数量*高*宽*3
-
+        # 设置扩展率
+        reduction_ratio = 4
         with tf.variable_scope("encoder") as sc: #创建编码命名空间
             with slim.arg_scope([slim.batch_norm], **self.batch_norm_params):# 保存所有BN层的参数
                 with slim.arg_scope([slim.conv2d], # 保存所有卷积层的参数
@@ -197,21 +198,12 @@ class DepthNetwork(object):
                     
                         # input 4*480*640*3
                         # 输入特征提取，尺度缩放为一半
-                        net = conv2d_block(inputs, 16, 3, 2, True, name='conv1_1',h_swish=True)  # size/2
-                        # 卷积操作变为 4*240*320*32
-                        net = res_conv2d(net, 32, 1) #2 
-                        # 4*240*320*32
-                        net = res_conv2d(net, 32, 1) #2 
-                        # 4*240*320*32
-                        net = res_conv2d(net, 32, 1) #2 
-                        # 4*120*160*64
-                        net = res_conv2d(net, 64, 2) #3 
-                        # 4*160*120*64
-                        net = res_conv2d(net, 64, 1) #2 
-                        # 4*160*120*64
-                        net = res_conv2d(net, 64, 1) #2 
-                        # 4*160*120*64
-                        net = res_conv2d(net, 64, 1) #2 
+                        net = conv2d_block(inputs, 32, 3, 2,  True, name='conv1_1',h_swish=True)  # size/2
+                        net = mnv3_block(net, 3, 32, 32, 1, True, name='bneck2_1', h_swish=False, ratio=reduction_ratio, se=True)
+                        net = mnv3_block(net, 3, 64, 64, 2, True, name='bneck2_2', h_swish=False, ratio=reduction_ratio, se=True) # size/4
+                        net = mnv3_block(net, 5, 96, 64, 1, True, name='bneck4_1', h_swish=True, ratio=reduction_ratio, se=True) 
+                        net = mnv3_block(net, 3, 240, 64, 2, True, name='bneck4_2', h_swish=True, ratio=reduction_ratio, se=True)
+                        net = mnv3_block(net, 5, 240, 64, 1, True, name='bneck4_3', h_swish=True, ratio=reduction_ratio, se=True)
                         # 16层conv
                         for i in range(self.cfg.HG_2D_COUNT):
                             with tf.variable_scope("2d_hg1_%d"%i):
@@ -225,7 +217,7 @@ class DepthNetwork(object):
                         # 卷积网络 4*120*160*32
                         embd = slim.conv2d(net, 32, [1, 1]) # 1
         # 重新进行缩放 1*4*120*160*32
-        embd = tf.reshape(embd, [batch, frames, ht//4, wd//4, 32])
+        embd = tf.reshape(embd, [batch, frames, ht//8, wd//8, 32])
         return embd
 
 
@@ -327,7 +319,45 @@ class DepthNetwork(object):
                         # 将金字塔的结果进行输入
                         self.pred_logits.append(self.fast_stereo_head(x))
 
-            
+    def mobilenet_decoder(self, volume):
+        """
+        后端解码模块
+        Args:
+            volume ([type]): decoder 主要特征部分
+        """
+
+        with slim.arg_scope([slim.batch_norm], **self.batch_norm_params):
+            with slim.arg_scope([slim.conv3d],
+                                weights_regularizer=slim.l2_regularizer(0.00005),
+                                normalizer_fn=None,
+                                activation_fn=None):
+                # 获取数据维度batch ,frams,w,h,dim,6
+                dim = tf.shape(volume)
+                    # 将其维度进行强制转换 3*60*80*32*64
+                volume = tf.reshape(volume, [dim[0]*dim[1], dim[2], dim[3], dim[4], 64])
+                    # 进行三维特征卷积，卷积核大小为
+                x = slim.conv3d(volume, 32, [1, 1, 1])
+                    # 添加变量
+                tf.add_to_collection("checkpoints", x)
+
+                # multi-view convolution
+                # 多视角卷积
+                x = tf.add(x, conv3d(conv3d(x, 32), 32))
+                # 重新整理输出为32维度
+                x = tf.reshape(x, [dim[0], dim[1], dim[2], dim[3], dim[4], 32])
+                # 沿着frame方向对所有帧求取平均值,1*120*160*32*32
+                x = tf.reduce_mean(x, axis=1)
+                tf.add_to_collection("checkpoints", x)
+                self.pred_logits = []
+                # 3维度特征金字塔提取
+                for i in range(self.cfg.HG_COUNT):
+                    with tf.variable_scope("hg1_%d"%i):
+                        # 3d沙漏卷积，进行特征卷积，1*120*160*32*32
+                        x = hg.fast_hourglass_3d(x, self.cfg.HG_DEPTH_COUNT, 32)
+                        # 将金字塔的结果进行输入
+                        self.pred_logits.append(self.fast_stereo_head(x))
+        
+
     def decoder(self, volume):
         """
         后端解码模块
