@@ -74,23 +74,25 @@ def compute_depth_errors(gt, pr, min_depth=0.1, max_depth=10.0):
         for i in range(len(gt)):
             scinv_list.append(scale_invariant(gt[i], pr[i]))
         scinv = np.mean(scinv_list)
-
+        # 调整形状
         gt = np.stack(gt).astype(np.float32).reshape(-1)
         pr = np.stack(pr).astype(np.float32).reshape(-1)
 
     else:
         scinv = scale_invariant(gt, pr)
     # igore invalid depth values from evaluation
+    # 过滤掉不符合要求的层
     v = (gt > min_depth) & (gt < max_depth)
     gt, pr = gt[v], pr[v]
 
     # just put all the metrics in the dict
+    # 平滑处理
     thresh = np.maximum((gt / pr), (pr / gt))
     a10 = (thresh < 1.10).mean() # a1,a2,a3 becoming saturated
-    a1 = (thresh < 1.25).mean()
+    a1 = (thresh < 1.25).mean() # 误差不超过1的数据
     a2 = (thresh < 1.25** 2).mean()
     a3 = (thresh < 1.25** 3).mean()
-
+    # 平均误差
     rmse = (gt - pr) ** 2
     rmse = np.sqrt(rmse.mean())
 
@@ -109,9 +111,9 @@ def compute_depth_errors(gt, pr, min_depth=0.1, max_depth=10.0):
         "a1": a1,
         "a2": a2,
         "a3": a3,
-        "rmse": rmse, # 中值误差均方根
+        "rmse": rmse, # 中值误差均方根  越小越好
         "log_rmse": rmse_log, # 中值误差均方根 对数
-        "rel": abs_rel, # 
+        "rel": abs_rel, # 平均相对误差，越小越好
         "sq_rel1": sq_rel1, # 开根均值误差
         "sq_rel2": sq_rel2, # 
         "log10": log10}
