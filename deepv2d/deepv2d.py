@@ -73,7 +73,7 @@ class DeepV2D:
             if cfg.STRUCTURE.MODE == 'concat':
                 self.image_dims = [cfg.INPUT.FRAMES, cfg.INPUT.HEIGHT, cfg.INPUT.WIDTH]
             else:
-                self.image_dims = [None, int(cfg.INPUT.HEIGHT*cfg.INPUT.RESIZE), (cfg.INPUT.WIDTH*cfg.INPUT.RESIZE)] # 构建输入的训练图片维度
+                self.image_dims = [None, int(cfg.INPUT.HEIGHT*cfg.INPUT.RESIZE), int(cfg.INPUT.WIDTH*cfg.INPUT.RESIZE)] # 构建输入的训练图片维度
 
         self.outputs = {}
         # 创建预定于变量

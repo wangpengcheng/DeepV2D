@@ -102,7 +102,7 @@ def main(args):
     deepv2d = DeepV2D(cfg, args.model, use_fcrn=args.fcrn, is_calibrated=is_calibrated, mode=args.mode)
     
     set_gpus(cfg)
-
+    
     with tf.Session() as sess:
 
         deepv2d.set_session(sess)

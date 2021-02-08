@@ -14,14 +14,22 @@
             //     "--model=models/nyu.ckpt",
             //     "--sequence=data/demos/nyu_0"
             // ],
+            
             "program": "training/train_tum.py",
             "args": [
                 "--cfg=cfgs/tum_2_2_moblie.yaml",
                 "--name=tmu_model",
                 "--restore=checkpoints/tum/tmu_model/_stage_2.ckpt",
                 "--dataset_dir=data/tum"//,
-                
-            ],
+             ],
+
+            // "program": "./evaluation/eval_tum.py",
+            // "args": [
+            //     "--cfg=cfgs/tum_2_2_moblie.yaml",
+            //     "--model=checkpoints/tum/tmu_model/_stage_2.ckpt",
+            //     "--dataset_dir=data/tum",
+            //     "--n_iters=1"
+            // ],
             "console": "integratedTerminal"
         }
     ]

@@ -4,6 +4,8 @@
 # https://blog.csdn.net/weixin_44791964/article/details/104069624
 import tensorflow as tf
 import numpy as np
+from tensorflow.keras.layers import GlobalAveragePooling2D
+
 weight_decay=1e-5
 
 def relu6(x, name='relu6'):
@@ -189,7 +191,7 @@ def Fully_connected(x, units, layer_name='fully_connected') :
     with tf.name_scope(layer_name) :
         return tf.layers.dense(inputs=x, use_bias=True, units=units)
 
-def global_avg(x,s=1):
+def global_avg(x, s=1):
     """
     全局平均池化层
     Args:
@@ -199,8 +201,9 @@ def global_avg(x,s=1):
     Returns:
         [type]: [description]
     """
+
     with tf.name_scope('global_avg'):
-        net = tf.layers.average_pooling2d(x, x.get_shape()[1:-1], s)
+        net = GlobalAveragePooling2D()(x)
         return net
 
 
