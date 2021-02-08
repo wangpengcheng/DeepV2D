@@ -243,10 +243,10 @@ def squeeze_excitation_layer(input, out_dim, ratio, layer_name):
     """
     注意力机制单元
     Args:
-        input ([type]): [description]
-        out_dim ([type]): [description]
-        ratio ([type]): [description]
-        layer_name ([type]): [description]
+        input ([type]): 输入数据
+        out_dim ([type]): 输出维度
+        ratio ([type]): 输出缩放率
+        layer_name ([type]): 层名称
 
     Returns:
         [type]: [description]
@@ -283,7 +283,7 @@ def mnv3_block(input, k_s, expansion_ratio, output_dim, stride, is_train, name, 
         bias (bool, optional): 是否使用添加. Defaults to True.
         shortcut (bool, optional): [description]. Defaults to True.
         h_swish (bool, optional): [description]. Defaults to False.
-        ratio (int, optional): [description]. Defaults to 16.
+        ratio (int, optional): 使用注意力机制时的扩展参数. Defaults to 16.
         se (bool, optional): 是否使用注意力机制. Defaults to False.
 
     Returns:
@@ -293,7 +293,7 @@ def mnv3_block(input, k_s, expansion_ratio, output_dim, stride, is_train, name, 
         # pw
         bottleneck_dim = expansion_ratio #round(expansion_ratio*input.get_shape().as_list()[-1])
 
-        # 1x1卷积调整通道
+        # 1x1卷积调整通道数，调整为扩展通道维度
         net = conv_1x1(input, bottleneck_dim, name='pw', bias=bias) # 1 1*1
         # norm 标准层
         net = batch_norm(net, train=is_train, name='pw_bn')
@@ -318,7 +318,7 @@ def mnv3_block(input, k_s, expansion_ratio, output_dim, stride, is_train, name, 
             net = squeeze_excitation_layer(net,out_dim=channel, ratio=ratio, layer_name='se_block') # 2
 
         # pw & linear
-        # 1x1卷积提升通道数目
+        # 1x1卷积再次进行维度提升
         net = conv_1x1(net, output_dim, name='pw_linear', bias=bias) #3
         net = batch_norm(net, train=is_train, name='pw_linear_bn')
 

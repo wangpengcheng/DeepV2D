@@ -1,16 +1,16 @@
 INPUT:
-  FRAMES: 5
+  FRAMES: 9
   HEIGHT: 480
   WIDTH: 640
   SAMPLES: 3
-  RESIZE: 1.0
+  RESIZE: 0.5
 TRAIN:
-  ITERS: [300, 20000]
+  ITERS: [300, 40000]
   BATCH: [1, 1]
   LR: 0.001
   CLIP_GRADS: True
   DEPTH_WEIGHT: 1.0
-  USE_GPU: '0'
+  USE_GPU: '1'
   GPU_MEMORY: 0.8
   IS_TRAIN: True # 是否正在训练中，用来决定是否有参数更新
 MOTION:
@@ -20,13 +20,12 @@ MOTION:
     DELTA: [0.02, 0.02, 0.02, 0.02, 0.02, 0.02]
 STRUCTURE:
   MODE: avg
-  ENCODER_MODE: fast_resnet # resnet fast_resnet mobilenet
-  DECODER_MODE: fast_resnet # resnet fast_resnet mobilenet
+  ENCODER_MODE: mobilenet # resnet fast_resnet mobilenet
+  DECODER_MODE: mobilenet # resnet fast_resnet mobilenet
   MAX_DEPTH: 10.0
   MIN_DEPTH: 0.2
   HG_COUNT: 1
-  HG_DEPTH_COUNT: 4
+  HG_DEPTH_COUNT: 2
   HG_2D_COUNT: 1
-  HG_2D_DEPTH_COUNT: 4
+  HG_2D_DEPTH_COUNT: 2
   USE_FAST_RESNET: True
-
