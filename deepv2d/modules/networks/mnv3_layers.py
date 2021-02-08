@@ -203,7 +203,6 @@ def global_avg(x, s=1):
     """
 
     with tf.name_scope('global_avg'):
-        net = tf.nn.avg_pool2d(x, [2,2],strides=s, padding="SAME")
         net = GlobalAveragePooling2D()(x)
         return net
 
