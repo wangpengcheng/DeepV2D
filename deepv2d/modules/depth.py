@@ -10,10 +10,6 @@ from geometry.transformation import *
 from geometry.intrinsics import *
 from special_ops import operators
 
-def print_net_shape():
-    with tf.Session() as sess:
-        sess.run(tf.initialize_all_variables())  
-        print(sess.run(tf.get_collection('temp_net'))) 
 
 def add_depth_summaries(gt, pr):
     """添加深度信息

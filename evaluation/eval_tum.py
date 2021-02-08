@@ -21,9 +21,6 @@ from utils.my_utils import set_gpus
 import eval_utils
 
 
-gpu_no = '1' # or '1'
-os.environ["CUDA_VISIBLE_DEVICES"] = gpu_no
-
 def write_to_folder(images, intrinsics, test_id):
     dest = os.path.join("tum/%06d" % test_id)
 
@@ -59,7 +56,6 @@ def make_predictions(args):
         for test_id, test_blob in enumerate(db.test_set_iterator()):
             # 获取图像和相机位姿
             images, intrinsics = test_blob['images'], test_blob['intrinsics']
-            print(images.shape)
             # 进行推理
             depth_pred, poses_pred = deepv2d(images, intrinsics, iters=1)
 
