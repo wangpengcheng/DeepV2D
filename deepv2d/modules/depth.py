@@ -198,12 +198,12 @@ class DepthNetwork(object):
                     
                         # input 4*480*640*3
                         # 输入特征提取，尺度缩放为一半
-                        net = conv2d_block(inputs, 32, 3, 2,  True, name='conv1_1',h_swish=True)  # size/2
-                        net = mnv3_block(net, 3, 32, 32, 1, True, name='bneck2_1', h_swish=False, ratio=reduction_ratio, se=True)
-                        net = mnv3_block(net, 3, 64, 64, 2, True, name='bneck2_2', h_swish=False, ratio=reduction_ratio, se=True) # size/4
-                        net = mnv3_block(net, 5, 96, 64, 1, True, name='bneck4_1', h_swish=True, ratio=reduction_ratio, se=True) 
-                        net = mnv3_block(net, 3, 240, 64, 2, True, name='bneck4_2', h_swish=True, ratio=reduction_ratio, se=True)
-                        net = mnv3_block(net, 5, 240, 64, 1, True, name='bneck4_3', h_swish=True, ratio=reduction_ratio, se=True)
+                        net = conv2d_block(inputs, 32, 3, 2,  False, name='conv1_1',h_swish=True)  # size/2
+                        net = mnv3_block(net, 3, 32, 32, 1, False, name='bneck2_1', h_swish=False, ratio=reduction_ratio, se=True)
+                        net = mnv3_block(net, 3, 64, 64, 2, False, name='bneck2_2', h_swish=False, ratio=reduction_ratio, se=True) # size/4
+                        net = mnv3_block(net, 5, 96, 64, 1, False, name='bneck4_1', h_swish=True, ratio=reduction_ratio, se=True) 
+                        net = mnv3_block(net, 3, 240, 64, 2, False, name='bneck4_2', h_swish=True, ratio=reduction_ratio, se=True) # size/8
+                        net = mnv3_block(net, 5, 240, 64, 1, False, name='bneck4_3', h_swish=True, ratio=reduction_ratio, se=True)
                         # 16层conv
                         for i in range(self.cfg.HG_2D_COUNT):
                             with tf.variable_scope("2d_hg1_%d"%i):
