@@ -163,7 +163,7 @@ class DepthNetwork(object):
                             # net = hg.fast_res_hourglass_2d(net, self.cfg.HG_2D_DEPTH_COUNT, 64)
                     # 卷积网络 4*60*80*32
                     embd = slim.conv2d(net, 32, [1, 1]) # 1
-        # 重新进行缩放 1*4*120*160*32
+        # 重新进行缩放 大小为原来的1/8
         embd = tf.reshape(embd, [batch, frames, ht//8, wd//8, 32])
         return embd
 
@@ -283,7 +283,6 @@ class DepthNetwork(object):
         Args:
             volume ([type]): decoder 主要特征部分
         """
-
         with slim.arg_scope([slim.batch_norm], **self.batch_norm_params):
             with slim.arg_scope([slim.conv3d],
                                 weights_regularizer=slim.l2_regularizer(0.00005),
@@ -401,7 +400,7 @@ class DepthNetwork(object):
         # 特征概率 1*480*640*32
         prob_volume = tf.nn.softmax(prob_volume, axis=-1)
         # 计算特征概率合并图，1*480*640*32
-        pred = tf.reduce_sum(self.depths*prob_volume, axis= -1) # 对概率深度进行求和
+        pred = tf.reduce_sum(self.depths*prob_volume, axis= -1,name='my_result') # 对概率深度进行求和
         return pred # 返回深度估计值
 
     # 匹配网络avg方式下降
