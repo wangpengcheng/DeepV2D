@@ -320,7 +320,7 @@ class DeepV2DTrainer(object):
         # 进行数据合并
         self.summary_op = tf.summary.merge_all()
         # 进行模型存储
-        saver = tf.train.Saver([var for var in tf.model_variables()], max_to_keep=10)
+        saver = tf.train.Saver([var for var in tf.model_variables()], max_to_keep=1)
         # 写入日志信息
         train_writer = tf.summary.FileWriter(cfg.LOG_DIR+'_stage_%s'%str(stage)) # 写入到数据训练文件中
         # 进行初始化

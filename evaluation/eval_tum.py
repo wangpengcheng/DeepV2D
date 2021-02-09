@@ -21,9 +21,6 @@ from utils.my_utils import set_gpus
 import eval_utils
 
 
-gpu_no = '1' # or '1'
-os.environ["CUDA_VISIBLE_DEVICES"] = gpu_no
-
 def write_to_folder(images, intrinsics, test_id):
     dest = os.path.join("tum/%06d" % test_id)
 
@@ -59,7 +56,6 @@ def make_predictions(args):
         for test_id, test_blob in enumerate(db.test_set_iterator()):
             # 获取图像和相机位姿
             images, intrinsics = test_blob['images'], test_blob['intrinsics']
-            print(images.shape)
             # 进行推理
             depth_pred, poses_pred = deepv2d(images, intrinsics, iters=1)
 
@@ -97,24 +93,24 @@ def evaluate(groundtruth, predictions):
         # 计算深度信息
         depth_metrics = eval_utils.compute_depth_errors(depth_groundtruth[i], depth_predictions[i])
         # 计算位姿矩阵
-        pose_metrics = eval_utils.compute_pose_errors(pose_groundtruth[i], pose_predictions[i])
+        #pose_metrics = eval_utils.compute_pose_errors(pose_groundtruth[i], pose_predictions[i])
 
         if i == 0:
-            for pkey in pose_metrics:
-                pose_results[pkey] = []
+            # for pkey in pose_metrics:
+            #     pose_results[pkey] = []
             for dkey in depth_metrics:
                 depth_results[dkey] = []
 
-        for pkey in pose_metrics:
-            pose_results[pkey].append(pose_metrics[pkey])
+        # for pkey in pose_metrics:
+        #     pose_results[pkey].append(pose_metrics[pkey])
 
         for dkey in depth_metrics:
             depth_results[dkey].append(depth_metrics[dkey])
 
 
     ### aggregate metrics
-    for pkey in pose_results:
-        pose_results[pkey] = np.mean(pose_results[pkey])
+    # for pkey in pose_results:
+    #     pose_results[pkey] = np.mean(pose_results[pkey])
 
     for dkey in depth_results:
         depth_results[dkey] = np.mean(depth_results[dkey])

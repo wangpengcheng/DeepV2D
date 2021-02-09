@@ -94,7 +94,7 @@ class DeepV2D:
         self.poses = []
 
         if self.use_fcrn:
-            self._build_fcrn_graph() # 
+            self._build_fcrn_graph() # 构建快速模型网络
         # 加载模型
         self.saver = tf.train.Saver(tf.model_variables()) #构建存储模型
 
@@ -102,7 +102,7 @@ class DeepV2D:
     def set_session(self, sess):
         self.sess = sess
         sess.run(tf.global_variables_initializer())
-        # 存储
+        # 进行存储
         self.saver.restore(self.sess, self.ckpt)
 
         if self.use_fcrn:

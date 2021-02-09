@@ -17,7 +17,7 @@ from utils.count import *
 from deepv2d import vis
 from core import config
 from deepv2d import DeepV2D
-
+from utils.my_utils import set_gpus
 
 gpu_no = '0' # or '1'
 os.environ["CUDA_VISIBLE_DEVICES"] = gpu_no
@@ -48,6 +48,7 @@ def load_test_sequence(path, n_frames=-1):
         inds = np.random.choice(inds, n_frames, replace=False)
     #选取第一帧为关键帧
     inds = [0] + inds.tolist()
+    print(inds)
     #获取所有图像
     images = [images[i] for i in inds]
     #图像转换为float 32位
@@ -100,15 +101,8 @@ def main(args):
     # 构建深度推理图
     deepv2d = DeepV2D(cfg, args.model, use_fcrn=args.fcrn, is_calibrated=is_calibrated, mode=args.mode)
     
-    # 定义TensorFlow配置
-    my_config = tf.ConfigProto()
-    # 配置GPU内存分配方式，按需增长，很关键
-    my_config.gpu_options.allow_growth = True
-    # 配置可使用的显存比例，为所有显存的80%
-    my_config.gpu_options.per_process_gpu_memory_fraction = 0.5
-    # 在创建session的时候把config作为参数传进去
-    sess = tf.InteractiveSession(config = my_config)
-
+    set_gpus(cfg)
+    
     with tf.Session() as sess:
 
         deepv2d.set_session(sess)

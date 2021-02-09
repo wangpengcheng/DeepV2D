@@ -10,10 +10,6 @@ from geometry.transformation import *
 from geometry.intrinsics import *
 from special_ops import operators
 
-def print_net_shape():
-    with tf.Session() as sess:
-        sess.run(tf.initialize_all_variables())  
-        print(sess.run(tf.get_collection('temp_net'))) 
 
 def add_depth_summaries(gt, pr):
     """添加深度信息
@@ -106,8 +102,8 @@ class DepthNetwork(object):
                         for i in range(self.cfg.HG_2D_COUNT):
                             with tf.variable_scope("2d_hg1_%d"%i):
                                 # 沙漏网络,4*120*160*128
-                                # net = hg.hourglass_2d(net, self.cfg.HG_2D_DEPTH_COUNT, 64)
-                                net = hg.fast_res_hourglass_2d(net, self.cfg.HG_2D_DEPTH_COUNT, 64)
+                                 net = hg.hourglass_2d(net, self.cfg.HG_2D_DEPTH_COUNT, 64)
+                                #net = hg.fast_res_hourglass_2d(net, self.cfg.HG_2D_DEPTH_COUNT, 64)
                         # # 沙漏网络,4*120*160*128
                         # net = hg.hourglass_2d(net, 4, 64) # 52
                         # # 沙漏网络，4*120*160*64
@@ -148,7 +144,7 @@ class DepthNetwork(object):
                     net = fast_res_conv2d(net, 32, 1) 
                     # 这里再次进行卷积，大小缩小一半
                     # 4*120*160*32
-                    net = fast_res_conv2d(net, 32, 2) 
+                    net = fast_res_conv2d(net, 32, 2)  # 在这里尺寸再缩小一半
                     # 4*120*160*32
                     net = fast_res_conv2d(net, 32, 1) #2 
                     # 4*120*160*32
@@ -167,7 +163,7 @@ class DepthNetwork(object):
                             # net = hg.fast_res_hourglass_2d(net, self.cfg.HG_2D_DEPTH_COUNT, 64)
                     # 卷积网络 4*60*80*32
                     embd = slim.conv2d(net, 32, [1, 1]) # 1
-        # 重新进行缩放 1*4*120*160*32
+        # 重新进行缩放 大小为原来的1/8
         embd = tf.reshape(embd, [batch, frames, ht//8, wd//8, 32])
         return embd
 
@@ -275,7 +271,8 @@ class DepthNetwork(object):
                 for i in range(self.cfg.HG_COUNT):
                     with tf.variable_scope("hg1_%d"%i):
                         # 3d沙漏卷积，进行特征卷积，1*120*160*32*32
-                        x = hg.fast_hourglass_3d(x, self.cfg.HG_DEPTH_COUNT, 32)
+                        x = hg.hourglass_3d(x, self.cfg.HG_DEPTH_COUNT, 32)
+                        # x = hg.fast_hourglass_3d(x, self.cfg.HG_DEPTH_COUNT, 32)
                         # 将金字塔的结果进行输入
                         self.pred_logits.append(self.stereo_head(x))
 
@@ -286,7 +283,6 @@ class DepthNetwork(object):
         Args:
             volume ([type]): decoder 主要特征部分
         """
-
         with slim.arg_scope([slim.batch_norm], **self.batch_norm_params):
             with slim.arg_scope([slim.conv3d],
                                 weights_regularizer=slim.l2_regularizer(0.00005),
@@ -294,11 +290,11 @@ class DepthNetwork(object):
                                 activation_fn=None):
                 # 获取数据维度batch ,frams,w,h,dim,6
                 dim = tf.shape(volume)
-                    # 将其维度进行强制转换 3*60*80*32*64
+                # 将其维度进行强制转换 3*60*80*32*64
                 volume = tf.reshape(volume, [dim[0]*dim[1], dim[2], dim[3], dim[4], 64])
-                    # 进行三维特征卷积，卷积核大小为
+                # 进行三维特征卷积，卷积核大小为
                 x = slim.conv3d(volume, 32, [1, 1, 1])
-                    # 添加变量
+                # 添加变量
                 tf.add_to_collection("checkpoints", x)
 
                 # multi-view convolution
@@ -331,21 +327,21 @@ class DepthNetwork(object):
                                 weights_regularizer=slim.l2_regularizer(0.00005),
                                 normalizer_fn=None,
                                 activation_fn=None):
-                # 获取数据维度batch ,frams,w,h,dim,6
+                  # 获取数据维度batch ,frams,w,h,dim,6
                 dim = tf.shape(volume)
-                    # 将其维度进行强制转换 3*60*80*32*64
+                # 将其维度进行强制转换 3*60*80*32*64
                 volume = tf.reshape(volume, [dim[0]*dim[1], dim[2], dim[3], dim[4], 64])
-                    # 进行三维特征卷积，卷积核大小为
+                # 进行三维特征卷积，卷积核大小为
                 x = slim.conv3d(volume, 32, [1, 1, 1])
-                    # 添加变量
+                # 添加变量
                 tf.add_to_collection("checkpoints", x)
 
                 # multi-view convolution
                 # 多视角卷积
-                x = tf.add(x, conv3d(conv3d(x, 32), 32))
+                x = tf.add(x, conv3d(x, 32))
                 # 重新整理输出为32维度
                 x = tf.reshape(x, [dim[0], dim[1], dim[2], dim[3], dim[4], 32])
-                # 沿着frame方向对所有帧求取平均值,1*120*160*32*32
+                # 沿着frame方向对所有帧求取平均值,1*60*80*32*32
                 x = tf.reduce_mean(x, axis=1)
                 tf.add_to_collection("checkpoints", x)
                 self.pred_logits = []
@@ -353,7 +349,7 @@ class DepthNetwork(object):
                 for i in range(self.cfg.HG_COUNT):
                     with tf.variable_scope("hg1_%d"%i):
                         # 3d沙漏卷积，进行特征卷积，1*120*160*32*32
-                        x = hg.fast_hourglass_3d(x, self.cfg.HG_DEPTH_COUNT, 32)
+                        x = hg.hourglass_3d(x, self.cfg.HG_DEPTH_COUNT, 32)
                         # 将金字塔的结果进行输入
                         self.pred_logits.append(self.fast_stereo_head(x))
         
@@ -404,7 +400,7 @@ class DepthNetwork(object):
         # 特征概率 1*480*640*32
         prob_volume = tf.nn.softmax(prob_volume, axis=-1)
         # 计算特征概率合并图，1*480*640*32
-        pred = tf.reduce_sum(self.depths*prob_volume, axis= -1) # 对概率深度进行求和
+        pred = tf.reduce_sum(self.depths*prob_volume, axis= -1,name='my_result') # 对概率深度进行求和
         return pred # 返回深度估计值
 
     # 匹配网络avg方式下降

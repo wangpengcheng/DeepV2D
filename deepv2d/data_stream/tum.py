@@ -226,13 +226,11 @@ class TUM_RGBD:
         data_id = 0
         # 访问数据文件夹，并列举所有数据文件夹
         for scan in sorted(os.listdir(self.dataset_path)):
-            print("scan dir:{}".format(scan))
 
             # 访问数据文件夹，构造对应的数据
             images, depths, poses, color_intrinsics, depth_intrinsics = self._load_scan(scan)
             color_intrinsics = color_intrinsics*self.resize 
             depth_intrinsics = depth_intrinsics*self.resize
-            print("hellp: {}".format(color_intrinsics[0]))
             # 构建索引表
             self.build_data_map(images,depths,poses)
             # 加载数据
