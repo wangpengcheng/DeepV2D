@@ -534,7 +534,7 @@ class DeepV2D:
             #self.update_poses(i)    # 计算位姿
             self.update_depths()    # 计算深度
             time_end=time.time()
-            print('time cost',time_end-time_start,'ms')
+            print('time cost',time_end-time_start,'s')
         if viz:
             self.vizualize_output()
 
