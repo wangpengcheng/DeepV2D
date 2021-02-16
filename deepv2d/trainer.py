@@ -102,7 +102,7 @@ class DeepV2DTrainer(object):
 
     # 构建二段训练，主要是相机位姿和深度信息的整合
     def build_train_graph_stage2(self, cfg, num_gpus=1):
-
+        # 进行训练
         with tf.name_scope("training_schedule"):
             # 全局训练参数
             global_step = tf.Variable(0, name='global_step', trainable=False)
