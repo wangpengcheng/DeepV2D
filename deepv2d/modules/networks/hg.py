@@ -127,10 +127,11 @@ def fast_hourglass_3d(x, n, dim, expand=48):
 
 def aspp_2d(net, dim, expand=48):
     out_dim = dim + expand
-    with tf.variable_scope('aspp', [net]) as sc:
+    with tf.variable_scope('aspp2d', [net]) as sc:
         aspp_list = []
         # 进行二维卷积1*1卷积
         branch_1 = slim.conv2d(net, out_dim, [1, 1], stride=1, scope='1x1conv')
+        tf.add_to_collection("checkpoints", branch_1)
         # 将其添加到
         aspp_list.append(branch_1)
         # 进行空洞卷积
@@ -139,6 +140,30 @@ def aspp_2d(net, dim, expand=48):
             aspp_list.append(branch_2)
         # 进行维度合并
         temp_concat = tf.concat(aspp_list, 1)
-        res = conv2d_1x1(temp_concat, dim)
-        return res 
+        out = conv2d_1x1(temp_concat, dim)
+        tf.add_to_collection("checkpoints", out)
+        return out 
+
+def aspp_3d(net,dim,expand=48):
+    out_dim = dim + expand
+    with tf.variable_scope('aspp3d', [net]) as sc:
+        aspp_list = []
+        # 进行二维卷积1*1卷积
+        branch_1 = slim.conv3d(net, out_dim, [1, 1, 1], stride=1, scope='1x1x1conv')
+        tf.add_to_collection("checkpoints", branch_1)
+      
+        # 将其添加到
+        aspp_list.append(branch_1)
+        # 进行空洞卷积
+        for i in range(3):
+            branch_2 = slim.conv3d(net, out_dim, [3, 3, 3], stride=1, rate=6*(i+ 1), scope='rate{}'.format(6*(i+1)))
+            aspp_list.append(branch_2)
+
+        # 进行维度合并
+        temp_concat = tf.concat(aspp_list, 1)
+
+        out = conv3d_1x1(temp_concat, dim)
+        tf.add_to_collection("checkpoints", out)
+
+    return out
         

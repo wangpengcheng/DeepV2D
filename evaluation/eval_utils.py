@@ -106,7 +106,7 @@ def compute_depth_errors(gt, pr, min_depth=0.1, max_depth=10.0):
     sq_rel2 = np.mean(((gt - pr)**2) / gt**2)
     # https://blog.csdn.net/qq_34923437/article/details/109048229
     depth_errors = {
-        "sc-inv": scinv, # 相对误差
+        "sc-inv": scinv, # 相对误差,越小越好
         "a10": a10,
         "a1": a1,
         "a2": a2,
