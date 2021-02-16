@@ -257,12 +257,13 @@ class TUM_RGBD:
         self.images_map = {}
         i=0
         for image_name in images_names:
-            print("read image file:{}".format(image_name))
+            #print("read image file:{}".format(image_name))
             image = cv2.imread(image_name)
             image = cv2.resize(image, (self.width, self.height))
             self.images.append(image)
             self.images_map[image_name]= i
             i=i+1
+        print("read image file OK")
         # 转换位姿信息
         #self.poses = []
         
@@ -277,7 +278,7 @@ class TUM_RGBD:
         self.depths_map={}
         i=0
         for depth_name in depths_names:
-            print("read image file:{}".format(depth_name))
+            
             # 读取深度信息
             depth = cv2.imread(depth_name, cv2.IMREAD_ANYDEPTH)
             depth = cv2.resize(depth, (int(self.width), int(self.height)))
@@ -287,6 +288,7 @@ class TUM_RGBD:
             self.depths.append(depth)
             self.depths_map[depth_name]=i
             i=i+1
+        print("read depth file OK")
 
     def test_set_iterator(self):
         """
