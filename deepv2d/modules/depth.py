@@ -397,9 +397,9 @@ class DepthNetwork(object):
 
     def soft_argmax(self, prob_volume):
         """ Convert probability volume into point estimate of depth 转换概率体积为深度的点估计"""
-        # 特征概率 1*480*640*32
+        # 特征概率 1*480*640*1
         prob_volume = tf.nn.softmax(prob_volume, axis=-1)
-        # 计算特征概率合并图，1*480*640*32
+        # 计算特征概率合并图，1*480*640*1
         pred = tf.reduce_sum(self.depths*prob_volume, axis= -1,name='my_result') # 对概率深度进行求和
         return pred # 返回深度估计值
 
@@ -437,6 +437,7 @@ class DepthNetwork(object):
         """3D Matching Network with view concatenation"""
 
         cfg = self.cfg
+        # 
         depths = tf.lin_space(cfg.MIN_DEPTH, cfg.MAX_DEPTH, cfg.COST_VOLUME_DEPTH)
         intrinsics = intrinsics_vec_to_matrix(intrinsics / 4.0)
 
