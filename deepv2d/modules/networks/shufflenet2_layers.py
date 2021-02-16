@@ -23,8 +23,9 @@ def channle_shuffle(inputs, group):
     assert in_channel % group == 0
     # 重新进行通道混洗
     l = tf.reshape(inputs, [-1, h, w, in_channel // group, group])
-    
+    # 重新进行形状变换,交换最后一维和倒数第二维度
     l = tf.transpose(l, [0, 1, 2, 4, 3])
+    # 最后进行形状变换，将其进行输出，在这里实现通道混洗
     l = tf.reshape(l, [-1, h, w, in_channel])
 
     return l
@@ -71,13 +72,15 @@ class ShufflenetUnit1(tf.keras.Model):
 
         assert out_channel % 2 == 0
         self.out_channel = out_channel
-
+        # 1*1的组卷积
         self.conv1_bn_relu = Conv2D_BN_ReLU(out_channel // 2, 1, 1)
+        # 深度可分离卷积
         self.dconv_bn = DepthwiseConv2D_BN(3, 1)
+        # 1*1 的组卷积
         self.conv2_bn_relu = Conv2D_BN_ReLU(out_channel // 2, 1, 1)
 
     def call(self, inputs, training=False):
-        # split the channel
+        # split the channel,在这里实现通道分离
         shortcut, x = tf.split(inputs, 2, axis=3)
 
         x = self.conv1_bn_relu(x, training=training)
@@ -215,7 +218,7 @@ if __name__ =="__main__":
     from tensorflow.keras.preprocessing import image
     from tensorflow.keras.applications.densenet import preprocess_input, decode_predictions
 
-    img_path = './images/cat.jpg'
+    img_path = '/home/node/workspace/DeepV2D/depth.png'
     img = image.load_img(img_path, target_size=(224, 224))
     x = image.img_to_array(img)
     x = np.expand_dims(x, axis=0)
@@ -228,6 +231,8 @@ if __name__ =="__main__":
 
     saver = tf.train.Saver()
     with tf.Session() as sess:
-        saver.restore(sess, "./models/shufflene_v2_1.0.ckpt")
+        init_op = tf.global_variables_initializer()
+        sess.run(init_op)
         preds = sess.run(outputs, feed_dict={inputs: x})
+        saver.save(sess, "./shufflene_v2_1.0.ckpt")
         print(decode_predictions(preds, top=3)[0])

@@ -102,9 +102,9 @@ class DeepV2DTrainer(object):
 
     # 构建二段训练，主要是相机位姿和深度信息的整合
     def build_train_graph_stage2(self, cfg, num_gpus=1):
-        # 进行训练
+        # 进行训练,设置训练相关参数
         with tf.name_scope("training_schedule"):
-            # 全局训练参数
+            # 全局训练参数，记录全局步长
             global_step = tf.Variable(0, name='global_step', trainable=False)
             # 将其转换为folat
             gs = tf.to_float(global_step)
@@ -116,16 +116,24 @@ class DeepV2DTrainer(object):
                 schedule = {'rmax': rmax, 'rmin': rmin, 'dmax': dmax}
             else:
                 schedule = None
-
+            # 获取当前步长
             LR_DECAY = int(0.8 * self.training_steps)
-            lr = tf.train.exponential_decay(cfg.TRAIN.LR, global_step, LR_DECAY, 0.2, staircase=True)
+            # 设置学习率衰减 https://blog.csdn.net/ddy_sweety/article/details/80668867
+            lr = tf.train.exponential_decay(
+                                            cfg.TRAIN.LR, # 初始迭代学习率
+                                            global_step,  # 当前迭代次数
+                                            LR_DECAY,  # 衰减速度（在迭代到该次数时学习率衰减为earning_rate * decay_rate）
+                                            0.2,  # 学习率衰减系数，通常介于0-1之间。
+                                            staircase=True # (默认值为False,当为True时，（global_step/decay_steps）则被转化为整数) ,选择不同的衰减方式。
+                                            )
 
             stereo_optim = tf.train.RMSPropOptimizer(lr)
-            motion_optim = tf.train.RMSPropOptimizer(MOTION_LR_FRACTION*lr)
+            if cfg.MOTION.USE_MOTION:
+                motion_optim = tf.train.RMSPropOptimizer(MOTION_LR_FRACTION*lr)
         # 进行数据读取
         id_batch, images_batch, poses_batch, gt_batch, filled_batch, pred_batch, intrinsics_batch = self.dl.next()
-        print("image shape:{}".format(images_batch))
-        # 在这里进行数据分割
+
+        # 在这里进行数据分割，方便多GPU运算
         images_batch = tf.split(images_batch, num_gpus)
         poses_batch = tf.split(poses_batch, num_gpus)
         gt_batch = tf.split(gt_batch, num_gpus)
@@ -164,7 +172,7 @@ class DeepV2DTrainer(object):
             Gs = VideoSE3Transformation(matrix=poses)
             # 获取相关数据
             batch, frames, height, width, _ = images.get_shape().as_list()
-            # 使用命名空间
+            # 使用命名空间，并设置深度网络的学习参数
             with tf.name_scope("depth_input"):
                 # 定义学习率和指数衰减 https://blog.csdn.net/lllxxq141592654/article/details/84110600
                 input_prob = tf.train.exponential_decay(2.0, global_step, LR_DECAY, 0.02, staircase=False)
@@ -186,9 +194,9 @@ class DeepV2DTrainer(object):
 
                 # 是否停止迭代
                 stop_cond = global_step < cfg.TRAIN.GT_POSE_ITERS
-                # 转换后的坐标
+                # 转换后的坐标，这里在相机位姿迭代次数使用完毕后，就直接使用输入的位姿--可以去掉
                 Ts = cond_transform(stop_cond, Ts.copy(stop_gradients=True), Ts)
-                # 最终的相机参数
+                # 最终的相机参数 --可以去掉
                 kvec = tf.cond(stop_cond, lambda: tf.stop_gradient(kvec), lambda: kvec)
                 # depth inference
                 # 进行前向计算推理，获取深度预测值
