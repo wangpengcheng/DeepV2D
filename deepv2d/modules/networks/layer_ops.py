@@ -57,6 +57,18 @@ def conv2d_1x1(x, dim, stride=1, bn=True):
         return slim.conv2d(tf.nn.relu(x), dim, [1, 1], stride=stride)
 
 def dilated_conv2d(x, dim, stride=1, my_rate=6, bn=True):
+    """
+    二维空洞卷积
+    Args:
+        x ([type]): [description]
+        dim ([type]): [description]
+        stride (int, optional): [description]. Defaults to 1.
+        my_rate (int, optional): [description]. Defaults to 6.
+        bn (bool, optional): [description]. Defaults to True.
+
+    Returns:
+        [type]: [description]
+    """
     if bn:
         return slim.conv2d(bnrelu(x), dim, [3, 3],rate=my_rate, stride=stride, scope='rate{}'.format(my_rate))
     else:

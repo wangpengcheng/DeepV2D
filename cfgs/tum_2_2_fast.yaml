@@ -5,7 +5,7 @@ INPUT:
   SAMPLES: 3
   RESIZE: 0.5
 TRAIN:
-  ITERS: [300, 400]
+  ITERS: [300, 25000]
   BATCH: [1, 1]
   LR: 0.001
   CLIP_GRADS: True

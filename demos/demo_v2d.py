@@ -122,6 +122,7 @@ def main(args):
             images ,poses,intrinsics = load_sorted_test_sequence(args.sequence,args.inference_file_name,cfg.INPUT.RESIZE)
             # 根据数据进行迭代，根据前面n帧的内容，推断最后帧的内容,注意这里推理的是中间关键帧的内容
             iter_number = int(len(images)/frames_len)
+            time_sum =0.0
             # 遍历进行
             for i in range(0,iter_number):
                 temp_images = images[i*frames_len:(i+1)*frames_len]
@@ -134,8 +135,9 @@ def main(args):
                 # 进行推理
                 depths = deepv2d.inference(temp_images,temp_poses,temp_intrinsics)
                 time_end=time.time()
-                print('time cost',time_end-time_start,'ms')
-                
+                print('time cost',time_end-time_start,'s')
+                if i != 0:
+                    time_sum = time_sum + (time_end-time_start)
                 key_frame_depth=depths[0]
                 key_frame_image = temp_images[int(frames_len/2)]
                 
@@ -148,7 +150,7 @@ def main(args):
                 # 写入图片
                 cv2.imwrite("{}/{}.png".format(result_out_dir,i),image_depth)
                 print("wirte image:{}/{}.png".format(result_out_dir,i))
-            
+            print("{} images,totle time: {} s, avg time:{} s".format(iter_number-1,time_sum,time_sum/(iter_number-1)))
         elif is_calibrated:
             depths, poses = deepv2d(images, intrinsics, viz=True, iters=args.n_iters)
         else:
