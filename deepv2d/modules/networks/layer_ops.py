@@ -56,6 +56,20 @@ def conv2d_1x1(x, dim, stride=1, bn=True):
     else:
         return slim.conv2d(tf.nn.relu(x), dim, [1, 1], stride=stride)
 
+def dilated_conv2d(x, dim, stride=1, my_rate=6, bn=True):
+    if bn:
+        return slim.conv2d(bnrelu(x), dim, [3, 3],rate=my_rate, stride=stride, scope='rate{}'.format(my_rate))
+    else:
+        return slim.conv2d(tf.nn.relu(x), dim, [3, 3],rate=my_rate, stride=stride, scope='rate{}'.format(my_rate))
+
+def avg_pool(input_data, k_h, k_w, s_h, s_w, name, padding='SAME'):
+        return tf.nn.avg_pool(input_data,
+                              ksize=[1, k_h, k_w, 1],
+                              strides=[1, s_h, s_w, 1],
+                              padding=padding,
+                              name=name)
+
+
 def fast_res_conv2d(x,dim,stride=1):
     if stride==1:
         y = conv2d_1x1(x,dim)
