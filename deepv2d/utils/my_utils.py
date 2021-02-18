@@ -15,3 +15,5 @@ def set_gpus(cfg):
     sess = tf.InteractiveSession(config = config)
 
     return sess
+
+    

@@ -11,7 +11,7 @@ TRAIN:
   CLIP_GRADS: True
   DEPTH_WEIGHT: 1.0
   USE_GPU: '0'
-  GPU_MEMORY: 0.8
+  GPU_MEMORY: 0.5
 MOTION:
   USE_MOTION: False
   STACK_FRAMES: False
@@ -19,7 +19,7 @@ MOTION:
     DELTA: [0.02, 0.02, 0.02, 0.02, 0.02, 0.02]
 STRUCTURE:
   MODE: avg
-  ENCODER_MODE: aspp # resnet fast_resnet mobilenet
+  ENCODER_MODE: asppnet # resnet fast_resnet mobilenet
   DECODER_MODE: fast_resnet # resnet fast_resnet mobilenet
   MAX_DEPTH: 10.0
   MIN_DEPTH: 0.2

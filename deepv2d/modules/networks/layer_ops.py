@@ -58,7 +58,7 @@ def conv2d(x, dim, stride=1, bn=True):
 def conv2d_1x1(x, dim, stride=1, bn=True):
     # https://blog.csdn.net/weixin_44695969/article/details/102997574
     if bn:
-        return slim.conv2d(bnrelu(x), dim, [1, 1], stride=stride) # 注意这里指定的卷积核的大小都是3*3的大小，可以将其转变为两个3*1
+        return slim.conv2d(bnrelu(x), dim, [1, 1], stride=stride) 
     else:
         return slim.conv2d(tf.nn.relu(x), dim, [1, 1], stride=stride)
 
@@ -79,6 +79,16 @@ def dilated_conv2d(x, dim, my_stride=1, my_rate=6, bn=True):
         return slim.conv2d(bnrelu(x), dim, [3, 3], rate=my_rate, stride= my_stride, scope='rate_2d{}'.format(my_rate))
     else:
         return slim.conv2d(tf.nn.relu(x), dim, [3, 3], rate=my_rate, stride= my_stride, scope='rate_2d{}'.format(my_rate))
+
+
+def dilated_conv3d(x, dim, my_stride=1, my_rate=6, bn=True):
+    if bn:
+        return slim.conv3d(bnrelu(x), dim, [3, 3, 3], rate=my_rate, stride=my_stride, scope='3d_rate{}'.format(my_rate))
+        #return slim.batch_norm(slim.conv3d(x), dim, [3, 3, 3], rate=my_rate, stride=my_stride, scope='3d_rate{}'.format(my_rate))
+
+    else:
+        return slim.conv3d(tf.nn.relu(x), dim, [3, 3, 3], rate=my_rate, stride=my_stride, scope='3d_rate{}'.format(my_rate))
+
 
 def avg_pool(input_data, k_h, k_w, s_h, s_w, name, padding='SAME'):
         return tf.nn.avg_pool(input_data,
@@ -133,13 +143,14 @@ def res_conv2d(x, dim, stride=1):
     return out
 
 def upnn3d(x, y, sc=2):
-    # 获取最后一维数据长度，相当于通道数量
+    # 获取最后一维数据长度，相当于通道数量，当前的通道数量
     dim = x.get_shape().as_list()[-1]
-    # 
+    # 获取相关维度
     bx, hx, wx, dx, _ = tf.unstack(tf.shape(x), num=5)
+    # 获取目标相关维度
     by, hy, wy, dy, _ = tf.unstack(tf.shape(y), num=5)
 
-    x1 = tf.reshape(tf.tile(x, [1,1,sc,sc,sc]), [bx, sc*hx, sc*wx, sc*dx, dim])
+    x1 = tf.reshape(tf.tile(x, [1, 1, sc, sc, sc]), [bx, sc*hx, sc*wx, sc*dx, dim])
     if not (sc*hx==hy and sc*wx==wy):
         x1 = x1[:, :hy, :wy]
 

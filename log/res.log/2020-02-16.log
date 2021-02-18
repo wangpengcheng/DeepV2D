@@ -287,3 +287,24 @@ wirte image:data/tum/cabinet/inference_result/219.png
 time cost 0.05093741416931152 ms
 wirte image:data/tum/cabinet/inference_result/220.png
 220 images,totle time: 10.868629932403564 s, avg time: 0.04940286332910711 s
+
+resenet 240*480*2*2
+
+wirte image:data/tum/cabinet/inference_result/212.png
+time cost 0.10447287559509277 s
+wirte image:data/tum/cabinet/inference_result/213.png
+time cost 0.11020159721374512 s
+wirte image:data/tum/cabinet/inference_result/214.png
+time cost 0.08046197891235352 s
+wirte image:data/tum/cabinet/inference_result/215.png
+time cost 0.134749174118042 s
+wirte image:data/tum/cabinet/inference_result/216.png
+time cost 0.10391831398010254 s
+wirte image:data/tum/cabinet/inference_result/217.png
+time cost 0.12374496459960938 s
+wirte image:data/tum/cabinet/inference_result/218.png
+time cost 0.08444833755493164 s
+wirte image:data/tum/cabinet/inference_result/219.png
+time cost 0.11534619331359863 s
+wirte image:data/tum/cabinet/inference_result/220.png
+220 images,totle time: 25.286697149276733 s, avg time:0.11493953249671242 s
