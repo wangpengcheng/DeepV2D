@@ -1,5 +1,11 @@
 import tensorflow as tf
+from tensorflow.keras.layers import Conv2D, DepthwiseConv2D
+from tensorflow.keras.layers import MaxPool2D, GlobalAveragePooling2D, Dense
+from tensorflow.keras.layers import BatchNormalization, Activation
+
+
 import numpy as np
+
 slim = tf.contrib.slim
 
 from core.config import cfg
@@ -56,7 +62,7 @@ def conv2d_1x1(x, dim, stride=1, bn=True):
     else:
         return slim.conv2d(tf.nn.relu(x), dim, [1, 1], stride=stride)
 
-def dilated_conv2d(x, dim, stride=1, my_rate=6, bn=True):
+def dilated_conv2d(x, dim, my_stride=1, my_rate=6, bn=True):
     """
     二维空洞卷积
     Args:
@@ -70,9 +76,9 @@ def dilated_conv2d(x, dim, stride=1, my_rate=6, bn=True):
         [type]: [description]
     """
     if bn:
-        return slim.conv2d(bnrelu(x), dim, [3, 3],rate=my_rate, stride=stride, scope='rate{}'.format(my_rate))
+        return slim.conv2d(bnrelu(x), dim, [3, 3], rate=my_rate, stride= my_stride, scope='rate_2d{}'.format(my_rate))
     else:
-        return slim.conv2d(tf.nn.relu(x), dim, [3, 3],rate=my_rate, stride=stride, scope='rate{}'.format(my_rate))
+        return slim.conv2d(tf.nn.relu(x), dim, [3, 3], rate=my_rate, stride= my_stride, scope='rate_2d{}'.format(my_rate))
 
 def avg_pool(input_data, k_h, k_w, s_h, s_w, name, padding='SAME'):
         return tf.nn.avg_pool(input_data,
@@ -174,3 +180,5 @@ def resize_depth(depth, dim, min_depth=0):
         depth = tf.where(depth<min_depth, min_depth*tf.ones_like(depth), depth)
 
     return tf.squeeze(depth, axis=-1)
+
+

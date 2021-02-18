@@ -130,10 +130,12 @@ def aspp_2d(net, dim, expand=64):
 
     with tf.variable_scope('aspp2d', [net]) as sc:
         aspp_list = []
+        # 进行特征卷积
+        # net1 = conv2d_1x1(net, dim)
         # 先进行1*1卷积
-        branch_1 = conv2d_1x1(net, dim)
+        branch_1 = conv2d_1x1(net, out_dim)
         # 进行均值池化
-        branch_1 = slim.avg_pool2d(net,[1,1])
+        #branch_1 = slim.avg_pool2d(net, out_dim, 1, padding='SAME',scope = 'aspp_2d_avg_pool')
         # 进行二维卷积1*1卷积
         
         tf.add_to_collection("checkpoints", branch_1)
@@ -145,6 +147,7 @@ def aspp_2d(net, dim, expand=64):
             aspp_list.append(branch_2)
         # 进行维度合并
         temp_concat = tf.concat(aspp_list, 1)
+        # out =net1 + conv2d_1x1(temp_concat, dim)
         out = conv2d_1x1(temp_concat, dim)
         tf.add_to_collection("checkpoints", out)
         return out 

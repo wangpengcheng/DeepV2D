@@ -31,7 +31,11 @@ def channle_shuffle(inputs, group):
     return l
 
 class Conv2D_BN_ReLU(tf.keras.Model):
-    """Conv2D -> BN -> ReLU"""
+    """
+    Conv2D -> BN -> ReLU
+    标准二维卷积
+    """
+
     def __init__(self, channel, kernel_size=1, stride=1):
         super(Conv2D_BN_ReLU, self).__init__()
 
@@ -80,7 +84,7 @@ class ShufflenetUnit1(tf.keras.Model):
         self.conv2_bn_relu = Conv2D_BN_ReLU(out_channel // 2, 1, 1)
 
     def call(self, inputs, training=False):
-        # split the channel,在这里实现通道分离
+        # split the channel,在这里实现通道分离,主要是将二维进行分离
         shortcut, x = tf.split(inputs, 2, axis=3)
 
         x = self.conv1_bn_relu(x, training=training)
@@ -88,6 +92,7 @@ class ShufflenetUnit1(tf.keras.Model):
         x = self.conv2_bn_relu(x, training=training)
 
         x = tf.concat([shortcut, x], axis=3)
+        # 进行通道混洗
         x = channle_shuffle(x, 2)
         return x
 
@@ -97,14 +102,18 @@ class ShufflenetUnit2(tf.keras.Model):
         super(ShufflenetUnit2, self).__init__()
 
         assert out_channel % 2 == 0
+        # 定义输入维度
         self.in_channel = in_channel
+        # 定义输出维度
         self.out_channel = out_channel
-
+        # 进行输出维度进行一半卷积
         self.conv1_bn_relu = Conv2D_BN_ReLU(out_channel // 2, 1, 1)
+        # 进行步长为2的深度可分离卷积
         self.dconv_bn = DepthwiseConv2D_BN(3, 2)
+        # 进行1x1的卷积
         self.conv2_bn_relu = Conv2D_BN_ReLU(out_channel - in_channel, 1, 1)
 
-        # for shortcut
+        # for shortcut 短连接的深度可分离卷积
         self.shortcut_dconv_bn = DepthwiseConv2D_BN(3, 2)
         self.shortcut_conv_bn_relu = Conv2D_BN_ReLU(in_channel, 1, 1)
 
@@ -149,7 +158,7 @@ class ShuffleNetv2(tf.keras.Model):
     """Shufflenetv2"""
     def __init__(self, num_classes, first_channel=24, channels_per_stage=(116, 232, 464)):
         super(ShuffleNetv2, self).__init__()
-
+        # 进行分离，定义分离数目
         self.num_classes = num_classes
 
         self.conv1_bn_relu = Conv2D_BN_ReLU(first_channel, 3, 2)
@@ -162,8 +171,11 @@ class ShuffleNetv2(tf.keras.Model):
         self.linear = Dense(num_classes)
 
     def call(self, inputs, training=False):
+        # 进行一维卷积
         x = self.conv1_bn_relu(inputs, training=training)
+        # 进行池化
         x = self.pool1(x)
+        # 进行交换
         x = self.stage2(x, training=training)
         x = self.stage3(x, training=training)
         x = self.stage4(x, training=training)
