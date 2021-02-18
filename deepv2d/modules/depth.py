@@ -196,12 +196,8 @@ class DepthNetwork(object):
                                     normalizer_fn=None,
                                     activation_fn=None,
                                     reuse=reuse):
-<<<<<<< HEAD
                     # 先进行一次卷积，尺寸减半
-                    net = slim.conv2d(inputs, 32, [3, 3], stride=2)
-=======
-                    net = slim.conv2d(inputs, 32, [3, 3], stride=2) # size/2
->>>>>>> b4c7825acc3dc32a351c0e5f096a1553050950bd
+                    net = slim.conv2d(inputs, 32, [3, 3], stride=2) 
                     
                     net = fast_res_conv2d(net, 32, 1)
                     # 5*240*320*32
@@ -262,7 +258,7 @@ class DepthNetwork(object):
                                     reuse=reuse):
                     net = slim.conv2d(inputs, 32, [3, 3], stride=2)
                     # 3*3 卷积
-                    net = ShuffleNetUnitA(net, 32, 2)
+                    net = ShuffleNetUnitA(net, 32, 2) 
                     # 3*3 卷积
                     net = ShuffleNetUnitA(net, 32, 2)
                     # 3*3 缩放卷积
@@ -273,8 +269,10 @@ class DepthNetwork(object):
                     net = ShuffleNetUnitA(net, 64, 2)
                     # 3*3 缩放卷积
                     net = ShuffleNetUnitB(net, 96, 2) #size/2
+
+                    net = slim.conv2d(net, 64, [3, 3], stride=1)
                      # 3*3 卷积
-                    net = ShuffleNetUnitA(net, 96, 2)
+                    net = ShuffleNetUnitA(net, 64, 2)
                     # 3*3 卷积
                     net = ShuffleNetUnitA(net, 64, 2)
                     
@@ -312,6 +310,7 @@ class DepthNetwork(object):
                     embd = slim.conv2d(net, 32, [1, 1]) # 1
         # 重新进行缩放 大小为原来的1/8
         embd = tf.reshape(embd, [batch, frames, ht//8, wd//8, 32])
+        return embd
 
 
     def mobilenet_encoder(self, inputs, reuse=False):
@@ -466,40 +465,6 @@ class DepthNetwork(object):
                         x = hg.fast_hourglass_3d(x, self.cfg.HG_DEPTH_COUNT, 32)
                         # 将金字塔的结果进行输入
                         self.pred_logits.append(self.fast_stereo_head(x))
-    def aspp_decoder(self, volume):
-        """
-        快速后端解码模块
-        Args:
-            volume ([type]): decoder 主要特征部分
-        """
-        with slim.arg_scope([slim.batch_norm], **self.batch_norm_params):
-            with slim.arg_scope([slim.conv3d],
-                                weights_regularizer=slim.l2_regularizer(0.0005),
-                                normalizer_fn=None,
-                                activation_fn=None):
-                # 获取数据维度batch ,frams,w,h,dim,6
-                dim = tf.shape(volume)
-                # 将其维度进行强制转换 3*60*80*32*64
-                volume = tf.reshape(volume, [dim[0]*dim[1], dim[2], dim[3], dim[4], 64])
-                # 进行三维特征卷积，卷积核大小为
-                x = slim.conv3d(volume, 32, [1, 1, 1])
-                # 添加变量
-                tf.add_to_collection("checkpoints", x)
-
-                # multi-view convolution
-                # 多视角卷积
-                x = tf.add(x, conv3d(x, 32))
-                # 重新整理输出为32维度
-                x = tf.reshape(x, [dim[0], dim[1], dim[2], dim[3], dim[4], 32])
-                # 沿着frame方向对所有帧求取平均值,1*60*80*32*32
-                x = tf.reduce_mean(x, axis=1)
-                tf.add_to_collection("checkpoints", x)
-                self.pred_logits = []
-                # aspp三维卷积
-                x = hg.aspp_3d(x,32)
-                x = self.fast_stereo_head(x)
-                # 添加到数据上
-                self.pred_logits.append(x)
 
     def mobilenet_decoder(self, volume):
         """
@@ -537,7 +502,7 @@ class DepthNetwork(object):
                         # 3d沙漏卷积，进行特征卷积，1*120*160*32*32
                         x = hg.hourglass_3d(x, self.cfg.HG_DEPTH_COUNT, 32)
                         # 将金字塔的结果进行输入
-                        self.pred_logits.append(self.stereo_head(x))
+                        self.pred_logits.append(self.fast_stereo_head(x))
         
 
     def decoder(self, volume):
@@ -552,8 +517,6 @@ class DepthNetwork(object):
             return self.fast_resnet_decoder(volume)
         elif self.cfg.DECODER_MODE == 'mobilenet':
             return self.mobilenet_decoder(volume)
-        elif self.cfg.DECODER_MODE == 'asppnet':
-            return self.aspp_decoder(volume)
         else:
             print("cfg.FAST_MODE is error value:{}".format(self.cfg.FAST_MODE)) 
 
@@ -573,7 +536,6 @@ class DepthNetwork(object):
     def fast_stereo_head(self, x):
         """ Predict probability volume from hg features hg 的特征概率"""
         x = bnrelu(x)
-        x = slim.conv3d(x, 32, [1, 1, 1], activation_fn=tf.nn.relu)
         x = slim.conv3d(x, 32, [3, 3, 3], activation_fn=tf.nn.relu)
         tf.add_to_collection("checkpoints", x)
         # 综合数据
@@ -633,10 +595,23 @@ class DepthNetwork(object):
         with tf.variable_scope("stereo", reuse=self.reuse) as sc:
             # extract 2d feature maps from images and build cost volume
             fmaps = self.encoder(images)
-            # 注意这里的不一样
             volume = operators.backproject_cat(Ts, depths, intrinsics, fmaps)
-            # 进行编码模块
-            self.decoder(volume)
+
+            self.spreds = []
+            with slim.arg_scope([slim.batch_norm], **self.batch_norm_params):
+                with slim.arg_scope([slim.conv3d],
+                                    weights_regularizer=slim.l2_regularizer(0.00005),
+                                    normalizer_fn=None,
+                                    activation_fn=None):
+
+
+                    x = slim.conv3d(volume, 48, [3, 3, 3])
+                    x = tf.add(x, conv3d(conv3d(x, 48), 48))
+                    self.pred_logits = []
+                    for i in range(self.cfg.HG_COUNT):
+                        with tf.variable_scope("hg1_%d"%i):
+                            x = hg.hourglass_3d(x, 4, 48)
+                            self.pred_logits.append(self.stereo_head(x))
 
         return self.soft_argmax(self.pred_logits[-1])
 
