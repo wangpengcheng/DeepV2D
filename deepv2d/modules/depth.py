@@ -257,25 +257,25 @@ class DepthNetwork(object):
                                     activation_fn=None,
                                     reuse=reuse):
                     net = slim.conv2d(inputs, 32, [3, 3], stride=2)
-                    # 3*3 卷积
+                    # # 3*3 卷积
                     net = ShuffleNetUnitA(net, 32, 2) 
-                    # 3*3 卷积
-                    net = ShuffleNetUnitA(net, 32, 2)
-                    # 3*3 缩放卷积
-                    net = ShuffleNetUnitB(net, 64, 2) #size/2
-                     # 3*3 卷积
-                    net = ShuffleNetUnitA(net, 64, 2)
-                    # 3*3 卷积
-                    net = ShuffleNetUnitA(net, 64, 2)
-                    # 3*3 缩放卷积
-                    net = ShuffleNetUnitB(net, 96, 2) #size/2
+                    # # 3*3 卷积
+                    # net = ShuffleNetUnitA(net, 32, 2)
+                    # # 3*3 缩放卷积
+                    #net = ShuffleNetUnitB(net, 64, 2) #size/2
+                    #  # 3*3 卷积
+                    # net = ShuffleNetUnitA(net, 64, 2)
+                    # # 3*3 卷积
+                    # net = ShuffleNetUnitA(net, 64, 2)
+                    # # 3*3 缩放卷积
+                    #net = ShuffleNetUnitB(net, 128, 2) #size/2
 
-                    net = slim.conv2d(net, 64, [3, 3], stride=1)
-                     # 3*3 卷积
-                    net = ShuffleNetUnitA(net, 64, 2)
-                    # 3*3 卷积
-                    net = ShuffleNetUnitA(net, 64, 2)
                     
+                    # # 3*3 卷积
+                    # net = ShuffleNetUnitA(net, 128, 2)
+                    # # 3*3 卷积
+                    # net = ShuffleNetUnitA(net, 128, 2)
+                    # net = slim.conv2d(net, 64, [3, 3], stride=1)
 
                     # # 先进行一次卷积，尺寸减半
                     # net = slim.conv2d(inputs, 32, [3, 3], stride=2)
@@ -285,13 +285,13 @@ class DepthNetwork(object):
                     # net = fast_res_conv2d(net, 32, 1) 
                     # # 这里再次进行卷积，大小缩小一半
                     # # 4*120*160*32
-                    # net = fast_res_conv2d(net, 32, 2)  # 在这里尺寸再缩小一半
+                    net = fast_res_conv2d(net, 32, 2)  # 在这里尺寸再缩小一半
                     # # 4*120*160*32
                     # net = fast_res_conv2d(net, 32, 1) #2 
                     # # 4*120*160*32
                     # net = fast_res_conv2d(net, 32, 1) #2 
                     # # 4*120*160*64
-                    # net = fast_res_conv2d(net, 64, 2) #3 在这里尺寸再减少一半
+                    net = fast_res_conv2d(net, 64, 2) #3 在这里尺寸再减少一半
                     # # 4*60*80*64
                     # net = fast_res_conv2d(net, 64, 1) #2 
                     # # 4*60*80*64

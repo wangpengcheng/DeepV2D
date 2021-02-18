@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-
+slim = tf.contrib.slim
 def channel_shuffle(inputs, num_groups):
     """
     通道混洗
@@ -43,7 +43,7 @@ def group_conv(inputs, filters, kernel, strides, num_groups):
     # 对每个进行卷积操作
     for layer in conv_side_layers_tmp:
         # 执行卷积操作
-        temp = tf.keras.layers.Conv2D(filters//num_groups, kernel, strides, padding='same')(layer)
+        temp = slim.conv2d(layer, filters//num_groups, kernel, strides, padding='same')
         # 添加操作
         conv_side_layers.append(temp)
     # 进行合并
@@ -65,12 +65,12 @@ def conv(inputs, filters, kernel_size, stride=1, activation=False):
         [type]: [description]
     """
     # 进行卷积操作
-    x = tf.keras.layers.Conv2D(filters, kernel_size, stride, padding='same')(inputs)
+    x = slim.conv2d(inputs, filters, kernel_size, stride, padding='same')
     # 设置BN层
-    x = tf.keras.layers.BatchNormalization()(x)
+    x = slim.batch_norm(x)
     # 执行卷积操作
     if activation:
-        x = tf.keras.layers.Activation('relu')(x)
+        x = tf.nn.relu(x)
         
     return x
 
@@ -85,10 +85,12 @@ def depthwise_conv_bn(inputs, kernel_size, stride=1):
     Returns:
         Tensor : 最终返回结果 
     """
-    x = tf.keras.layers.DepthwiseConv2D(kernel_size=kernel_size, 
-                                        strides=stride, 
-                                        padding='same')(inputs)
-    x = tf.keras.layers.BatchNormalization()(x)
+    x = slim.separable_conv2d(inputs,
+        kernel_size=kernel_size,
+        strides=stride,
+        padding='same'
+        )
+    x = slim.batch_norm(x)
         
     return x
 
@@ -112,9 +114,9 @@ def ShuffleNetUnitA(inputs, out_channels, num_groups):
     # 1*1 进行分组卷积
     x = group_conv(inputs, bottleneck_channels, kernel=1, strides=1, num_groups=num_groups)
     # 进行BN层
-    x = tf.keras.layers.BatchNormalization()(x)
+    x = slim.batch_norm(x)
     # 激活层
-    x = tf.keras.layers.Activation('relu')(x)
+    x = tf.nn.relu(x)
     # 通道混洗
     x = channel_shuffle(x, num_groups)
     # 3*3 深度可分离卷积
@@ -122,11 +124,11 @@ def ShuffleNetUnitA(inputs, out_channels, num_groups):
     # 1*1 分组卷积
     x = group_conv(x, out_channels, kernel=1, strides=1, num_groups=num_groups)
     # BN层
-    x = tf.keras.layers.BatchNormalization()(x)
+    x = slim.batch_norm(x)
     # 执行加法
     x = tf.keras.layers.add([inputs, x])
     # 激活层
-    x = tf.keras.layers.Activation('relu')(x)
+    x = tf.nn.relu(x)
     
     return x
 
@@ -149,20 +151,20 @@ def ShuffleNetUnitB(inputs, out_channels, num_groups):
     bottleneck_channels = out_channels // 4
     # 进行分组卷积
     x = group_conv(inputs, bottleneck_channels, kernel=1, strides=1, num_groups=num_groups)
-    x = tf.keras.layers.BatchNormalization()(x)
-    x = tf.keras.layers.Activation('relu')(x)
+    x = slim.batch_norm(x)
+    x = tf.nn.relu(x)
     # 通道混洗
     x = channel_shuffle(x, num_groups)
     # 进行深度可分离卷积
     x = depthwise_conv_bn(x, kernel_size=3, stride=2)
     # 分组卷积
     x = group_conv(x, out_channels, kernel=1, strides=1, num_groups=num_groups)
-    x = tf.keras.layers.BatchNormalization()(x)
+    x = slim.batch_norm(x)
     # 进行均值池化
-    y = tf.keras.layers.AvgPool2D(pool_size=3, strides=2, padding='same')(inputs)
+    y = slim.avg_pool2d(inputs,kernel_size=3, strides=2, padding='same')
     # 数据合并
     x = tf.concat([y, x], axis=-1)
-    x = tf.keras.layers.Activation('relu')(x)
+    x = tf.nn.relu(x)
     
     return x
 
