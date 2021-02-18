@@ -5,7 +5,7 @@ import cv2
 import vis
 from scipy import interpolate
 import matplotlib.pyplot as plt
-
+from tensorflow.python.client import timeline
 from modules.depth import DepthNetwork
 from modules.motion import MotionNetwork
 
@@ -491,7 +491,7 @@ class DeepV2D:
         print("Press q to exit")
         vis.visualize_prediction(point_cloud, point_colors, self.poses)
 
-    def inference(self, images, poses,intrinsics=None, iters=2, viz=False):
+    def inference(self, images, poses,intrinsics=None, iters=2, viz=False,i_step=-1):
         self.images = images
         self.poses = poses
         self.intrinsics = intrinsics
@@ -501,9 +501,29 @@ class DeepV2D:
                 self.poses_placeholder: self.poses,
                 self.intrinsics_placeholder: self.intrinsics
             }
-        # 开始执行推理
-        self.depths = self.sess.run(self.outputs['depths'], feed_dict=feed_dict)
-
+        # 设置推理时间统计
+        if i_step >= 0:
+            options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+            run_metadata = tf.RunMetadata()
+            # 开始执行推理,并采集参数
+            self.depths = self.sess.run(
+                self.outputs['depths'], 
+                feed_dict=feed_dict,
+                options=options,
+                run_metadata=run_metadata
+                )
+             # 将使用历史，保存为json文件
+            fetched_timeline = timeline.Timeline(run_metadata.step_stats)
+            chrome_trace = fetched_timeline.generate_chrome_trace_format()
+            # 写入文件夹
+            with open('./log/time_lines/timeline_02_step_%d.json' %i_step, 'w') as f:
+                    f.write(chrome_trace)
+        else:
+            self.depths = self.sess.run(
+                self.outputs['depths'], 
+                feed_dict=feed_dict
+                )
+        
         return self.depths
     # call基本函数,用来执行推理
     def __call__(self, images, intrinsics=None, iters=2, viz=False):

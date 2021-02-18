@@ -193,7 +193,7 @@ class DepthNetwork(object):
                                     normalizer_fn=None,
                                     activation_fn=None,
                                     reuse=reuse):
-                    net = slim.conv2d(inputs, 32, [3, 3], stride=2)
+                    net = slim.conv2d(inputs, 32, [3, 3], stride=2) # size/2
                     
                     net = fast_res_conv2d(net, 32, 1)
                     # 5*240*320*32
@@ -253,12 +253,13 @@ class DepthNetwork(object):
                     
                         # input 4*480*640*3
                         # 输入特征提取，尺度缩放为一半
-                        net = conv2d_block(inputs, 32, 3, 2,  False, name='conv1_1',h_swish=True)  # size/2
-                        net = mnv3_block(net, 3, 32, 32, 1, False, name='bneck2_1', h_swish=False, ratio=reduction_ratio, se=True)
-                        net = mnv3_block(net, 3, 64, 64, 2, False, name='bneck2_2', h_swish=False, ratio=reduction_ratio, se=True) # size/4
-                        net = mnv3_block(net, 5, 96, 64, 1, False, name='bneck4_1', h_swish=True, ratio=reduction_ratio, se=True) 
-                        net = mnv3_block(net, 3, 240, 64, 2, False, name='bneck4_2', h_swish=True, ratio=reduction_ratio, se=True) # size/8
-                        net = mnv3_block(net, 5, 240, 64, 1, False, name='bneck4_3', h_swish=True, ratio=reduction_ratio, se=True)
+                        net = conv2d_block(inputs, 32, 3, 2,  True, name='conv1_1',h_swish=True)  # size/2
+                        net = mnv3_block(net, 3, 32, 32, 1, True, name='bneck2_0', h_swish=False, ratio=reduction_ratio, se=True)
+                        net = mnv3_block(net, 3, 32, 32, 1, True, name='bneck2_1', h_swish=False, ratio=reduction_ratio, se=True)
+                        net = mnv3_block(net, 3, 64, 64, 2, True, name='bneck2_2', h_swish=False, ratio=reduction_ratio, se=True) # size/4
+                        net = mnv3_block(net, 5, 96, 64, 1, True, name='bneck4_1', h_swish=True, ratio=reduction_ratio, se=True) 
+                        net = mnv3_block(net, 3, 240, 64, 2, True, name='bneck4_2', h_swish=True, ratio=reduction_ratio, se=True) # size/8
+                        net = mnv3_block(net, 5, 240, 64, 1, True, name='bneck4_3', h_swish=True, ratio=reduction_ratio, se=True)
                         # 16层conv
                         for i in range(self.cfg.HG_2D_COUNT):
                             with tf.variable_scope("2d_hg1_%d"%i):
@@ -293,7 +294,7 @@ class DepthNetwork(object):
             return self.fast_resnet_encoder(inputs, reuse)
         elif self.cfg.ENCODER_MODE == 'mobilenet':
             return self.mobilenet_encoder(inputs, reuse)
-        elif self.cfg.ENCODER_MODE =='aspp':
+        elif self.cfg.ENCODER_MODE =='asppnet':
             return self.aspp_encoder(inputs, reuse)
         else:
             print("cfg.FAST_MODE is error value:{}".format(self.cfg.FAST_MODE)) 
@@ -375,6 +376,40 @@ class DepthNetwork(object):
                         x = hg.fast_hourglass_3d(x, self.cfg.HG_DEPTH_COUNT, 32)
                         # 将金字塔的结果进行输入
                         self.pred_logits.append(self.fast_stereo_head(x))
+    def aspp_decoder(self, volume):
+        """
+        快速后端解码模块
+        Args:
+            volume ([type]): decoder 主要特征部分
+        """
+        with slim.arg_scope([slim.batch_norm], **self.batch_norm_params):
+            with slim.arg_scope([slim.conv3d],
+                                weights_regularizer=slim.l2_regularizer(0.0005),
+                                normalizer_fn=None,
+                                activation_fn=None):
+                # 获取数据维度batch ,frams,w,h,dim,6
+                dim = tf.shape(volume)
+                # 将其维度进行强制转换 3*60*80*32*64
+                volume = tf.reshape(volume, [dim[0]*dim[1], dim[2], dim[3], dim[4], 64])
+                # 进行三维特征卷积，卷积核大小为
+                x = slim.conv3d(volume, 32, [1, 1, 1])
+                # 添加变量
+                tf.add_to_collection("checkpoints", x)
+
+                # multi-view convolution
+                # 多视角卷积
+                x = tf.add(x, conv3d(x, 32))
+                # 重新整理输出为32维度
+                x = tf.reshape(x, [dim[0], dim[1], dim[2], dim[3], dim[4], 32])
+                # 沿着frame方向对所有帧求取平均值,1*60*80*32*32
+                x = tf.reduce_mean(x, axis=1)
+                tf.add_to_collection("checkpoints", x)
+                self.pred_logits = []
+                # aspp三维卷积
+                x = hg.aspp_3d(x,32)
+                x = self.fast_stereo_head(x)
+                # 添加到数据上
+                self.pred_logits.append(x)
 
     def mobilenet_decoder(self, volume):
         """
@@ -412,7 +447,7 @@ class DepthNetwork(object):
                         # 3d沙漏卷积，进行特征卷积，1*120*160*32*32
                         x = hg.hourglass_3d(x, self.cfg.HG_DEPTH_COUNT, 32)
                         # 将金字塔的结果进行输入
-                        self.pred_logits.append(self.fast_stereo_head(x))
+                        self.pred_logits.append(self.stereo_head(x))
         
 
     def decoder(self, volume):
@@ -427,6 +462,8 @@ class DepthNetwork(object):
             return self.fast_resnet_decoder(volume)
         elif self.cfg.DECODER_MODE == 'mobilenet':
             return self.mobilenet_decoder(volume)
+        elif self.cfg.DECODER_MODE == 'asppnet':
+            return self.aspp_decoder(volume)
         else:
             print("cfg.FAST_MODE is error value:{}".format(self.cfg.FAST_MODE)) 
 
@@ -446,6 +483,7 @@ class DepthNetwork(object):
     def fast_stereo_head(self, x):
         """ Predict probability volume from hg features hg 的特征概率"""
         x = bnrelu(x)
+        x = slim.conv3d(x, 32, [1, 1, 1], activation_fn=tf.nn.relu)
         x = slim.conv3d(x, 32, [3, 3, 3], activation_fn=tf.nn.relu)
         tf.add_to_collection("checkpoints", x)
         # 综合数据
@@ -505,23 +543,10 @@ class DepthNetwork(object):
         with tf.variable_scope("stereo", reuse=self.reuse) as sc:
             # extract 2d feature maps from images and build cost volume
             fmaps = self.encoder(images)
+            # 注意这里的不一样
             volume = operators.backproject_cat(Ts, depths, intrinsics, fmaps)
-
-            self.spreds = []
-            with slim.arg_scope([slim.batch_norm], **self.batch_norm_params):
-                with slim.arg_scope([slim.conv3d],
-                                    weights_regularizer=slim.l2_regularizer(0.00005),
-                                    normalizer_fn=None,
-                                    activation_fn=None):
-
-
-                    x = slim.conv3d(volume, 48, [3, 3, 3])
-                    x = tf.add(x, conv3d(conv3d(x, 48), 48))
-                    self.pred_logits = []
-                    for i in range(self.cfg.HG_COUNT):
-                        with tf.variable_scope("hg1_%d"%i):
-                            x = hg.hourglass_3d(x, 4, 48)
-                            self.pred_logits.append(self.stereo_head(x))
+            # 进行编码模块
+            self.decoder(volume)
 
         return self.soft_argmax(self.pred_logits[-1])
 

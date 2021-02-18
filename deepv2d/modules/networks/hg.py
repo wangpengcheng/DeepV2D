@@ -105,9 +105,9 @@ def hourglass_3d(x, n, dim, expand=48):
 def fast_hourglass_3d(x, n, dim, expand=48):
     dim2 = dim + expand
 
-    x = x + conv3d_1x1(x, 1)
+    x = x + conv3d_1x1(x, dim)
     tf.add_to_collection("checkpoints", x)
-    
+
     # 线性层缩放减半
     pool1 = slim.max_pool3d(x, [2, 2, 2], padding='SAME')
 
@@ -126,22 +126,35 @@ def fast_hourglass_3d(x, n, dim, expand=48):
     return out
 
 def aspp_2d(net, dim, expand=64):
+    """
+    aspp尺度卷积网络，主要是为了抵抗尺度变换
+
+    Args:
+        net ([type]): [description]
+        dim ([type]): [description]
+        expand (int, optional): [description]. Defaults to 64.
+
+    Returns:
+        [type]: [description]
+    """
     out_dim = dim + expand
 
     with tf.variable_scope('aspp2d', [net]) as sc:
         aspp_list = []
         # 先进行1*1卷积
-        branch_1 = conv2d_1x1(net, dim)
+        # branch_1 = conv2d_1x1(net, out_dim)
         # 进行均值池化
-        branch_1 = slim.avg_pool2d(net,[1,1])
+        # branch_1 = slim.avg_pool2d(net,out_dim,1, padding='SAME',scope = 'aspp_2d_avg_pool')
+        #branch_1 = avg_pool(net, 1, 1, 1, 1,)
         # 进行二维卷积1*1卷积
-        
+        branch_1 = slim.conv2d(net, out_dim, [1, 1], stride=1, scope='1x1conv')
         tf.add_to_collection("checkpoints", branch_1)
         # 将其添加到
         aspp_list.append(branch_1)
         # 进行空洞卷积
         for i in range(3):
             branch_2 = slim.conv2d(net, out_dim, [3, 3], stride=1, rate=6*(i+1), scope='rate{}'.format(6*(i+1)))
+            #branch_2 = dilated_conv2d(net, out_dim, stride=1, my_rate=6*(i+1))
             aspp_list.append(branch_2)
         # 进行维度合并
         temp_concat = tf.concat(aspp_list, 1)
@@ -149,25 +162,38 @@ def aspp_2d(net, dim, expand=64):
         tf.add_to_collection("checkpoints", out)
         return out 
 
-def aspp_3d(net,dim,expand=48):
+def aspp_3d(net, dim, expand=48):
     out_dim = dim + expand
     with tf.variable_scope('aspp3d', [net]) as sc:
         aspp_list = []
         # 进行二维卷积1*1卷积
-        branch_1 = slim.conv3d(net, out_dim, [1, 1, 1], stride=1, scope='1x1x1conv')
-        tf.add_to_collection("checkpoints", branch_1)
-        # 将其添加到
-        aspp_list.append(branch_1)
+        # branch_1 = slim.conv3d(net, out_dim, [1, 1, 1], stride=1, scope='1x1x1conv')
+        # 进行二维卷积
+        # net = net + conv3d_1x1(net,dim)
+
+        # tf.add_to_collection("checkpoints", net)
+        # 进行均值池化,再进行卷积,注意这里是没有进行扩充
+        pool1 = slim.avg_pool3d(net,[2,2,2],padding='SAME', scope = 'aspp_3d_avg_pool')
+
+        # 进行上采样
+        low1 = conv3d(pool1,out_dim)
+        
+        # 添加第一个卷积
+        aspp_list.append(conv3d_1x1(pool1, out_dim))
+
         # 进行空洞卷积
         for i in range(3):
-            branch_2 = slim.conv3d(net, out_dim, [3, 3, 3], stride=1, rate=6*(i+ 1), scope='rate{}'.format(6*(i+1)))
+            branch_2 = dilated_conv3d(low1, out_dim, my_rate = 6*(i+ 1))
             aspp_list.append(branch_2)
 
         # 进行维度合并
         temp_concat = tf.concat(aspp_list, 1)
+        # 进行多维卷积
+        low3 = conv3d_1x1(temp_concat, dim)
 
-        out = conv3d_1x1(temp_concat, dim)
+        up2 = upnn3d(low3, net)
+        out = up2 + net
+
         tf.add_to_collection("checkpoints", out)
-
     return out
         

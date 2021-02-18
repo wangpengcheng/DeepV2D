@@ -118,14 +118,18 @@ def backproject_avg(Ts, depths, intrinsics, fmaps, adj_list=None):
 
 
 def backproject_cat(Ts, depths, intrinsics, fmaps):
+    # 获取通道数目
     dim = fmaps.get_shape().as_list()[-1]
+    # 获取深度数量
     dd = depths.get_shape().as_list()[0]
+    # # 将特征图进行矩阵分解，获取batch、num、ht和wd等，
     batch, num, ht, wd, _ = tf.unstack(tf.shape(fmaps), num=5)
 
     # make depth volume
     depths = tf.reshape(depths, [1, 1, dd, 1, 1])
+    # 将其进行扩张到和fmaps维度相同，注意这里的num进行了保留
     depths = tf.tile(depths, [batch, num, 1, ht, wd])
-
+    # 进行平滑操作
     ii, jj = tf.meshgrid(tf.range(1), tf.range(0, num))
     ii = tf.reshape(ii, [-1])
     jj = tf.reshape(jj, [-1])
