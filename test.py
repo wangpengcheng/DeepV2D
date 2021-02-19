@@ -16,6 +16,7 @@ ph_squeeze = tf.squeeze(ph)  # 对 placeholder 用 squeeze
 print(ph.shape.as_list())
 
 a = ph.shape.as_list()
+c = tf.reshape(a,[-1,-1])
 for c in a :
     print(c)
 
