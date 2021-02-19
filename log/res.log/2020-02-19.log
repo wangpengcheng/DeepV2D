@@ -540,3 +540,177 @@ sc-inv, a10, a1, a2, a3, rmse, log_rmse, rel, sq_rel1, sq_rel2, log10,
 inference
 
 220 images,totle time: 4.08725905418396 s, avg time: 0.018578450246290727 s
+
+
+shufflenetv2_res 
+
+p4000
+
+[stage=2, 11600] loss: 0.055787046
+[stage=2, 11700] loss: 0.053573660
+[stage=2, 11800] loss: 0.055448047
+[stage=2, 11900] loss: 0.054011506
+[stage=2, 12000] loss: 0.054470191
+[stage=2, 12100] loss: 0.054984726
+[stage=2, 12200] loss: 0.056710163
+[stage=2, 12300] loss: 0.054010033
+[stage=2, 12400] loss: 0.055098329
+[stage=2, 12500] loss: 0.054461359
+[stage=2, 12600] loss: 0.054892427
+[stage=2, 12700] loss: 0.051520171
+[stage=2, 12800] loss: 0.054865256
+[stage=2, 12900] loss: 0.052826054
+[stage=2, 13000] loss: 0.053239751
+[stage=2, 13100] loss: 0.052238756
+[stage=2, 13200] loss: 0.052521520
+[stage=2, 13300] loss: 0.053218999
+[stage=2, 13400] loss: 0.053768025
+[stage=2, 13500] loss: 0.052398284
+[stage=2, 13600] loss: 0.051923952
+[stage=2, 13700] loss: 0.049708819
+[stage=2, 13800] loss: 0.054433165
+[stage=2, 13900] loss: 0.052310332
+[stage=2, 14000] loss: 0.051573033
+[stage=2, 14100] loss: 0.052099070
+[stage=2, 14200] loss: 0.052014630
+[stage=2, 14300] loss: 0.051040307
+[stage=2, 14400] loss: 0.049623803
+[stage=2, 14500] loss: 0.052607020
+[stage=2, 14600] loss: 0.052504560
+[stage=2, 14700] loss: 0.051223209
+[stage=2, 14800] loss: 0.048615173
+[stage=2, 14900] loss: 0.050788869
+[stage=2, 15000] loss: 0.052440553
+[stage=2, 15100] loss: 0.048849993
+[stage=2, 15200] loss: 0.049521622
+[stage=2, 15300] loss: 0.050026080
+[stage=2, 15400] loss: 0.053587268
+[stage=2, 15500] loss: 0.048318332
+[stage=2, 15600] loss: 0.049604294
+[stage=2, 15700] loss: 0.048836289
+[stage=2, 15800] loss: 0.048304471
+[stage=2, 15900] loss: 0.048656470
+[stage=2, 16000] loss: 0.049237594
+[stage=2, 16100] loss: 0.049478338
+[stage=2, 16200] loss: 0.048284053
+[stage=2, 16300] loss: 0.048293579
+[stage=2, 16400] loss: 0.048032367
+[stage=2, 16500] loss: 0.047842250
+[stage=2, 16600] loss: 0.048644354
+[stage=2, 16700] loss: 0.048838012
+[stage=2, 16800] loss: 0.047463896
+[stage=2, 16900] loss: 0.047917906
+[stage=2, 17000] loss: 0.047857653
+[stage=2, 17100] loss: 0.047875713
+[stage=2, 17200] loss: 0.047603034
+[stage=2, 17300] loss: 0.048991544
+[stage=2, 17400] loss: 0.047544993
+[stage=2, 17500] loss: 0.045470017
+[stage=2, 17600] loss: 0.047912699
+[stage=2, 17700] loss: 0.047706530
+[stage=2, 17800] loss: 0.045522479
+[stage=2, 17900] loss: 0.047595312
+[stage=2, 18000] loss: 0.045888093
+[stage=2, 18100] loss: 0.046668389
+[stage=2, 18200] loss: 0.046654571
+[stage=2, 18300] loss: 0.044097797
+[stage=2, 18400] loss: 0.045921134
+[stage=2, 18500] loss: 0.045464146
+[stage=2, 18600] loss: 0.045079097
+[stage=2, 18700] loss: 0.046278897
+[stage=2, 18800] loss: 0.045895130
+[stage=2, 18900] loss: 0.046902278
+[stage=2, 19000] loss: 0.045554974
+[stage=2, 19100] loss: 0.045343536
+[stage=2, 19200] loss: 0.047023954
+[stage=2, 19300] loss: 0.046213798
+[stage=2, 19400] loss: 0.045850377
+[stage=2, 19500] loss: 0.044904114
+[stage=2, 19600] loss: 0.046720807
+[stage=2, 19700] loss: 0.043427711
+[stage=2, 19800] loss: 0.046097797
+[stage=2, 19900] loss: 0.044379295
+[stage=2, 20000] loss: 0.045764183
+[stage=2, 20100] loss: 0.042069787
+[stage=2, 20200] loss: 0.040193601
+[stage=2, 20300] loss: 0.037893614
+[stage=2, 20400] loss: 0.038609873
+[stage=2, 20500] loss: 0.038518207
+[stage=2, 20600] loss: 0.038925257
+[stage=2, 20700] loss: 0.038727375
+[stage=2, 20800] loss: 0.037200395
+[stage=2, 20900] loss: 0.036803433
+[stage=2, 21000] loss: 0.038024222
+[stage=2, 21100] loss: 0.037500632
+[stage=2, 21200] loss: 0.036984821
+[stage=2, 21300] loss: 0.037388900
+[stage=2, 21400] loss: 0.036496194
+[stage=2, 21500] loss: 0.037252783
+[stage=2, 21600] loss: 0.036850098
+[stage=2, 21700] loss: 0.036190668
+[stage=2, 21800] loss: 0.036417585
+[stage=2, 21900] loss: 0.037146848
+[stage=2, 22000] loss: 0.036256317
+[stage=2, 22100] loss: 0.038322887
+[stage=2, 22200] loss: 0.036053390
+[stage=2, 22300] loss: 0.037281761
+[stage=2, 22400] loss: 0.036545382
+[stage=2, 22500] loss: 0.037177028
+[stage=2, 22600] loss: 0.035933153
+[stage=2, 22700] loss: 0.036924284
+[stage=2, 22800] loss: 0.036120762
+[stage=2, 22900] loss: 0.036095708
+[stage=2, 23000] loss: 0.036426266
+[stage=2, 23100] loss: 0.037318205
+[stage=2, 23200] loss: 0.035187220
+[stage=2, 23300] loss: 0.036796814
+[stage=2, 23400] loss: 0.037214852
+[stage=2, 23500] loss: 0.035008746
+[stage=2, 23600] loss: 0.036920482
+[stage=2, 23700] loss: 0.035399908
+[stage=2, 23800] loss: 0.036055373
+[stage=2, 23900] loss: 0.035171863
+[stage=2, 24000] loss: 0.036283477
+[stage=2, 24100] loss: 0.035847637
+[stage=2, 24200] loss: 0.036779358
+[stage=2, 24300] loss: 0.035932440
+[stage=2, 24400] loss: 0.036099912
+[stage=2, 24500] loss: 0.035481667
+[stage=2, 24600] loss: 0.037736349
+[stage=2, 24700] loss: 0.034551287
+[stage=2, 24800] loss: 0.036117284
+[stage=2, 24900] loss: 0.035997976
+
+
+time cost 0.0359501838684082 s
+start iterator 0
+time cost 0.03983449935913086 s
+start iterator 0
+time cost 0.03264570236206055 s
+start iterator 0
+time cost 0.033078670501708984 s
+sc-inv, a10, a1, a2, a3, rmse, log_rmse, rel, sq_rel1, sq_rel2, log10, 
+0.1017,     0.9731,     0.9812,     0.9859,     0.9916,     0.1653,     0.1023,     0.0346,     0.0262,     0.0330,     0.0120, 
+
+
+
+wirte image:data/tum/cabinet/inference_result/211.png
+time cost 0.03524613380432129 s
+wirte image:data/tum/cabinet/inference_result/212.png
+time cost 0.0317692756652832 s
+wirte image:data/tum/cabinet/inference_result/213.png
+time cost 0.033730506896972656 s
+wirte image:data/tum/cabinet/inference_result/214.png
+time cost 0.03625822067260742 s
+wirte image:data/tum/cabinet/inference_result/215.png
+time cost 0.03397798538208008 s
+wirte image:data/tum/cabinet/inference_result/216.png
+time cost 0.03526759147644043 s
+wirte image:data/tum/cabinet/inference_result/217.png
+time cost 0.035028696060180664 s
+wirte image:data/tum/cabinet/inference_result/218.png
+time cost 0.03366208076477051 s
+wirte image:data/tum/cabinet/inference_result/219.png
+time cost 0.03242826461791992 s
+wirte image:data/tum/cabinet/inference_result/220.png
+220 images,totle time: 7.7016167640686035 s, avg time: 0.03500734892758456 s

@@ -312,8 +312,92 @@ class DepthNetwork(object):
         # 重新进行缩放 大小为原来的1/8
         embd = tf.reshape(embd, [batch, frames, ht//8, wd//8, 32])
         return embd
-    
     def shufflenetv2_encoder(self, inputs, reuse=False):
+        """
+        2D feature extractor
+        使用1+3+1 的resnet卷积基本单元，每层网络深度加深1层，计算量减少一半左右
+        使用shufflent取代原来的resnet,
+        使用aspp代替金字塔网络:
+        原来卷积: 1+3+1+3+3+1 
+        现在卷积: 1+3+3+3+1
+        Args:
+            inputs ([type]): [description]
+            reuse (bool, optional): [description]. Defaults to False.
+
+        Returns:
+            [type]: [description]
+        """
+        # 在第5个通道上进行分离，获取数据
+        batch, frames, ht, wd, _ = tf.unstack(tf.shape(inputs), num=5)
+        # 将其降低维度为4维 假设数据为1*4*480*640*3->4*480*640*3
+        inputs = tf.reshape(inputs, [batch*frames, ht, wd, 3]) # 调整输入维度为图片数量*高*宽*3
+        with tf.variable_scope("encoder") as sc: #创建编码命名空间
+            with slim.arg_scope([slim.batch_norm], **self.batch_norm_params):# 保存所有BN层的参数
+                with slim.arg_scope([slim.conv2d], # 保存所有卷积层的参数
+                                    weights_regularizer=slim.l2_regularizer(0.00005),
+                                    normalizer_fn=None,
+                                    activation_fn=None,
+                                    reuse=reuse):
+                    # net = slim.conv2d(inputs, 32, [3, 3], stride=2)
+                    net = conv(inputs, 32, 3, 2, activation=True)
+                    # # 3*3 卷积
+                    net = ShuffleNetUnitV2A(net, 32, 2) 
+                    # # 3*3 卷积
+                    net = ShuffleNetUnitV2A(net, 32, 2)
+
+                    # # 3*3 缩放卷积
+                    net = ShuffleNetUnitV2B(net, 64, 2) #size/2
+                    #  # 3*3 卷积
+                    net = ShuffleNetUnitV2A(net, 64, 2)
+                    # # 3*3 卷积
+                    net = ShuffleNetUnitV2A(net, 64, 2)
+
+                    # # 3*3 缩放卷积
+                    net = ShuffleNetUnitB(net, 128, 2) #size/2
+                    # # 3*3 卷积
+                    net = ShuffleNetUnitA(net, 128, 2)
+                    # # 3*3 卷积
+                    net = ShuffleNetUnitA(net, 128, 2)
+                    # 进行卷积操作
+                    #net = slim.conv2d(net, 64, [3, 3], stride=1)
+                    net = conv(net, 64, 3, 1, activation=True)
+
+                    # # 先进行一次卷积，尺寸减半
+                    # net = slim.conv2d(inputs, 32, [3, 3], stride=2)
+                    
+                    # net = fast_res_conv2d(net, 32, 1)
+                    # # 5*240*320*32
+                    # net = fast_res_conv2d(net, 32, 1) 
+                    # # 这里再次进行卷积，大小缩小一半
+                    # # 4*120*160*32
+                    #net = fast_res_conv2d(net, 32, 2)  # 在这里尺寸再缩小一半
+                    # # 4*120*160*32
+                    # net = fast_res_conv2d(net, 32, 1) #2 
+                    # # 4*120*160*32
+                    # net = fast_res_conv2d(net, 32, 1) #2 
+                    # # 4*120*160*64
+                    #net = fast_res_conv2d(net, 64, 2) #3 在这里尺寸再减少一半
+                    # # 4*60*80*64
+                    # net = fast_res_conv2d(net, 64, 1) #2 
+                    # # 4*60*80*64
+                    # net = fast_res_conv2d(net, 64, 1) #2 
+
+                    # 16层conv
+                    # for i in range(self.cfg.HG_2D_COUNT):
+                    #     with tf.variable_scope("2d_hg1_%d"%i):
+                    #         # 这里使用改进的快速2d沙漏网络
+                    #         net = hg.hourglass_2d(net, self.cfg.HG_2D_DEPTH_COUNT, 64)
+                    #         # net = hg.fast_res_hourglass_2d(net, self.cfg.HG_2D_DEPTH_COUNT, 64)
+                    # # 卷积网络 4*60*80*32
+                    # embd = slim.conv2d(net, 32, [1, 1]) # 1
+                    hg.aspp_2d(net, 64)
+                    # 卷积网络 4*60*80*32
+                    embd = slim.conv2d(net, 32, [1, 1]) # 1
+        # 重新进行缩放 大小为原来的1/8
+        embd = tf.reshape(embd, [batch, frames, ht//8, wd//8, 32])
+        return embd
+
+    def shufflenetv2_res_encoder(self, inputs, reuse=False):
         """
         2D feature extractor
         使用1+3+1 的resnet卷积基本单元，每层网络深度加深1层，计算量减少一半左右
@@ -346,14 +430,16 @@ class DepthNetwork(object):
                     net = ShuffleNetUnitV2A(net, 32, 2)
 
                     # # 3*3 缩放卷积
-                    net = ShuffleNetUnitV2B(net, 64, 2) #size/2
+                    # net = ShuffleNetUnitV2B(net, 64, 2) #size/2
+                    net = fast_res_conv2d(net, 64, 2)
                     #  # 3*3 卷积
                     net = ShuffleNetUnitV2A(net, 64, 2)
                     # # 3*3 卷积
                     net = ShuffleNetUnitV2A(net, 64, 2)
 
                     # # 3*3 缩放卷积
-                    net = ShuffleNetUnitB(net, 128, 2) #size/2
+                    # net = ShuffleNetUnitB(net, 128, 2) #size/2
+                    net = fast_res_conv2d(net, 128, 2)
                     # # 3*3 卷积
                     net = ShuffleNetUnitA(net, 128, 2)
                     # # 3*3 卷积
@@ -471,6 +557,8 @@ class DepthNetwork(object):
             return self.shufflenet_encoder(inputs, reuse)
         elif self.cfg.ENCODER_MODE =='shufflenetv2':
             return self.shufflenetv2_encoder(inputs, reuse)
+        elif self.cfg.ENCODER_MODE =='shufflenetv2_res':
+            return self.shufflenetv2_res_encoder(inputs, reuse)
         else:
             print("cfg.FAST_MODE is error value:{}".format(self.cfg.FAST_MODE)) 
 

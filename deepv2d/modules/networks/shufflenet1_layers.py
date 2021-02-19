@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 slim = tf.contrib.slim
+# https://blog.csdn.net/u014380165/article/details/81322175
 def channel_shuffle(inputs, num_groups):
     """
     通道混洗
