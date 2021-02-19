@@ -37,7 +37,7 @@ def write_to_folder(images, intrinsics, test_id):
 def make_predictions(args):
 
     cfg = config.cfg_from_file(args.cfg)
-    deepv2d = DeepV2D(cfg, args.model, use_fcrn=True, mode=args.mode)
+    deepv2d = DeepV2D(cfg, args.model, use_fcrn=False, mode=args.mode)
     # 进行初始化
     # init_op = tf.group(tf.global_variables_initializer(),
     #         tf.local_variables_initializer())
@@ -51,7 +51,7 @@ def make_predictions(args):
         depth_predictions, pose_predictions = [], []
         depth_groundtruth, pose_groundtruth = [], []
         # 构建数据加载器
-        db = TUM_RGBD(cfg.INPUT.RESIZE, args.dataset_dir,test=True,n_frames=4, r=2)
+        db = TUM_RGBD(cfg.INPUT.RESIZE, args.dataset_dir,test=True,n_frames=5, r=2)
         #提取数据集
         for test_id, test_blob in enumerate(db.test_set_iterator()):
             # 获取图像和相机位姿
