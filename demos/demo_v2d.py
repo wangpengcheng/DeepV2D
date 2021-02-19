@@ -66,10 +66,11 @@ def load_sorted_test_sequence(data_path, inference_file_name, scale):
     images= []
     # 加载所有图片信息
     for image_name in image_names:
-        print("load image:{}".format(image_name))
         image = cv2.imread(image_name)
         image = cv2.resize(image, (int(640*scale), int(480*scale)))
         images.append(image)
+    
+    print("load rgb image: OK")
     poses = []
     for pre_pose in pre_poses:
         pose_mat = pose_vec2mat(pre_pose)

@@ -56,7 +56,7 @@ def conv(inputs, filters, kernel_size, stride=1, activation=False):
     标准卷积操作层
     Args:
         inputs ([type]): 输入数据
-        filters ([type]): 适配器
+        filters ([type]): 输入维度大小
         kernel_size ([type]): 卷积核大小
         stride (int, optional): [description]. Defaults to 1.
         activation (bool, optional): [description]. Defaults to False.
@@ -169,6 +169,70 @@ def ShuffleNetUnitB(inputs, out_channels, num_groups):
     
     return x
 
+def ShuffleNetUnitV2A(inputs, out_channels, num_groups):
+    """
+    shufflenet v2 卷积单元1 主要负责直接卷积和输出
+    注意输出通道数目为输入应该尽量相同
+
+    https://zhuanlan.zhihu.com/p/48261931
+    Args:
+        inputs ([type]): 输入数据
+        out_dims : 输出维度数据
+        num_groups ([type]): 分组数量
+
+    Returns:
+        [type]: 返回的值
+    """
+    # 检查是否为2的倍数
+    assert out_channels % 2 == 0
+    # 先进行二维分离操作，将第三维度的分成两个部分
+    shortcut, x = tf.split(inputs, 2, axis=-1)
+    # 1*1 卷积
+    x = conv(inputs, out_channels // 2, 1, 1, activation=True)
+    # 深度可分离卷积
+    x = depthwise_conv_bn(x, out_channels // 2, kernel_size=3, stride=1)
+    # 1*1 卷积
+    x = conv(x, out_channels // 2, 1, 1, activation=True)
+    # 进行连接
+    x = tf.concat([shortcut, x], axis=3)
+    # 进行通道混洗
+    x = channel_shuffle(x, 2)
+    return x
+
+
+def ShuffleNetUnitV2B(inputs, out_channels, num_groups):
+    """
+    单元B，主要执行缩小一半的卷积操作
+    输出为输入的一倍
+    Args:
+        inputs ([type]): 输入数据
+        out_channels ([type]): 输出数据
+        num_groups ([type]): 卷积数量
+
+    Returns:
+        输出数据: 返回卷积结果值 
+    """
+    assert out_channels % 2 == 0
+    # 进行双分支的数据复制
+    shortcut = inputs
+    # 获取输入通道数目
+    in_channels = inputs.get_shape().as_list()[-1]
+    # 进行1*1 卷积
+    x = conv(inputs, out_channels // 2, 1, 1, activation=True)
+    # 3*3 深度可分离卷积
+    x = depthwise_conv_bn(x, out_channels // 2, kernel_size=3, stride=2)
+    # 1*1 深度卷积
+    x = conv(x, out_channels - in_channels, 1, 1, activation=True)
+    # 深度可分离卷积
+    shortcut = depthwise_conv_bn(shortcut, in_channels, kernel_size=3, stride= 2)
+    # 1*1 卷积
+    shortcut = conv(shortcut, in_channels, 1, 1, activation=True)
+    # 进行组合
+    output = tf.concat([shortcut, x], axis=-1)
+    # 进行数据混合
+    output = channel_shuffle(output, 2)
+    return output
+
 def stage(inputs, out_channels, num_groups, n):
     """
     阶段模块
@@ -187,6 +251,27 @@ def stage(inputs, out_channels, num_groups, n):
     for _ in range(n):
         out_channels = x.get_shape().as_list()[-1]
         x = ShuffleNetUnitA(x, out_channels, num_groups)
+        
+    return x
+
+def stagev2(inputs, out_channels, num_groups, n):
+    """
+    阶段模块
+    Args:
+        inputs ([type]): 输入数据
+        out_channels ([type]): 输出通道数
+        num_groups ([type]): 分组数据
+        n ([type]): 单卷积数目
+
+    Returns:
+        [type]: [description]
+    """
+    
+    x = ShuffleNetUnitV2B(inputs, out_channels, num_groups)
+    # 执行第一个卷积
+    for _ in range(n):
+        out_channels = x.get_shape().as_list()[-1]
+        x = ShuffleNetUnitV2A(x, out_channels, num_groups)
         
     return x
 
@@ -211,6 +296,29 @@ def ShuffleNet(inputs, first_stage_channels, num_groups):
     
     return x
 
+def ShuffleNetV2(inputs, first_stage_channels, num_groups):
+    # 进行二维卷积
+    x = tf.keras.layers.Conv2D(filters=24, 
+                               kernel_size=3, 
+                               strides=2, 
+                               padding='same')(inputs)
+    #最大池化
+    x = tf.keras.layers.MaxPooling2D(pool_size=3, strides=2, padding='same')(x)
+    # 进行卷积操作，附带的单层卷积数量为1
+    x = stagev2(x, first_stage_channels, num_groups, n=3)
+    # 进行卷积操作，进行维度升级
+    x = stagev2(x, first_stage_channels*2, num_groups, n=7)
+    # 进行维度审计
+    x = stagev2(x, first_stage_channels*4, num_groups, n=3)
+    # 进行全局池化操作
+    x = tf.keras.layers.GlobalAveragePooling2D()(x)
+    # 执行全连接层
+    x = tf.keras.layers.Dense(1000)(x)
+    
+    return x
 
 # inputs = np.zeros((1, 224, 224, 3), np.float32)
-# ShuffleNet(inputs, 144, 1).shape
+# a = ShuffleNetV2(inputs, 144, 1)
+# with tf.Session() as sess:
+#     sess.run(tf.global_variables_initializer())
+#     print(sess.run(a))
