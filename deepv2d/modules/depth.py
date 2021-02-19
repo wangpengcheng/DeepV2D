@@ -339,7 +339,8 @@ class DepthNetwork(object):
                                     normalizer_fn=None,
                                     activation_fn=None,
                                     reuse=reuse):
-                    net = slim.conv2d(inputs, 32, [3, 3], stride=2)
+                    # net = slim.conv2d(inputs, 32, [3, 3], stride=2)
+                    net = conv(inputs, 32, 3, 2, activation=True)
                     # # 3*3 卷积
                     net = ShuffleNetUnitV2A(net, 32, 2) 
                     # # 3*3 卷积
@@ -359,7 +360,8 @@ class DepthNetwork(object):
                     # # 3*3 卷积
                     net = ShuffleNetUnitA(net, 128, 2)
                     # 进行卷积操作
-                    net = slim.conv2d(net, 64, [3, 3], stride=1)
+                    #net = slim.conv2d(net, 64, [3, 3], stride=1)
+                    net = conv(net, 64, 3, 1, activation=True)
 
                     # # 先进行一次卷积，尺寸减半
                     # net = slim.conv2d(inputs, 32, [3, 3], stride=2)

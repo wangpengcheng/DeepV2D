@@ -148,15 +148,20 @@ def aspp_2d(net, dim, expand=64):
         # 进行均值池化
         # branch_1 = slim.avg_pool2d(net,out_dim,1, padding='SAME',scope = 'aspp_2d_avg_pool')
         #branch_1 = avg_pool(net, 1, 1, 1, 1,)
+        net1 = conv2d_1x1(net, out_dim)
+        #net1 = tf.reduce_mean(net1, out_dim, 1, padding='SAME',scope = 'aspp_2d_avg_pool')
+        aspp_list.append(net1)
+
         # 进行二维卷积1*1卷积
         branch_1 = slim.conv2d(net, out_dim, [1, 1], stride=1, scope='1x1conv')
+        branch_1 = slim.batch_norm(branch_1)
         tf.add_to_collection("checkpoints", branch_1)
         # 将其添加到
         aspp_list.append(branch_1)
         # 进行空洞卷积
         for i in range(3):
-            branch_2 = slim.conv2d(net, out_dim, [3, 3], stride=1, rate=6*(i+1), scope='rate{}'.format(6*(i+1)))
-            #branch_2 = dilated_conv2d(net, out_dim, stride=1, my_rate=6*(i+1))
+            #branch_2 = slim.conv2d(net, out_dim, [3, 3], stride=1, rate=6*(i+1), scope='rate{}'.format(6*(i+1)))
+            branch_2 = dilated_conv2d(net, out_dim, my_stride=1, my_rate=6*(i+1))
             aspp_list.append(branch_2)
         # 进行维度合并
         temp_concat = tf.concat(aspp_list, 1)
