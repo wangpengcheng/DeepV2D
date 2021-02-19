@@ -74,7 +74,7 @@ def conv(inputs, filters, kernel_size, stride=1, activation=False):
         
     return x
 
-def depthwise_conv_bn(inputs, kernel_size, stride=1):
+def depthwise_conv_bn(inputs, out_dim, kernel_size, stride=1):
     """
     进行深度可分离卷积
     Args:
@@ -85,10 +85,11 @@ def depthwise_conv_bn(inputs, kernel_size, stride=1):
     Returns:
         Tensor : 最终返回结果 
     """
-    x = slim.separable_conv2d(inputs,
-        kernel_size=kernel_size,
-        strides=stride,
-        padding='same'
+    x = slim.separable_conv2d(
+        inputs,
+        num_outputs = out_dim,
+        kernel_size = kernel_size,
+        stride = stride
         )
     x = slim.batch_norm(x)
         
@@ -108,7 +109,7 @@ def ShuffleNetUnitA(inputs, out_channels, num_groups):
     # 获取输入通道数
     in_channels = inputs.get_shape().as_list()[-1]
     # 获取输出通道数量
-    # out_channels = in_channels
+    #out_channels = in_channels
     # 块通道数目，即分组数量，一般都是4
     bottleneck_channels = out_channels // 4
     # 1*1 进行分组卷积
@@ -120,7 +121,7 @@ def ShuffleNetUnitA(inputs, out_channels, num_groups):
     # 通道混洗
     x = channel_shuffle(x, num_groups)
     # 3*3 深度可分离卷积
-    x = depthwise_conv_bn(x, kernel_size=3, stride=1)
+    x = depthwise_conv_bn(x, bottleneck_channels, kernel_size=3, stride=1)
     # 1*1 分组卷积
     x = group_conv(x, out_channels, kernel=1, strides=1, num_groups=num_groups)
     # BN层
@@ -145,7 +146,7 @@ def ShuffleNetUnitB(inputs, out_channels, num_groups):
     """
     # 获取输入通道数目
     in_channels = inputs.get_shape().as_list()[-1]
-    # 将输出通道数目减去输入通道数目？？？
+    # 将输出通道数目减去输入通道数目？？？，需要其它的来进行池化
     out_channels -= in_channels
     # 计算每个块的大小
     bottleneck_channels = out_channels // 4
@@ -156,12 +157,12 @@ def ShuffleNetUnitB(inputs, out_channels, num_groups):
     # 通道混洗
     x = channel_shuffle(x, num_groups)
     # 进行深度可分离卷积
-    x = depthwise_conv_bn(x, kernel_size=3, stride=2)
+    x = depthwise_conv_bn(x, bottleneck_channels, kernel_size=3, stride=2)
     # 分组卷积
     x = group_conv(x, out_channels, kernel=1, strides=1, num_groups=num_groups)
     x = slim.batch_norm(x)
     # 进行均值池化
-    y = slim.avg_pool2d(inputs,kernel_size=3, strides=2, padding='same')
+    y = slim.avg_pool2d(inputs, kernel_size=3, stride=2, padding='same')
     # 数据合并
     x = tf.concat([y, x], axis=-1)
     x = tf.nn.relu(x)
@@ -184,7 +185,8 @@ def stage(inputs, out_channels, num_groups, n):
     x = ShuffleNetUnitB(inputs, out_channels, num_groups)
     # 执行第一个卷积
     for _ in range(n):
-        x = ShuffleNetUnitA(x, num_groups)
+        out_channels = x.get_shape().as_list()[-1]
+        x = ShuffleNetUnitA(x, out_channels, num_groups)
         
     return x
 

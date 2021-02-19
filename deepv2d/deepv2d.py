@@ -101,6 +101,7 @@ class DeepV2D:
     # 创建session
     def set_session(self, sess):
         self.sess = sess
+        # 初始化所有变脸
         sess.run(tf.global_variables_initializer())
         # 进行存储
         self.saver.restore(self.sess, self.ckpt)
