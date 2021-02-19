@@ -75,10 +75,14 @@ def dilated_conv2d(x, dim, my_stride=1, my_rate=6, bn=True):
     Returns:
         [type]: [description]
     """
+    x = slim.conv2d(x, dim, [3, 3], rate=my_rate, stride= my_stride, scope='rate_2d{}'.format(my_rate))
     if bn:
-        return slim.conv2d(bnrelu(x), dim, [3, 3], rate=my_rate, stride= my_stride, scope='rate_2d{}'.format(my_rate))
+        x = slim.batch_norm(x)
+        x = tf.nn.relu(x)
     else:
-        return slim.conv2d(tf.nn.relu(x), dim, [3, 3], rate=my_rate, stride= my_stride, scope='rate_2d{}'.format(my_rate))
+        x = tf.nn.relu(x)
+    return x
+
 
 
 def dilated_conv3d(x, dim, my_stride=1, my_rate=6, bn=True):
