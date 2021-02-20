@@ -991,3 +991,5 @@ sc-inv, a10, a1, a2, a3, rmse, log_rmse, rel, sq_rel1, sq_rel2, log10,
 inference 
 220 images,totle time: 4.000942230224609 s, avg time: 0.018186101046475497 s
 
+
+

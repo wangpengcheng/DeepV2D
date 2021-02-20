@@ -503,8 +503,6 @@ class DepthNetwork(object):
             return self.shufflenet_encoder(inputs, reuse)
         elif self.cfg.ENCODER_MODE =='shufflenetv2':
             return self.shufflenetv2_encoder(inputs, reuse)
-        elif self.cfg.ENCODER_MODE =='shufflenetv2_res':
-            return self.shufflenetv2_res_encoder(inputs, reuse)
         else:
             print("cfg.FAST_MODE is error value:{}".format(self.cfg.FAST_MODE)) 
 
@@ -584,8 +582,8 @@ class DepthNetwork(object):
                         # x = hg.hourglass_3d(x, self.cfg.HG_DEPTH_COUNT, 32)
                         x = hg.fast_hourglass_3d(x, self.cfg.HG_DEPTH_COUNT, 32)
                         # 将金字塔的结果进行输入
-                        self.pred_logits.append(self.fast_stereo_head(x))
-                        #self.pred_logits.append(self.stereo_head(x))
+                        #self.pred_logits.append(self.fast_stereo_head(x))
+                        self.pred_logits.append(self.stereo_head(x))
 
     def mobilenet_decoder(self, volume):
         """
@@ -658,6 +656,7 @@ class DepthNetwork(object):
         """ Predict probability volume from hg features hg 的特征概率"""
         x = bnrelu(x)
         x = slim.conv3d(x, 32, [1, 1, 1], activation_fn=tf.nn.relu)
+        x = slim.conv3d(x, 32, [3, 3, 3], activation_fn=tf.nn.relu)
         x = slim.conv3d(x, 32, [3, 3, 3], activation_fn=tf.nn.relu)
         tf.add_to_collection("checkpoints", x)
         # 综合数据
