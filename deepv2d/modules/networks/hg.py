@@ -102,6 +102,29 @@ def hourglass_3d(x, n, dim, expand=48):
 
 
 # 3d 沙漏网络
+def fast_hourglass_3d_01(x, n, dim, expand=48):
+    dim2 = dim + expand
+    ax = conv3d_1x1(x, dim)
+    ax = conv3d(ax, dim)
+    x = x + conv3d_1x1(ax, dim)
+    tf.add_to_collection("checkpoints", x)
+
+    # 线性层缩放减半
+    pool1 = slim.max_pool3d(x, [2, 2, 2], padding='SAME')
+    #pool1 = conv3d_1x1(pool1, dim2)
+    low1 = conv3d(pool1, dim2)
+    if n>1:
+        low2 = fast_hourglass_3d(low1, n-1, dim2)
+    else:
+        low2 = low1 + conv3d(low1, dim2)
+
+    low3 = conv3d_1x1(low2, dim)
+    up2 = upnn3d(low3, x)
+    out = up2 + x
+    tf.add_to_collection("checkpoints", out)
+
+    return out
+# 快速3d沙漏网络
 def fast_hourglass_3d(x, n, dim, expand=48):
     dim2 = dim + expand
 

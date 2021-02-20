@@ -234,6 +234,25 @@ def ShuffleNetUnitV2B(inputs, out_channels, num_groups):
     output = channel_shuffle(output, 2)
     return output
 
+
+def FastShuffleNetv2Conv2d(x,dim,stride=1):
+    if stride==1:
+        y = conv(x, dim, 1, 1, activation=True)
+        y = conv(x, dim, 3, 1, activation=True)
+        y = conv(x, dim, 1, 1, activation=True)
+    else:
+        y = conv2d_1x1(x,dim, stride=2)
+        y = conv2d(x,dim, stride=2)
+        y = conv2d_1x1(x,dim, stride=2)
+        y = conv(x, dim, 1, 1, activation=True)
+        y = conv(x, dim, 3, 1, activation=True)
+        y = conv(x, dim, 1, 1, activation=True)
+        # 使用单核进行卷积，大小和原来一样 将x进行转变
+        x = slim.conv2d(x, dim, [1,1], stride=2)
+    out = x + y # 将卷积数据进行叠加
+    tf.add_to_collection("checkpoints", out) # 将数据放入集合参数
+    return out
+
 def stage(inputs, out_channels, num_groups, n):
     """
     阶段模块
