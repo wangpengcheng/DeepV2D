@@ -66,7 +66,7 @@ def conv(inputs, filters, kernel_size, stride=1, activation=False):
         [type]: [description]
     """
     # 进行卷积操作
-    x = slim.conv2d(inputs, filters, kernel_size, stride, padding='same')
+    x = slim.conv2d(inputs, filters, kernel_size, stride)
     # 设置BN层
     x = slim.batch_norm(x)
     # 执行卷积操作

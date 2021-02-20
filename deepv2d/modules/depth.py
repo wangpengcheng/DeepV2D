@@ -312,6 +312,7 @@ class DepthNetwork(object):
         # 重新进行缩放 大小为原来的1/8
         embd = tf.reshape(embd, [batch, frames, ht//8, wd//8, 32])
         return embd
+    
     def shufflenetv2_encoder(self, inputs, reuse=False):
         """
         2D feature extractor
@@ -353,11 +354,11 @@ class DepthNetwork(object):
                     net = ShuffleNetUnitV2A(net, 64, 2)
 
                     # # 3*3 缩放卷积
-                    net = ShuffleNetUnitB(net, 128, 2) #size/2
+                    net = ShuffleNetUnitV2B(net, 128, 2) #size/2
                     # # 3*3 卷积
-                    net = ShuffleNetUnitA(net, 128, 2)
+                    net = ShuffleNetUnitV2A(net, 128, 2)
                     # # 3*3 卷积
-                    net = ShuffleNetUnitA(net, 128, 2)
+                    net = ShuffleNetUnitV2A(net, 128, 2)
                     # 进行卷积操作
                     #net = slim.conv2d(net, 64, [3, 3], stride=1)
                     net = conv(net, 64, 3, 1, activation=True)
@@ -472,8 +473,6 @@ class DepthNetwork(object):
             return self.shufflenet_encoder(inputs, reuse)
         elif self.cfg.ENCODER_MODE =='shufflenetv2':
             return self.shufflenetv2_encoder(inputs, reuse)
-        elif self.cfg.ENCODER_MODE =='shufflenetv2_res':
-            return self.shufflenetv2_res_encoder(inputs, reuse)
         else:
             print("cfg.FAST_MODE is error value:{}".format(self.cfg.FAST_MODE)) 
 
@@ -553,7 +552,8 @@ class DepthNetwork(object):
                         # x = hg.hourglass_3d(x, self.cfg.HG_DEPTH_COUNT, 32)
                         x = hg.fast_hourglass_3d(x, self.cfg.HG_DEPTH_COUNT, 32)
                         # 将金字塔的结果进行输入
-                        self.pred_logits.append(self.fast_stereo_head(x))
+                        #self.pred_logits.append(self.fast_stereo_head(x))
+                        self.pred_logits.append(self.stereo_head(x))
 
     def mobilenet_decoder(self, volume):
         """
@@ -625,6 +625,7 @@ class DepthNetwork(object):
     def fast_stereo_head(self, x):
         """ Predict probability volume from hg features hg 的特征概率"""
         x = bnrelu(x)
+        x = slim.conv3d(x, 32, [3, 3, 3], activation_fn=tf.nn.relu)
         x = slim.conv3d(x, 32, [3, 3, 3], activation_fn=tf.nn.relu)
         tf.add_to_collection("checkpoints", x)
         # 综合数据
