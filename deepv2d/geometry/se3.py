@@ -1,32 +1,43 @@
-"""
-SO3 and SE3 operations, exponentials and logarithms adapted from Sophus
-"""
-
 import numpy as np
 import torch 
 from utils.einsum import *
-<<<<<<< HEAD
-
-=======
 import os
-from tensorflow.python.framework import function
->>>>>>> 317bed8ad3da1341c39a302c231c811b94fb32b7
+"""
+SO3 and SE3 operations, exponentials and logarithms adapted from Sophus
+"""
 
 
 MIN_THETA = 1e-4
 
 def matdotv(A,b):
+    """
+    通用矩阵乘法
+    Args:
+        A ([type]): [description]
+        b ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """
     return torch.squeeze(torch.matmul(A, torch.unsqueeze(b, -1)), -1)
 
 def hat(a):
-    a1, a2, a3 = torch.split(a, [1,1,1], axis=-1)
+    """
+    将向量转换为反对称矩阵，方便进行外积运算
+    Args:
+        a ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """
+    a1, a2, a3 = torch.split(a, [1,1,1], dim=-1)
     zz = torch.zeros_like(a1)
 
     ax = torch.stack([
-        torch.cat([zz,-a3,a2], axis=-1),
-        torch.cat([a3,zz,-a1], axis=-1),
-        torch.cat([-a2,a1,zz], axis=-1)
-    ], axis=-2)
+        torch.cat([zz, -a3, a2], dim=-1),
+        torch.cat([a3, zz, -a1], dim=-1),
+        torch.cat([-a2, a1, zz], dim=-1)
+    ], dim=-2)
 
     return ax
     
@@ -34,23 +45,34 @@ def hat(a):
 ### quaternion functions ###
 
 def quaternion_rotate_point(q, pt, eq=None):
+    """
+    四元数点旋转
+    Args:
+        q ([type]): 四元数点
+        pt ([type]): 旋转点
+        eq ([type], optional): [description]. Defaults to None.
+
+    Returns:
+        [type]: [description]
+    """
     if eq is None:
-        w, vec = torch.split(q, [1, 3], axis=-1)
-        uv = 2*matdotv(hat(vec), pt)
+        # 获取，实部和虚部
+        w, vec = torch.split(q, [1, 3], dim=-1)
+        uv = 2*matdotv(hat(vec), pt) # 2pq^
         return pt + w*uv + matdotv(hat(vec), uv)
     else:
-        w, vec = torch.split(q, [1, 3], axis=-1)
+        w, vec = torch.split(q, [1, 3], dim=-1)
         uv1 = 2*einsum(eq, hat(w*vec), pt)
         uv2 = 2*einsum(eq, hat(vec), pt)
         return pt + uv1 + einsum(eq, hat(vec), uv2)
 
 def quaternion_rotate_matrix(q, mat, eq=None):
     if eq is None:
-        w, vec = torch.split(q, [1, 3], axis=-1)
+        w, vec = torch.split(q, [1, 3], dim=-1)
         uv = 2*torch.matmul(hat(vec), mat)
         return mat + w*uv + torch.matmul(hat(vec), uv)
     else:
-        w, vec = torch.split(q, [1, 3], axis=-1)
+        w, vec = torch.split(q, [1, 3], dim=-1)
         uv1 = 2*einsum(eq, hat(w*vec), mat)
         uv2 = 2*einsum(eq, hat(vec), mat)
         return mat + uv1 + einsum(eq, hat(vec), uv2)
@@ -59,20 +81,30 @@ def quaternion_inverse(q):
     return q * [1, -1, -1, -1]
 
 def quaternion_multiply(a, b):
-    aw, ax, ay, az = torch.split(a, [1,1,1,1], axis=-1)
-    bw, bx, by, bz = torch.split(b, [1,1,1,1], axis=-1)
+    """
+    两个四元组的乘法
+    Args:
+        a ([type]): [description]
+        b ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """
+    aw, ax, ay, az = torch.split(a, [1, 1, 1, 1], dim=-1)
+    bw, bx, by, bz = torch.split(b, [1, 1, 1, 1], dim=-1)
     
     q = torch.cat([
         aw * bw - ax * bx - ay * by - az * bz,
         aw * bx + ax * bw + ay * bz - az * by,
         aw * by + ay * bw + az * bx - ax * bz,
         aw * bz + az * bw + ax * by - ay * bx,
-    ], axis=-1)
+    ], dim=-1)
 
     return q
 
 def quaternion_to_matrix(q):
-    w, x, y, z = torch.split(q, [1,1,1,1], axis=-1)
+    # 四元组转换为旋转矩阵
+    w, x, y, z = torch.split(q, [1,1,1,1], dim=-1)
 
     r11 = 1 - 2 * y**2 - 2 * z**2
     r12 = 2 * x * y - 2 * w * z
@@ -87,36 +119,44 @@ def quaternion_to_matrix(q):
     r33 = 1 - 2 * x**2 - 2 * y**2
     
     R = torch.stack([
-        torch.cat([r11,r12,r13], axis=-1),
-        torch.cat([r21,r22,r23], axis=-1),
-        torch.cat([r31,r32,r33], axis=-1)
+        torch.cat([r11,r12,r13], dim=-1),
+        torch.cat([r21,r22,r23], dim=-1),
+        torch.cat([r31,r32,r33], dim=-1)
     ], dim=-2)
 
     return R
 
 def rotation_matrix_to_quaternion(R):
+    """
+    旋转矩阵转换为四元组
+    Args:
+        R ([type]): 旋转矩阵
+
+    Returns:
+        [type]: [description]
+    """
     Rxx, Ryx, Rzx = R[...,0,0], R[...,0,1], R[...,0,2]
     Rxy, Ryy, Rzy = R[...,1,0], R[...,1,1], R[...,1,2]
     Rxz, Ryz, Rzz = R[...,2,0], R[...,2,1], R[...,2,2]
 
     zz = torch.zeros_like(Rxx)
-    k1 = torch.stack([Rxx-Ryy-Rzz, zz, zz, zz], axis=-1)
-    k2 = torch.stack([Ryx+Rxy, Ryy-Rxx-Rzz, zz, zz], axis=-1)
-    k3 = torch.stack([Rzx+Rxz, Rzy+Ryz, Rzz-Rxx-Ryy,zz], axis=-1)
-    k4 = torch.stack([Ryz-Rzy, Rzx-Rxz, Rxy-Ryx, Rxx+Ryy+Rzz], axis=-1)
+    k1 = torch.stack([Rxx-Ryy-Rzz, zz, zz, zz], dim=-1)
+    k2 = torch.stack([Ryx+Rxy, Ryy-Rxx-Rzz, zz, zz], dim=-1)
+    k3 = torch.stack([Rzx+Rxz, Rzy+Ryz, Rzz-Rxx-Ryy,zz], dim=-1)
+    k4 = torch.stack([Ryz-Rzy, Rzx-Rxz, Rxy-Ryx, Rxx+Ryy+Rzz], dim=-1)
 
-    K = torch.stack([k1, k2, k3, k4], axis=-2)
+    K = torch.stack([k1, k2, k3, k4], dim=-2)
     eigvals, eigvecs = np.eigh(K) # 共轭矩阵特征分解
 
-    x, y, z, w = torch.split(eigvecs[...,-1], [1,1,1,1], axis=-1)
-    qvec = torch.cat([w, x, y, z], axis=-1)
-    qvec /=  torch.sqrt(torch.sum(qvec**2, axis=-1, keepdims=True))
+    x, y, z, w = torch.split(eigvecs[...,-1], [1,1,1,1], dim=-1)
+    qvec = torch.cat([w, x, y, z], dim=-1)
+    qvec /=  torch.sqrt(torch.sum(qvec**2, dim=-1, keepdims=True))
 
     return qvec * torch.sign(w)
 
 def so3_expm_and_theta(omega):
     """ omega in \so3 """
-    theta_sq = torch.sum(omega**2, axis=-1)
+    theta_sq = torch.sum(omega**2, dim=-1)
     theta = torch.sqrt(theta_sq)
     half_theta = 0.5*theta
 
@@ -133,12 +173,12 @@ def so3_expm_and_theta(omega):
     qy = imag_factor * omega[...,1]
     qz = imag_factor * omega[...,2]
 
-    quat = torch.stack([qw, qx, qy, qz], axis=-1)
+    quat = torch.stack([qw, qx, qy, qz], dim=-1)
     return quat, theta
         
 def so3_logm_and_theta(so3):
-    w, vec = torch.split(so3, [1,3], axis=-1)
-    squared_n = torch.sum(vec**2, axis=-1, keepdims=True)
+    w, vec = torch.split(so3, [1,3], dim=-1)
+    squared_n = torch.sum(vec**2, dim=-1, keepdims=True)
     n = torch.sqrt(squared_n)
 
     two_atan_nbyw_by_n = torch.nonzero(n<MIN_THETA,
@@ -151,13 +191,13 @@ def so3_logm_and_theta(so3):
 
 def se3_expm(xi):
     """ xi in \se3 """
-    tau, omega = torch.split(xi, [3, 3], axis=-1)
+    tau, omega = torch.split(xi, [3, 3], dim=-1)
     q, theta = so3_expm_and_theta(omega)
 
 
-    theta = theta[...,np.newaxis,np.newaxis]
+    theta = theta[...,np.newdim,np.newdim]
     theta = torch.Tensor.repeat(theta, 
-        torch.cat([torch.ones_like(q.shape[:-1]), [3,3]], axis=-1))
+        torch.cat([torch.ones_like(q.shape[:-1]), [3,3]], dim=-1))
 
     theta_sq = theta * theta
     Omega = hat(omega)
@@ -176,9 +216,11 @@ def se3_logm(so3, t):
     Omega = hat(omega)
     Omega_sq = torch.matmul(Omega, Omega)
 
-    theta = theta[...,tf.newaxis]
-    theta = torch.Tensor.repeat(theta, 
-        torch.cat([torch.ones_like(omega.shape)[:-1]), [3,3]], axis=-1))
+    theta = theta[...,tf.newdim]
+    theta = torch.Tensor.repeat(
+        theta,
+        torch.cat([torch.ones_like(omega.shape[:-1]), [3, 3]], dim=-1)
+        )
     half_theta = 0.5*theta
 
     Vinv_approx = torch.eye(3, batch_shape=(omega.shape)[:-1]) - \
@@ -191,24 +233,15 @@ def se3_logm(so3, t):
     Vinv = torch.nonzero(theta<MIN_THETA, Vinv_approx, Vinv_exact)
     tau = matdotv(Vinv, t)
 
-    upsilon = torch.cat([tau, omega], axis=-1)
+    upsilon = torch.cat([tau, omega], dim=-1)
     return upsilon
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 ### matrix functions ###
 
 def se3_matrix_inverse(G):
-<<<<<<< HEAD
     """ Invert SE3 matrix """
     inp_shape = G.shape
     G = torch.reshape(G, [-1, 4, 4])
-=======
-    """ Invert SE3 matrix 
-    se3维度变换
-    """
-    inp_shape = tf.shape(G)
-    G = tf.reshape(G, [-1, 4, 4])
->>>>>>> 317bed8ad3da1341c39a302c231c811b94fb32b7
 
     R, t = G[:, :3, :3], G[:, :3, 3:]
     R = torch.transpose(R, [0, 2, 1])
@@ -218,12 +251,21 @@ def se3_matrix_inverse(G):
     filler = torch.reshape(filler, [1, 1, 4])
     filler = torch.Tensor.repeat(filler, [tf.shape(G)[0], 1, 1])
 
-    Ginv = torch.cat([R, t], axis=-1)
-    Ginv = torch.cat([Ginv, filler], axis=-2)
+    Ginv = torch.cat([R, t], dim=-1)
+    Ginv = torch.cat([Ginv, filler], dim=-2)
     return torch.reshape(Ginv, inp_shape)
 
 
-def _se3_matrix_expm_grad(op, grad):
+def _se3_matrix_expm_grad(grad):
+    """
+    梯度计算操作
+    Args:
+        op ([type]): [description]
+        grad ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """
     grad_upsilon_omega = torch.stack([
         grad[..., 0, 3],
         grad[..., 1, 3],
@@ -231,31 +273,29 @@ def _se3_matrix_expm_grad(op, grad):
         grad[..., 2, 1] - grad[..., 1, 2],
         grad[..., 0, 2] - grad[..., 2, 0],
         grad[..., 1, 0] - grad[..., 0, 1]
-    ], axis=-1)
+    ], dim=-1)
 
     return grad_upsilon_omega
 
 def _se3_matrix_expm_shape(op):
     return [op.inputs[0].shape.tolist()[:-1] + [4, 4]]
 
-@function.Defun(tf.float32,
-        python_grad_func=_se3_matrix_expm_grad,
-        shape_func=_se3_matrix_expm_shape)
 def se3_matrix_expm(upsilon_omega):
     """ se3 matrix exponential se(3) -> SE(3), works for arbitrary batch dimensions
     - Note: gradient is overridden with _se3_matrix_expm_grad, which approximates 
     gradient for small upsilon_omega
+    - 注意，重载了梯度函数
     """
 
     eps=1e-12
     inp_shape = upsilon_omega.shape
-    out_shape = torch.cat([inp_shape[:-1], [4,4]], axis=-1)
+    out_shape = torch.cat([inp_shape[:-1], [4,4]], dim=-1)
 
     upsilon_omega = torch.reshape(upsilon_omega, [-1, 6])
     batch = (upsilon_omega.shape)[0]
-    v, w = torch.split(upsilon_omega, [3, 3], axis=-1)
+    v, w = torch.split(upsilon_omega, [3, 3], dim=-1)
 
-    theta_sq = torch.sum(w**2, axis=1)
+    theta_sq = torch.sum(w**2, dim=1)
     theta_sq = torch.reshape(theta_sq, [-1, 1, 1])
 
     theta = torch.sqrt(theta_sq)
@@ -288,13 +328,33 @@ def se3_matrix_expm(upsilon_omega):
     fill = torch.reshape(fill, [1, 1, 4])
     fill = torch.Tensor.repeat(fill, [batch, 1, 1])
 
-    G = torch.cat([R, t], axis=2)
-    G = torch.cat([G, fill], axis=1)
+    G = torch.cat([R, t], dim=2)
+    G = torch.cat([G, fill], dim=1)
     G = torch.reshape(G, out_shape)
     return G
 
+class Se3MatrixExpm(torch.autograd.Function):
+    """
+    自定义相关结构
+    Args:
+        torch ([type]): [description]
+    """
+    def forward(self, input_):
+        # 在forward中，需要定义MyReLU这个运算的forward计算过程
+        # 同时可以保存任何在后向传播中需要使用的变量值
+        self.save_for_backward(input_)         # 将输入保存起来，在backward时使用
+        output = se3_matrix_expm(input_) # 向前计算
+        return output
 
-def se3_matrix_increment(G, upsilon_omega):
-    """ Left increment of rigid body transformation: G = expm(xi) G"""
-    dG = se3_matrix_expm(upsilon_omega)
-    return torch.matmul(dG, G)
+    def backward(self, grad_output):
+        # 根据BP算法的推导（链式法则），dloss / dx = (dloss / doutput) * (doutput / dx)
+        # dloss / doutput就是输入的参数grad_output、
+        # 因此只需求relu的导数，在乘以grad_outpu    
+        input_, = self.saved_tensors # 把上面保存的input_输出
+        if ctx.needs_input_grad[0]:# 判断self.saved_tensors中的Variable是否需要进行反向求导计算梯度
+            print('input_ need grad')
+        grad_input = grad_output.clone()
+        _se3_matrix_expm_grad
+        return _se3_matrix_expm_grad(grad_input)
+
+

@@ -41,14 +41,8 @@ def main(args):
 
     solver = DeepV2DTrainer(cfg)
     ckpt = None
-
-    if args.restore is not None:
-        solver.train(db, cfg, stage=2, restore_ckpt=args.restore, num_gpus=args.num_gpus)
-
-    else:
-        for stage in [1, 2]:
-            ckpt = solver.train(db, cfg, stage=stage, ckpt=ckpt, num_gpus=args.num_gpus)
-            tf.reset_default_graph()
+    # 进行训练
+    solver.train(db, cfg, stage=2, restore_ckpt=args.restore, num_gpus=args.num_gpus)
 
 
 

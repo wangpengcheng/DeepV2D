@@ -95,7 +95,7 @@ def get_data_from_sum_file(order_file):
     depths = np.loadtxt(order_file, delimiter=' ', dtype=np.unicode_,usecols=(3,))
     # 位姿数据
     try:
-        poses = np.loadtxt(order_file, delimiter=' ', dtype=np.float64, usecols=(5,6,7,8,9,10,11,12))
+        poses = np.loadtxt(order_file, delimiter=' ', dtype=np.float64, usecols=(5,6,7,8,9,10,11))
     except:
         poses = np.zeros((len(images), 7))
     return images, depths, poses

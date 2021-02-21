@@ -46,9 +46,5 @@ def einsum(equation, *inputs):
                     ellipsis_axes = replace_axes
 
     equation = equation.replace('...', ellipsis_axes)
-    print(equation,)
-    print("===")
-    print(*inputs)
     out = torch.einsum(equation, *inputs)
-    #tf.add_to_collection("checkpoints", out) 将输出放入集合
     return out

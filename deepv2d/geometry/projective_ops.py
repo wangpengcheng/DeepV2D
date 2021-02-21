@@ -16,8 +16,7 @@ def coords_grid(shape, homogeneous=True):
     new_shape = np.ones_like(list(shape)[:-2])
     new_shape = np.concatenate([new_shape,list(shape)[-2:], [-1]], axis=0).tolist()
     coords = torch.reshape(coords, new_shape)
-    print(coords)
-    tile = np.concatenate([list(shape)[:-2], [1,1,1]], axis=0).tolist() # 获取小块
+    tile = np.concatenate([list(shape)[:-2], [1, 1, 1]], axis=0).tolist() # 获取小块
     coords = torch.Tensor.repeat(coords, tile) # 对坐标点张量进行扩张
     return coords
 
@@ -73,7 +72,7 @@ def project(points, intrinsics, jacobian=False):
     
     """ project point cloud onto image 将点云投影到图像上""" 
     X, Y, Z = torch.unbind(points,dim=-1)
-    Z[ Z<MIN_DEPTH ]=MIN_DEPTH
+    Z[ Z< MIN_DEPTH ]=MIN_DEPTH
     #Z = torch.max(Z, MIN_DEPTH) # 获取最大深度，主要这里需要设置一下最小深度
     
 

@@ -10,18 +10,28 @@ from geometry.intrinsics import *
 from special_ops import operators
 
 def add_depth_summaries(gt, pr):
+    """
+    tensorborad 写入函数
+
+    Args:
+        gt ([type]): [description]
+        pr ([type]): [description]
+    """
     gt = tf.reshape(gt, [-1])
     pr = tf.reshape(pr, [-1])
 
     v = tf.where((gt>0.1) & (gt<10.0))
     gt = tf.gather(gt, v)
     pr = tf.gather(pr, v)
-
+    # 筛选最大值
     thresh = tf.maximum(gt / pr, pr / gt)
+    # 计算准确率平均值
     delta = tf.reduce_mean(tf.to_float(thresh < 1.25))
+    # 计算绝对值
     abs_rel = tf.reduce_mean(tf.abs(gt-pr) / gt)
 
     with tf.device('/cpu:0'):
+        # 写入相关数据
         tf.summary.scalar("a1", delta)
         tf.summary.scalar("rel", abs_rel)
 

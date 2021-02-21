@@ -35,9 +35,11 @@ __C.INPUT.FRAMES = 9
 __C.INPUT.HEIGHT = 480
 __C.INPUT.WIDTH = 640
 __C.INPUT.SAMPLES = 3
+# 加载图像缩放按钮
+__C.INPUT.RESIZE = 1.0
 
 # random scale augumentation
-__C.INPUT.SCALES = [1.0]
+__C.INPUT.SCALES = [2.0]
 
 # training parameters
 __C.TRAIN.ITERS = [20000, 120000]
@@ -50,9 +52,14 @@ __C.TRAIN.LR_DECAY = 0.9
 __C.TRAIN.REGRESSOR_INIT = False
 __C.TRAIN.RENORM = True
 __C.TRAIN.CLIP_GRADS = True
-
 __C.TRAIN.DEPTH_WEIGHT = 1.0
 
+# 是否处于训练状态
+__C.TRAIN.IS_TRAIN = True
+
+# 
+__C.TRAIN.USE_GPU = '0'
+__C.TRAIN.GPU_MEMORY = 0.5
 __C.STRUCTURE = edict()
 __C.STRUCTURE.MIN_DEPTH = 0.1
 __C.STRUCTURE.MAX_DEPTH = 8.0
@@ -63,14 +70,31 @@ __C.STRUCTURE.RESCALE_IMAGES = False
 # type of view aggregation to use (either 'avg' or 'concat')
 __C.STRUCTURE.MODE = 'avg'
 
+# 改进模型的类型，现在有:resnet fast_resnet、mobilenet
+__C.STRUCTURE.ENCODER_MODE = 'resnet'
+# 编码改进模型
+__C.STRUCTURE.DECODER_MODE = 'resnet'
+
 # number of stacked 3D hourglass modules to use
 __C.STRUCTURE.HG_COUNT = 2
+
+# number of stacked 2D hourglass modules to use
+__C.STRUCTURE.HG_2D_COUNT = 2
+
+
+# 设置沙漏网络递归层数
+__C.STRUCTURE.HG_DEPTH_COUNT = 2
+# 
+__C.STRUCTURE.HG_2D_DEPTH_COUNT = 2
+
+__C.STRUCTURE.USE_FAST_RESNET = True # 是否使用快速卷积
 
 __C.STRUCTURE.TRAIN = edict()
 # small smoothing loss over missing depth values
 __C.STRUCTURE.TRAIN.SMOOTH_W = 0.02
 
 __C.MOTION = edict()
+__C.MOTION.USE_MOTION = True # 是否使用相机位姿估计网络
 # stack frames when estimating camera motion
 __C.MOTION.STACK_FRAMES = False
 
