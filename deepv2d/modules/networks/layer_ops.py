@@ -163,6 +163,11 @@ class Conv3d(nn.Module):
         :param nOut: number of output channels
         :param kSize: kernel size
         :param stride: optional stride rate for down-sampling
+        pytorch 
+        in N, Ci, D, H, W
+        out N, Co, D, H, W
+        tensorflow
+        [batch, in_depth, in_height, in_width, in_channels] N,D,H,W,C
         '''
         super().__init__()
         # 自适应边长填充
@@ -399,7 +404,7 @@ class FastResConv3d(nn.Module):
         '''
         # 进行初始化
         super().__init__()
-        if stride==1:
+        if stride ==1:
             self.conv1 = Conv3dBnRel(nIn, nOut, 1, 1)
             self.conv2 = Conv3dBnRel(nIn, nOut, 3, 1)
             self.conv3 = Conv3dBnRel(nIn, nOut, 1, 1)
