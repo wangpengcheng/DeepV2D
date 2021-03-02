@@ -3,7 +3,7 @@ INPUT:
   HEIGHT: 480
   WIDTH: 640
   SAMPLES: 3
-  SCALES: [1.0, 1.1, 1.2]
+  SCALES: [1.0, 1.1, 1.2] # 缩放参数
 TRAIN:
   ITERS: [20000, 120000]
   BATCH: [4, 2]

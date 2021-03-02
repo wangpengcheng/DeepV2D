@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 import os
 import cv2
-
+import time
 from data_layer import DataLayer, DBDataLayer
 
 from geometry.transformation import *
@@ -126,7 +126,7 @@ class DeepV2DTrainer(object):
                                             0.2,  # 学习率衰减系数，通常介于0-1之间。
                                             staircase=True # (默认值为False,当为True时，（global_step/decay_steps）则被转化为整数) ,选择不同的衰减方式。
                                             )
-
+            # 设置优化器
             stereo_optim = tf.train.RMSPropOptimizer(lr)
             if cfg.MOTION.USE_MOTION:
                 motion_optim = tf.train.RMSPropOptimizer(MOTION_LR_FRACTION*lr)
@@ -152,7 +152,7 @@ class DeepV2DTrainer(object):
                 # 位姿估计网络
                 motion_net = MotionNetwork(cfg.MOTION, reuse=gpu_id>0)
             else:
-                print("Donot Use motion net")
+                print("Do not Use motion net")
             # 深度估计网络
             depth_net = DepthNetwork(cfg.STRUCTURE, schedule=schedule, reuse=gpu_id>0)
             # 数据分配
@@ -191,18 +191,20 @@ class DeepV2DTrainer(object):
                     kvec = intrinsics
                 
                 # 在这里直接将位姿矩阵和相机参数进行初始化
-
-                # 是否停止迭代
-                stop_cond = global_step < cfg.TRAIN.GT_POSE_ITERS
-                # 转换后的坐标，这里在相机位姿迭代次数使用完毕后，就直接使用输入的位姿--可以去掉
-                Ts = cond_transform(stop_cond, Ts.copy(stop_gradients=True), Ts)
-                # 最终的相机参数 --可以去掉
-                kvec = tf.cond(stop_cond, lambda: tf.stop_gradient(kvec), lambda: kvec)
+                if cfg.MOTION.USE_MOTION:
+                    # 是否停止迭代
+                    stop_cond = global_step < cfg.TRAIN.GT_POSE_ITERS
+                    # 转换后的坐标，这里在相机位姿迭代次数使用完毕后，就直接使用输入的位姿--可以去掉
+                    Ts = cond_transform(stop_cond, Ts.copy(stop_gradients=True), Ts)
+                    # 最终的相机参数 --可以去掉
+                    kvec = tf.cond(stop_cond, lambda: tf.stop_gradient(kvec), lambda: kvec)
+                
                 # depth inference
                 # 进行前向计算推理，获取深度预测值
                 depth_pr = depth_net.forward(Ts, images, kvec)
                 # 计算
                 depth_loss = depth_net.compute_loss(depth_gt, log_error=(gpu_id==0))
+                # 计算位姿估计网络loss
                 if cfg.MOTION.USE_MOTION:
                     # 计算loss值
                     motion_loss = motion_net.compute_loss(Gs,
@@ -243,7 +245,9 @@ class DeepV2DTrainer(object):
 
                 motion_gvs = []
                 stereo_gvs = []
+                # 获取每个变量的梯度
                 for (g, v) in zip(grads, var_list):
+                        # 进行存储
                         if 'stereo' in v.name and (g is not None):
                             if cfg.TRAIN.CLIP_GRADS:
                                 g = tf.clip_by_value(g, -1.0, 1.0)
@@ -271,7 +275,7 @@ class DeepV2DTrainer(object):
         # 计算平均梯度
         if cfg.MOTION.USE_MOTION:
             tower_motion_gvs = average_gradients(tower_motion_grads)
-        
+        # 更新训练选项
         with tf.name_scope("train_op"):
             with tf.control_dependencies(update_ops):
                 if cfg.MOTION.USE_MOTION:
@@ -285,12 +289,15 @@ class DeepV2DTrainer(object):
                         stereo_optim.apply_gradients(tower_stereo_gvs),
                         tf.assign(global_step, global_step+1)
                     )
-
+        # 写入操作
         self.write_op = self.dl.write(id_batch, tf.concat(tower_predictions, axis=0))
+        # 计算总的loss
         self.total_loss = tf.reduce_mean(tf.stack(tower_losses, axis=0))
-
+        # 输出loss
         tf.summary.scalar("total_loss", self.total_loss)
+        # 输出学习率
         tf.summary.scalar("learning_rate", lr)
+        # 输出输入形状
         tf.summary.scalar("input_prob", input_prob)
 
 
@@ -314,7 +321,7 @@ class DeepV2DTrainer(object):
         # 开始加载数据模型
         print ("batch size: %d \t max steps: %d"%(batch_size, max_steps))
         # 开始加载数据模型
-        if isinstance(data_source, str):
+        if isinstance(data_source, str): # 如果是字符串则直接加载
             self.dl = DataLayer(data_source, batch_size=batch_size)
         else:
             self.dl = DBDataLayer(data_source, batch_size=batch_size)
@@ -327,9 +334,9 @@ class DeepV2DTrainer(object):
 
         # 进行数据合并
         self.summary_op = tf.summary.merge_all()
-        # 进行模型存储
+        # 进行模型存储器构建
         saver = tf.train.Saver([var for var in tf.model_variables()], max_to_keep=1)
-        # 写入日志信息
+        # 写入日志信息 
         train_writer = tf.summary.FileWriter(cfg.LOG_DIR+'_stage_%s'%str(stage)) # 写入到数据训练文件中
         # 进行初始化
         init_op = tf.group(tf.global_variables_initializer(),
@@ -358,20 +365,29 @@ class DeepV2DTrainer(object):
 
             kwargs = {}
             # 训练阶段大于2，两次训练都结束,保存姿态网络数据
-            if stage >= 2 and cfg.MOTION.USE_MOTION:
-                # 位姿估计的所有变量
-                motion_vars = tf.get_collection(tf.GraphKeys.MODEL_VARIABLES, scope="motion")
-                # 创建存储
-                motion_saver = tf.train.Saver(motion_vars)
-                # 进行中间参数保存，保存的模型
-                if ckpt is not None:
-                    motion_saver.restore(sess, ckpt)
-                # 存储的临时文件
-                if restore_ckpt is not None:
-                    saver.restore(sess, restore_ckpt)
+            if stage >= 2:
+                if cfg.MOTION.USE_MOTION:
+                    # 位姿估计的所有变量
+                    motion_vars = tf.get_collection(tf.GraphKeys.MODEL_VARIABLES, scope="motion")
+                    # 位姿存储
+                    motion_saver = tf.train.Saver(motion_vars)
+                    # 进行中间参数保存，保存的模型
+                    if ckpt is not None:
+                        motion_saver.restore(sess, ckpt)
+                    # 加载存储的临时文件
+                    if restore_ckpt is not None:
+                        saver.restore(sess, restore_ckpt)
             
             # 运行时的loss
             running_loss = 0.0
+            if cfg.STORE.IS_SAVE_LOSS_LOG:
+                loss_log_file_name = os.path.join(cfg.LOG_DIR, time.strftime("%Y%m%d%H%M%S.log", time.localtime()))
+                if not os.path.exists(loss_log_file_name):
+                    os.mknod(loss_log_file_name)
+                loss_file = open(loss_log_file_name, "w") 
+            else:
+                loss_file = None
+
             # 开始迭代并进行训练
             for step in range(1, max_steps):
 
@@ -391,7 +407,12 @@ class DeepV2DTrainer(object):
                     train_writer.add_summary(result['summary'], step)
 
                 if step % LOG_FREQ == 0:
-                    print('[stage=%d, %5d] loss: %.9f'%(stage, step, running_loss / LOG_FREQ))
+                    loss_str = "[stage={}, {:>5d}] loss: {:.9f}".format(stage, step, running_loss / LOG_FREQ)
+                    print(loss_str)
+                    # 需要记录loss值
+                    if loss_file is not None:
+                        loss_file.write(loss_str) 
+
                     running_loss = 0.0
                 # 存储模型文件
                 if step % CHECKPOINT_FREQ == 0:
@@ -403,5 +424,8 @@ class DeepV2DTrainer(object):
             checkpoint_file = os.path.join(cfg.CHECKPOINT_DIR, '_stage_%s.ckpt'%str(stage))
             # 存储模型文件
             saver.save(sess, checkpoint_file)
+            # 关闭日志文件
+            if loss_file is not None:
+                loss_file.close()
 
         return checkpoint_file
