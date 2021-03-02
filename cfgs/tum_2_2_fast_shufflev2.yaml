@@ -1,0 +1,34 @@
+INPUT:
+  FRAMES: 5
+  HEIGHT: 480
+  WIDTH: 640
+  SAMPLES: 3
+  RESIZE: 0.5
+TRAIN:
+  ITERS: [300, 20000]
+  BATCH: [1, 8]
+  LR: 0.001
+  CLIP_GRADS: True
+  DEPTH_WEIGHT: 1.0
+  USE_GPU: '0,1'
+  GPU_MEMORY: 0.5
+MOTION:
+  USE_MOTION: False
+  STACK_FRAMES: False
+  TRAIN:
+    DELTA: [0.02, 0.02, 0.02, 0.02, 0.02, 0.02]
+STRUCTURE:
+  MODE: avg
+  ENCODER_MODE: shufflenetv2 # resnet fast_resnet mobilenet aspp shufflenet
+  DECODER_MODE: resnet # resnet fast_resnet mobilenet
+  MAX_DEPTH: 10.0
+  MIN_DEPTH: 0.2
+  HG_COUNT: 1
+  HG_DEPTH_COUNT: 2
+  HG_2D_COUNT: 1
+  HG_2D_DEPTH_COUNT: 2
+  USE_FAST_RESNET: True
+
+# new fast 0.037686747854406184 s
+# resnet  0.046844121542843904
+# 0.023392965576865456 0.03974004550413652

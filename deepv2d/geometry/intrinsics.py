@@ -10,7 +10,7 @@ def intrinsics_vec_to_matrix(kvec):
     o = torch.ones_like(fx) #1阶矩阵
 
     K = torch.stack([fx, z, cx, z, fy, cy, z, z, o], dim=-1)
-    K = torch.reshape.reshape(K, kvec.get_shape().as_list()[:-1] + [3,3]) # 相机矩阵拼接
+    K = torch.reshape(K, kvec.shape[:-1] + tuple([3, 3])) # 相机矩阵拼接
     return K
 
 def intrinsics_matrix_to_vec(kmat):
@@ -39,7 +39,7 @@ def rescale_depth(depth, downscale=4):
     j,n,w,h= depth.shape[:]
     w = int(w/downscale+0.5)
     h = int(h/downscale+0.5)
-    depth = torch.nn.functional.interpolate(depth,size=[w,h],mode="nearest")
+    depth = torch.nn.functional.interpolate(depth,size=[w, h],mode="nearest")
     return torch.squeeze(depth, dim=0) # 对其进行维度压缩
 
 def rescale_depth_and_intrinsics(depth, intrinsics, downscale=4):

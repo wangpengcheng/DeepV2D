@@ -36,7 +36,7 @@ def main(args):
     cfg.LOG_DIR = log_dir
     cfg.CHECKPOINT_DIR = checkpoint_dir
     cfg.TMP_DIR = tmp_dir
-
+    # 创建数据集
     db = TUM_RGBD(args.dataset_dir, r=args.r)
 
     solver = DeepV2DTrainer(cfg)

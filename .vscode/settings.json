@@ -1,4 +1,5 @@
 {
     "python.pythonPath": "/home/node/.conda/envs/consistent_depth/bin/python",
-    "git.ignoreLimitWarning": true
+    "python.terminal.activateEnvironment":true
+
 }

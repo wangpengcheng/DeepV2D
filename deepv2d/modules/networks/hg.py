@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 import numpy as np
-from layer_ops import *  
+from .layer_ops import *  
 
 
 class Hourglass2d(nn.Module):
@@ -23,7 +23,7 @@ class Hourglass2d(nn.Module):
         # 重新进行卷积
         self.low3_conv = Conv2dBnRel(self.dim2, nOut, 3)
         # 进行上采样
-        self.upnn2d = nn.UpsamplingNearest2d(scale_factor=2)
+        #self.upnn2d = nn.UpsamplingNearest2d(scale_factor=2)
 
     def forward(self, input):
         """
@@ -31,12 +31,14 @@ class Hourglass2d(nn.Module):
         Args:
             input ([type]): [description]
         """
-        out = self.resnet(input)
+        out = input + self.resnet(input)
+        ht, wd = out.shape[-2:]
         pool1 = self.pool(out)
         low1 = self.low1_conv(pool1)
         low2 = self.low2_conv(low1)
         low3 = self.low3_conv(low2)
-        up2 = self.upnn2d(low3)
+        # up data
+        up2 = nn.functional.upsample_nearest(low3,size=(ht, wd))
         out += up2
         return out
 
@@ -58,7 +60,7 @@ class FastHourglass2d(nn.Module):
         # 重新进行卷积
         self.low3_conv = Conv2dBnRel(self.dim2, nOut, 1)
         # 进行上采样
-        self.upnn2d = nn.UpsamplingNearest2d(scale_factor=2)
+        #self.upnn2d = nn.UpsamplingNearest2d(scale_factor=2)
 
     def forward(self, input):
         """
@@ -67,11 +69,13 @@ class FastHourglass2d(nn.Module):
             input ([type]): [description]
         """
         out = input + self.resnet(input)
+        ht, wd = out.shape[-2:]
         pool1 = self.pool(out)
         low1 = self.low1_conv(pool1)
         low2 = self.low2_conv(low1)
         low3 = self.low3_conv(low2)
-        up2 = self.upnn2d(low3)
+        # up data
+        up2 = nn.functional.upsample_nearest(low3,size=(ht, wd))
         out += up2
         return out
 
@@ -84,36 +88,36 @@ class FastHourglass2d(nn.Module):
 class Hourglass3d(nn.Module):
     def __init__(self, nIn, nOut, stack_number, expand=64):
         super().__init__()
-        self.dim2 = nOut + expand
+        dim2 = nOut + expand
         # 第一次卷积
         self.resnet = ResConv3d(nIn, nOut)
         # 最大池化层,注意输入和输出
         self.pool = MaxPool3D(nOut, nOut, 2)
         # 进行向上3*3卷积 
-        self.low1_conv = Conv3dBnRel(nOut, self.dim2, 3)
+        self.low1_conv = Conv3dBnRel(nOut, dim2, 3)
 
         if stack_number > 1:
-            self.low2_conv = Hourglass3d(self.dim2, self.dim2, stack_number-1)
+            self.low2_conv = Hourglass3d(dim2, dim2, stack_number-1)
         else:
-            self.low2_conv = Conv3dBnRel(self.dim2, self.dim2, 3)
+            self.low2_conv = Conv3dBnRel(dim2, dim2, 3)
         # 重新进行卷积
-        self.low3_conv = Conv3dBnRel(self.dim2, nOut, 3)
-        # 进行上采样
-        self.upnn2d = nn.Upsample(scale_factor=2, mode='nearest')
-
+        self.low3_conv = Conv3dBnRel(dim2, nOut, 3)
+       
     def forward(self, input):
         """
         进行前向计算
         Args:
             input ([type]): [description]
         """
-        out = self.resnet(input)
-        pool1 = self.pool(out)
-        low1 = self.low1_conv(pool1)
+        out = self.resnet(input) # 1 32 32 30 40 
+        dt, ht, wd = out.shape[-3:]
+        pool1 = self.pool(out) # 1 32 16 15 20 
+        low1 = self.low1_conv(pool1) # 1 96 16 45 20 
         low2 = self.low2_conv(low1)
         low3 = self.low3_conv(low2)
-        up2 = self.upnn2d(low3)
-        out += up2
+        # up data
+        up2 = nn.functional.upsample_nearest(low3, size=(dt, ht, wd))
+        out = out + up2
         return out
 
 
@@ -144,12 +148,14 @@ class FastHourglass3d(nn.Module):
             input ([type]): [description]
         """
         out = input + self.resnet(input)
+        dt, ht, wd = out.shape[-3:]
         pool1 = self.pool(out)
         low1 = self.low1_conv(pool1)
         low2 = self.low2_conv(low1)
         low3 = self.low3_conv(low2)
-        up2 = self.upnn2d(low3)
-        out += up2
+        # up data
+        up2 = nn.functional.upsample_nearest(low3, size=(dt, ht, wd))
+        out = out + up2
         return out
 
 
