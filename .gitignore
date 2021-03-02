@@ -10,4 +10,4 @@ models
 tmp
 *.tfrecords
 *.pkl
-data
+data/*
