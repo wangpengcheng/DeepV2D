@@ -6,7 +6,7 @@ INPUT:
   RESIZE: 0.5
 TRAIN:
   ITERS: [300, 20000]
-  BATCH: [1, 1]
+  BATCH: [1, 8]
   LR: 0.001
   CLIP_GRADS: True
   DEPTH_WEIGHT: 1.0
@@ -20,7 +20,7 @@ MOTION:
 STRUCTURE:
   MODE: avg
   ENCODER_MODE: shufflenetv2 # resnet fast_resnet mobilenet aspp shufflenet
-  DECODER_MODE: fast_resnet # resnet fast_resnet mobilenet
+  DECODER_MODE: resnet # resnet fast_resnet mobilenet
   MAX_DEPTH: 10.0
   MIN_DEPTH: 0.2
   HG_COUNT: 1

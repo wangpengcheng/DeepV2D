@@ -71,14 +71,16 @@ def backproject(depth, intrinsics, jacobian=False):
 def project(points, intrinsics, jacobian=False):
     
     """ project point cloud onto image 将点云投影到图像上""" 
+    # 获取点云图
     X, Y, Z = torch.unbind(points,dim=-1)
+    # 设置最小深度
     Z[ Z< MIN_DEPTH ]=MIN_DEPTH
     #Z = torch.max(Z, MIN_DEPTH) # 获取最大深度，主要这里需要设置一下最小深度
     
 
     x_shape = X.shape # 获取x数据的长度
     fx, fy, cx, cy = extract_and_reshape_intrinsics(intrinsics, x_shape) # 调整相机内参矩阵
-
+    # 计算对应的像素点位置坐标
     x = fx * (X / Z) + cx
     y = fy * (Y / Z) + cy
     coords = torch.stack([x, y], dim=-1)

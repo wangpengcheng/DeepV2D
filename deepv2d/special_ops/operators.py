@@ -1,6 +1,6 @@
 import torch
 import os.path as osp
-
+import numpy as np
 
 from utils.bilinear_sampler import *
 
@@ -23,7 +23,14 @@ def adj_to_inds(num=-1, adj_list=None):
     return ii, jj
 
 
-def backproject_avg(Ts, depths, intrinsics, fmaps, adj_list=None):
+def backproject_avg(
+            Ts, 
+            depths, 
+            intrinsics, 
+            fmaps, 
+            back_project, 
+            adj_list=None
+            ):
     """
 
     Args:
@@ -36,6 +43,8 @@ def backproject_avg(Ts, depths, intrinsics, fmaps, adj_list=None):
     Returns:
         [type]: [description]
     """
+    # use_cuda_backproject
+    use_cuda_backproject = True
     # 获取通道数目
     dim = fmaps.shape[2]
     # 获取深度数量
@@ -60,23 +69,37 @@ def backproject_avg(Ts, depths, intrinsics, fmaps, adj_list=None):
     coords2 = Tij.transform(depths, intrinsics) # 坐标2
     # 1*4*30*40*32
     fmap1 = my_gather(fmaps, ii, dim=1).permute(0,1,3,4,2) # 获取数组切片，主要是获取ii中的数据
-    fmap2 = my_gather(fmaps, jj, dim=1).permute(0,1,3,4,2) #
-    # 将坐标进行维度转换，，将x,y,z->z,x,y 1*4*30*40*32*2
-    coords1 = coords1.permute(0, 1, 3, 4, 2, 5)
-    coords2 = coords2.permute(0, 1, 3, 4, 2, 5)
-    # 对应fmap,的坐标点上，进行双阶线性采样；获取比较准确的坐标样本，作为图像特征值
-    fvol1 = bilinear_sampler(fmap1, coords1, batch_dims=2) #1*4*30*40*32*32
-    # 双阶段线性采样
-    fvol2 = bilinear_sampler(fmap2, coords2, batch_dims=2)
-    # 计算特征值  1 4 30 40 32 
-    volume = torch.cat([fvol1, fvol2], dim=-1).permute(0, 1, 4, 2, 3)
+    fmap2 = my_gather(fmaps, jj, dim=1).permute(0,1,3,4,2) # 进行数据转换
+    if use_cuda_backproject:
+        # 进行数据合并
+        coords = torch.cat([coords1, coords2],dim = -1)
+        # 进行
+        coords = torch.reshape(coords, [batch*num, dd, ht, wd, 2, 2]) # 4 32 30 40 2 2
+        # 
+        fmap1 = torch.reshape(fmap1, [batch*num, ht, wd, dim]) # 调整特征图 4 30 40 32
+        fmap2 = torch.reshape(fmap2, [batch*num, ht, wd, dim]) # 4 30 40 32
+        fmaps_stack = torch.stack([fmap1, fmap2], dim = -2) # 4 30 40 2 32
+     
+        # 进行数据筛选
+        volume = back_project(fmaps_stack.cuda(), coords.cuda())
+      
+    else:
+        # 将坐标进行维度转换，，将x,y,z->z,x,y 1*4*30*40*32*2
+        coords1 = coords1.permute(0, 1, 3, 4, 2, 5)
+        coords2 = coords2.permute(0, 1, 3, 4, 2, 5)
+        # 对应fmap,的坐标点上，进行双阶线性采样；获取比较准确的坐标样本，作为图像特征值
+        fvol1 = bilinear_sampler(fmap1, coords1, batch_dims=2) #1*4*30*40*32*32
+        # 双阶段线性采样
+        fvol2 = bilinear_sampler(fmap2, coords2, batch_dims=2)
+        # 计算特征值  1 4 30 40 32 
+        volume = torch.cat([fvol1, fvol2], dim=-1)
 
     if adj_list is None:
         # 将特征值进行重组，相当于特征混合
-        volume = torch.reshape(volume, [batch, num, 2*dim, dd,  ht, wd  ])
+        volume = torch.reshape(volume, [batch, num, ht, wd, dd, 2*dim])
     else:
         n, m = torch.unbind(torch.Tensor(list(adj_list.shape), num=2))
-        volume = torch.reshape(volume, [batch*n,m-1, 2*dim,dd, ht, wd])
+        volume = torch.reshape(volume, [batch*n, m-1, ht, wd, dd, 2*dim])
 
     return volume # 3D特征组合
 

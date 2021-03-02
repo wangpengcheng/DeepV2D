@@ -47,7 +47,7 @@ class GroupsConvBN(nn.Module):
         padding = int((kSize - 1)/2)
         self.group_conv = nn.Conv2d(inputs, filters, kernel_size=kernel, groups=num_groups, bias=False)
         self.bn = nn.BatchNorm2d(filters)
-        self.act = nn.ReLU(filters)
+        self.act = nn.ReLU()
 
     def forward(self, input):
         '''
@@ -108,7 +108,7 @@ class ShuffleNetUnitA(nn.Module):
         # 执行分组卷积
         self.group_conv2 = GroupsConvBN(bottleneck_channels, out_channels, kernel=1, num_groups=num_groups)
         # 最后激活层
-        self.active = nn.ReLU(out_channels)
+        self.active = nn.ReLU()
     def forward(self, input):
         # 组卷积
         out = self.group_conv1(input)
@@ -151,7 +151,7 @@ class ShuffleNetUnitB(nn.Module):
         # 执行分组卷积
         self.group_conv2 = GroupsConvBN(bottleneck_channels, out_channels, kernel=1, num_groups=num_groups)
         # 最后激活层
-        self.active = nn.ReLU(out_channels)
+        self.active = nn.ReLU()
 
     def forward(self, input):
         residual = input
@@ -196,7 +196,7 @@ class ShuffleNetUnitV2A(nn.Module):
         # 执行分组卷积
         self.conv2 = Conv2dBnRel(mid_channels, mid_channels, kSize=1, stride=1)
         # 最后激活层
-        self.active = nn.ReLU(out_channels)
+        self.active = nn.ReLU()
 
     def forward(self, input):
         # 首先进行二维分离操作,将第三维分成两个部分
@@ -243,7 +243,7 @@ class ShuffleNetUnitV2B(nn.Module):
         # 再进行卷积
         self.conv3 = Conv2dBnRel(mid_channels, in_channels, kSize=1, stride=1)
         # 最后激活层
-        self.active = nn.ReLU(out_channels)
+        self.active = nn.ReLU()
 
     def forward(self, input):
         shortcut = input

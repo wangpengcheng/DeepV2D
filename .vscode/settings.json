@@ -69,4 +69,6 @@
         "string": "cpp",
         "random": "cpp"
     }
+    "python.terminal.activateEnvironment":true
+
 }

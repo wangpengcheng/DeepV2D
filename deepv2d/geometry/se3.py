@@ -353,6 +353,8 @@ class Se3MatrixExpm(torch.autograd.Function):
         input_, = self.saved_tensors # 把上面保存的input_输出
         if ctx.needs_input_grad[0]:# 判断self.saved_tensors中的Variable是否需要进行反向求导计算梯度
             print('input_ need grad')
+        else:
+            print('input_ not need grad')
         grad_input = grad_output.clone()
         # 进行梯度计算
         return _se3_matrix_expm_grad(grad_input)
