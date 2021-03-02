@@ -45,6 +45,6 @@ def einsum(equation, *inputs):
                 if len(replace_axes) > len(ellipsis_axes):
                     ellipsis_axes = replace_axes
 
-    equation = equation.replace('...', ellipsis_axes)
+    equation = equation.replace('...', ellipsis_axes).lower() # 'aijk,aiXYZk->aiXYZj'
     out = torch.einsum(equation, *inputs)
     return out

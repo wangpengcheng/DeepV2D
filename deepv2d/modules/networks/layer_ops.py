@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 
+
+
 class Conv2d(nn.Module):
     '''
     This class is for a convolutional layer.
@@ -83,7 +85,7 @@ class Conv2dBN(nn.Module):
         super().__init__()
         padding = int((kSize - 1)/2)
         self.conv = nn.Conv2d(nIn, nOut, (kSize, kSize), stride=stride, padding=(padding, padding), bias=True)
-        self.bn = nn.BatchNorm2d(nOut, eps=1e-03)
+        self.bn = nn.BatchNorm2d(nOut, eps=1e-05)
 
     def forward(self, input):
         '''
@@ -113,7 +115,7 @@ class Conv2dBnRel(nn.Module):
         #self.conv = nn.Conv2d(nIn, nOut, kSize, stride=stride, padding=padding, bias=True)
         self.conv = nn.Conv2d(nIn, nOut, (kSize, kSize), stride=stride, padding=(padding, padding), bias=True)
         #self.conv1 = nn.Conv2d(nOut, nOut, (1, kSize), stride=1, padding=(0, padding), bias=True)
-        self.bn = nn.BatchNorm2d(nOut, eps=1e-03)
+        self.bn = nn.BatchNorm2d(nOut, eps=1e-05)
         self.act = nn.ReLU(nOut)
 
     def forward(self, input):
@@ -139,7 +141,7 @@ class BR2d(nn.Module):
         :param nOut: output feature maps
         '''
         super().__init__()
-        self.bn = nn.BatchNorm2d(nOut, eps=1e-03)
+        self.bn = nn.BatchNorm2d(nOut, eps=1e-05)
         self.act = nn.ReLU(nOut)
 
     def forward(self, input):
@@ -197,7 +199,7 @@ class Conv3dBN(nn.Module):
         super().__init__()
         padding = int((kSize - 1)/2)
         self.conv = nn.Conv3d(nIn, nOut, (kSize, kSize, kSize), stride=stride, padding=(padding, padding, padding), bias=True)
-        self.bn = nn.BatchNorm2d(nOut, eps=1e-03)
+        self.bn = nn.BatchNorm2d(nOut, eps=1e-05)
 
     def forward(self, input):
         '''
@@ -225,7 +227,7 @@ class Conv3dBnRel(nn.Module):
         super().__init__()
         padding = int((kSize - 1)/2)
         self.conv = nn.Conv3d(nIn, nOut, (kSize, kSize, kSize), stride=stride, padding=(padding, padding, padding), bias=True)
-        self.bn = nn.BatchNorm3d(nOut, eps=1e-03)
+        self.bn = nn.BatchNorm3d(nOut, eps=1e-05)
         self.act = nn.ReLU(nOut)
 
     def forward(self, input):
@@ -249,7 +251,7 @@ class BR3d(nn.Module):
         :param nOut: output feature maps
         '''
         super().__init__()
-        self.bn = nn.BatchNorm3d(nOut, eps=1e-03)
+        self.bn = nn.BatchNorm3d(nOut, eps=1e-05)
         self.act = nn.ReLU(nOut)
 
     def forward(self, input):
@@ -299,11 +301,11 @@ class ResConv2d(nn.Module):
         super().__init__()
         if stride==1:
             self.conv1 = Conv2dBnRel(nIn, nOut, 3, 1)
-            self.conv2 = Conv2dBnRel(nIn, nOut, 3, 1)
+            self.conv2 = Conv2dBnRel(nOut, nOut, 3, 1)
             self.conv3 = None
         else:
             self.conv1 = Conv2dBnRel(nIn, nOut, 3, 1)
-            self.conv2 = Conv2dBnRel(nIn, nOut, 3, 2)
+            self.conv2 = Conv2dBnRel(nOut, nOut, 3, 2)
             self.conv3 = Conv2dBnRel(nIn, nOut, 1, 2)
     
             
@@ -334,11 +336,11 @@ class ResConv3d(nn.Module):
         super().__init__()
         if stride==1:
             self.conv1 = Conv3dBnRel(nIn, nOut, 3, 1)
-            self.conv2 = Conv3dBnRel(nIn, nOut, 3, 1)
+            self.conv2 = Conv3dBnRel(nOut, nOut, 3, 1)
             self.conv3 = None
         else:
             self.conv1 = Conv3dBnRel(nIn, nOut, 3, 1)
-            self.conv2 = Conv3dBnRel(nIn, nOut, 3, 2)
+            self.conv2 = Conv3dBnRel(nOut, nOut, 3, 2)
             self.conv3 = Conv3dBnRel(nIn, nOut, 1, 2)
     
             
@@ -368,13 +370,13 @@ class FastResConv2d(nn.Module):
         super().__init__()
         if stride==1:
             self.conv1 = Conv2dBnRel(nIn, nOut, 1, 1)
-            self.conv2 = Conv2dBnRel(nIn, nOut, 3, 1)
-            self.conv3 = Conv2dBnRel(nIn, nOut, 1, 1)
+            self.conv2 = Conv2dBnRel(nOut, nOut, 3, 1)
+            self.conv3 = Conv2dBnRel(nOut, nOut, 1, 1)
             self.conv4 = None
         else:
             self.conv1 = Conv2dBnRel(nIn, nOut, 1, 1)
-            self.conv2 = Conv2dBnRel(nIn, nOut, 3, 2)
-            self.conv3 = Conv2dBnRel(nIn, nOut, 1, 1)
+            self.conv2 = Conv2dBnRel(nOut, nOut, 3, 2)
+            self.conv3 = Conv2dBnRel(nOut, nOut, 1, 1)
             self.conv4 = Conv2dBnRel(nIn, nOut, 1, 2)
     
             
@@ -406,13 +408,13 @@ class FastResConv3d(nn.Module):
         super().__init__()
         if stride ==1:
             self.conv1 = Conv3dBnRel(nIn, nOut, 1, 1)
-            self.conv2 = Conv3dBnRel(nIn, nOut, 3, 1)
-            self.conv3 = Conv3dBnRel(nIn, nOut, 1, 1)
+            self.conv2 = Conv3dBnRel(nOut, nOut, 3, 1)
+            self.conv3 = Conv3dBnRel(nOut, nOut, 1, 1)
             self.conv4 = None
         else:
             self.conv1 = Conv3dBnRel(nIn, nOut, 1, 1)
-            self.conv2 = Conv3dBnRel(nIn, nOut, 3, 2)
-            self.conv3 = Conv3dBnRel(nIn, nOut, 1, 1)
+            self.conv2 = Conv3dBnRel(nOut, nOut, 3, 2)
+            self.conv3 = Conv3dBnRel(nOut, nOut, 1, 1)
             self.conv4 = Conv3dBnRel(nIn, nOut, 1, 2)
     
             

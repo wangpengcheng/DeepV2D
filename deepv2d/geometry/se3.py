@@ -244,12 +244,12 @@ def se3_matrix_inverse(G):
     G = torch.reshape(G, [-1, 4, 4])
 
     R, t = G[:, :3, :3], G[:, :3, 3:]
-    R = torch.transpose(R, [0, 2, 1])
+    R = R.permute((0, 2, 1))
     t = -torch.matmul(R, t)
 
-    filler = tf.constant([0.0, 0.0, 0.0, 1.0])
+    filler = torch.Tensor([0.0, 0.0, 0.0, 1.0])
     filler = torch.reshape(filler, [1, 1, 4])
-    filler = torch.Tensor.repeat(filler, [tf.shape(G)[0], 1, 1])
+    filler = torch.Tensor.repeat(filler, [G.shape[0], 1, 1])
 
     Ginv = torch.cat([R, t], dim=-1)
     Ginv = torch.cat([Ginv, filler], dim=-2)
@@ -278,7 +278,7 @@ def _se3_matrix_expm_grad(grad):
     return grad_upsilon_omega
 
 def _se3_matrix_expm_shape(op):
-    return [op.inputs[0].shape.tolist()[:-1] + [4, 4]]
+    return [op.inputs[0].shape[:-1] + [4, 4]]
 
 def se3_matrix_expm(upsilon_omega):
     """ se3 matrix exponential se(3) -> SE(3), works for arbitrary batch dimensions

@@ -46,9 +46,10 @@ class DeepV2DTrainer(object):
                 schedule = {'rmax': rmax, 'rmin': rmin, 'dmax': dmax}
             else:
                 schedule = None
-            # 获取当前步长
+            # 获取当前步长，并设置学习率衰减
             LR_DECAY = int(0.8 * self.training_steps)
             # 设置学习率衰减 https://blog.csdn.net/ddy_sweety/article/details/80668867
+            # decayed_learning_rate = learning_rate *decay_rate ^ (global_step / decay_steps)
             lr = tf.train.exponential_decay(
                                             cfg.TRAIN.LR, # 初始迭代学习率
                                             global_step,  # 当前迭代次数
@@ -182,7 +183,9 @@ class DeepV2DTrainer(object):
         Returns:
             [type]: [description]
         """
+        # 获取深度步长
         batch_size = num_gpus * cfg.TRAIN.BATCH[stage-1]
+        # 获取最大步长
         max_steps = cfg.TRAIN.ITERS[stage-1]
         self.training_steps = max_steps
         # 开始加载数据模型

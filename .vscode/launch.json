@@ -4,6 +4,16 @@
     // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+        // {
+        //     "name": "Python: 当前文件",
+        //     "type": "python",
+        //     "request": "launch",
+        //     "program": "./pytorch-parallel/benchmark.py",
+        //     "args": [
+        //         "-m=cuda"
+        //     ],
+        //     "console": "integratedTerminal"
+        // },
         {
             "name": "Python: 当前文件",
             "type": "python",
@@ -15,18 +25,34 @@
             "name": "Python: 当前文件", //python demos/demo_v2d.py --model=models/nyu.ckpt --sequence=data/demos/nyu_0
             "type": "python",
             "request": "launch",
-            // "cwd":"${workSpaceRoot}",
+            //"cwd":"${workSpaceRoot}",
             // "program": "demos/demo_v2d.py",
             // "args": [
             //     "--model=models/nyu.ckpt",
             //     "--sequence=data/demos/nyu_0"
             // ],
-            "program": "training/train_tum.py",
+            // "program": "demos/demo_v2d.py",
+            // "args":[
+            //     "--cfg=cfgs/tum_2_2_fast_shuffle.yaml",
+            //     "--model=checkpoints/tum/tmu_model/_stage_2.ckpt",
+            //     "--use_pose",
+            //     "--sequence=data/tum/cabinet",
+            //     "--inference_file_name=data/tum/cabinet/rgb_depth_ground_test.txt"
+            // ],
+            "program": "training/train_tum01.py",
             "args": [
-                "--cfg=cfgs/tum.yaml",
+                "--cfg=cfgs/tum_2_2_fast_shufflev2.yaml",
                 "--name=tmu_model",
-                "--dataset_dir=data/tum"
+                // "--restore=checkpoints/tum/tmu_model/_stage_2.ckpt",
+                "--dataset_dir=data/tum" //,
             ],
+            // "program": "./evaluation/eval_tum.py",
+            // "args": [
+            //     "--cfg=cfgs/tum_2_2_fast_shuffle.yaml",
+            //     "--model=checkpoints/tum/tmu_model/_stage_2.ckpt",
+            //     "--dataset_dir=data/tum",
+            //     "--n_iters=1"
+            // ],
             "console": "integratedTerminal"
         }
     ]

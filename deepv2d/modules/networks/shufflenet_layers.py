@@ -1,7 +1,7 @@
 import torch 
 import numpy as np
 import torch.nn as nn
-from layer_ops import *  
+from .layer_ops import *  
 # https://blog.csdn.net/qq_38675397/article/details/104249654
 
 

@@ -45,7 +45,7 @@ class DepthNetwork(object):
 
         self.summaries = {}
         self.depths = tf.lin_space(cfg.MIN_DEPTH, cfg.MAX_DEPTH, cfg.COST_VOLUME_DEPTH)
-
+        # batch norm 层的相关餐参数
         self.batch_norm_params = {
           'decay': .995,
           'epsilon': 1e-5,

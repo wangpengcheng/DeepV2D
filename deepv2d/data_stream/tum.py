@@ -7,6 +7,7 @@ import glob
 import random
 import pickle
 from geometry.transformation import *
+from torch.utils.data import Dataset
 from scipy import interpolate
 import argparse
 import random
@@ -21,16 +22,12 @@ cy = 255.3
 factor = 5000.0 # for the 16-bit PNG files
 intrinsics = np.array([fx, fy, cx, cy],dtype=np.float32)
 
-def get_TUM_data(data_path):
+def get_TUM_data(data_path,sum_data_file_name):
     """读取tum中的数据
 
     Args:
         data_path ([str]): 数据存在的路径 
-
-    Returns:
-        [type]: [description]
     """
-    sum_data_file_name = "rgb_depth_ground.txt"
     data_file_path = os.path.join(data_path,sum_data_file_name)
     print("==== {} ======".format(data_file_path))
     # 不存在综合数据就进行创建
@@ -48,10 +45,13 @@ def get_TUM_data(data_path):
     # 文件样例:
     # 1341841310.82 rgb/1341841310.821702.png 1341841310.82 depth/1341841310.822401.png 1341841310.81 -2.7366 0.1278 1.2413 0.7256 -0.5667 0.2209 -0.3217
     #
-    images,depths,poses = get_data_from_sum_file(data_file_path)
-    images = [data_path+'/'+i for i in images ]
-    depths = [data_path+'/'+i for i in depths ]
-    return images,depths,poses
+    image_names,depths_names,poses = get_data_from_sum_file(data_file_path)
+
+    image_names = [data_path+'/'+i for i in image_names ]
+    depth_names = [data_path+'/'+i for i in depths_names ]
+
+    return image_names, depth_names, poses
+
 
 _EPS = numpy.finfo(float).eps * 4.0
 
@@ -120,15 +120,18 @@ def pose_vec2mat(pvec, use_filler=True):
         P = np.concatenate([P, filler], axis=1)
     return P[0]
 
-class TUM_RGBD:
+class TUM_RGBD(Dataset):
     """主要用来进行数据的加载与查找
     """
-    def __init__(self, dataset_path, n_frames=4, r=6):
+    def __init__(self,resize, dataset_path, test=False, n_frames=4, r=6):
         self.dataset_path = dataset_path
+        self.resize = resize
         self.n_frames = n_frames
-        self.height = 480
-        self.width = 640
+        self.height = int(480*self.resize)
+        self.width = int(640*self.resize)
+        self.is_test = test
         self.build_dataset_index(r=r)
+
     # 获取数据长度
     def __len__(self):
         return len(self.dataset_index)
@@ -137,13 +140,16 @@ class TUM_RGBD:
         return [self.n_frames, self.height, self.width]
     # 获取数据
     def __getitem__(self, index):
+        # 获取索引
         data_blob = self.dataset_index[index]
         num_frames = data_blob['n_frames']
+        # 图片样例数目
         num_samples = self.n_frames - 1
 
         frameid = data_blob['id']
+        
         keyframe_index = num_frames // 2 # 选取中间帧作为关键帧
-        # 获取索引数组
+        # 创建关键帧
         inds = np.arange(num_frames)
         inds = inds[~np.equal(inds, keyframe_index)]
         
@@ -152,9 +158,7 @@ class TUM_RGBD:
         # 读取图像
         images = []
         for i in inds:
-            print("images:{}".format(data_blob['images'][i]))
-            image = cv2.imread(data_blob['images'][i])
-            image = cv2.resize(image, (640, 480))
+            image = self.images[self.images_map[data_blob['images'][i]]]
             images.append(image)
         # 转换位姿信息
         poses = []
@@ -168,16 +172,13 @@ class TUM_RGBD:
         # 获取深度信息
         depth_file = data_blob['depth']
         # 读取深度信息
-        depth = cv2.imread(depth_file, cv2.IMREAD_ANYDEPTH)
-        
-        depth = (depth.astype(np.float32)) /factor
+        depth = self.depths[self.depths_map[depth_file]]
         filled = fill_depth(depth)
-        
         K = data_blob['intrinsics']
         # 相机内参，转换为向量矩阵
         kvec = K.copy()
 
-        depth = depth[...,None]
+        depth = depth[..., None]
         return images, poses, depth, filled, filled, kvec, frameid
 
 
@@ -199,20 +200,16 @@ class TUM_RGBD:
             str: 最终为文件属性
         """
         sequence_dir = os.path.join(self.dataset_path, sequence_name)
-        # 创建序列化文件
-        datum_file = os.path.join(sequence_dir, 'pickle-TUM.pkl')
-        # 如果序列化文件不存在就进行创建
-        #if not os.path.isfile(datum_file):
-            # 获取对齐之后的数据 
-        images, depths, poses = get_TUM_data(sequence_dir)
+    
+        if self.is_test :
+            sum_data_file_name = "rgb_depth_ground.txt"
+        else:
+            sum_data_file_name = "rgb_depth_ground_test.txt" # 注意这里测试数据的生成
+        images, depths, poses = get_TUM_data(sequence_dir,sum_data_file_name)
         depth_intrinsics = intrinsics.copy()
         color_intrinsics = intrinsics.copy()
         # 写入序列化数据
         datum = images, depths, poses, color_intrinsics, depth_intrinsics
-        #pickle.dump(datum, open(datum_file, 'wb'))
-            
-        #else:
-        #    datum = pickle.load(open(datum_file, 'rb'))
 
         return datum
 
@@ -222,28 +219,112 @@ class TUM_RGBD:
         data_id = 0
         # 访问数据文件夹，并列举所有数据文件夹
         for scan in sorted(os.listdir(self.dataset_path)):
-            print("scan:{}".format(scan))
+
             # 访问数据文件夹，构造对应的数据
             images, depths, poses, color_intrinsics, depth_intrinsics = self._load_scan(scan)
-
+            color_intrinsics = color_intrinsics*self.resize 
+            depth_intrinsics = depth_intrinsics*self.resize
+            # 构建索引表
+            self.build_data_map(images, depths, poses)
+            # 加载数据
             for i in range(r, len(images)-r, skip):
                 # some poses in scannet are nans
                 if np.any(np.isnan(poses[i-r:i+r+1])):
                     continue
                 # 加载网络数据参数
                 training_example = {}
+                # 加载深度图像
                 training_example['depth'] = depths[i]
                 training_example['images'] = images[i-r:i+r+1]
                 training_example['poses'] = poses[i-r:i+r+1]
                 training_example['intrinsics'] = depth_intrinsics
                 training_example['n_frames'] = 2*r+1
                 training_example['id'] = data_id
-
                 self.dataset_index.append(training_example)
                 data_id += 1
 
-    #def test_set_iterator(self):
+    def build_data_map(self, images_names, depths_names, poses):
+        # 读取图像
+        self.images = []
+        self.images_map = {}
+        i=0
+        for image_name in images_names:
+            #print("read image file:{}".format(image_name))
+            image = cv2.imread(image_name)
+            image = cv2.resize(image, (self.width, self.height))
+            self.images.append(image)
+            self.images_map[image_name]= i
+            i=i+1
+        print("read image file OK")
+        # 转换位姿信息
+        #self.poses = []
+        
+        # for poses_name in poses_names:
+            
+        #     pose_vec = poses_name
+        #     pose_mat = pose_vec2mat(pose_vec)
+        #     self.poses.append(np.linalg.inv(pose_mat))
+        
+        # 读取深度
+        self.depths = []
+        self.depths_map={}
+        i=0
+        for depth_name in depths_names:
+            
+            # 读取深度信息
+            depth = cv2.imread(depth_name, cv2.IMREAD_ANYDEPTH)
+            depth = cv2.resize(depth, (int(self.width), int(self.height)))
 
+            depth = (depth.astype(np.float32))/factor
+
+            self.depths.append(depth)
+            self.depths_map[depth_name]=i
+            i=i+1
+        print("read depth file OK")
+
+    def test_set_iterator(self):
+        """
+        测试数据迭代器
+        """
+        # 遍历预加载的数据集
+        for temp_data_blob in self.dataset_index:
+            num_frames = temp_data_blob['n_frames']
+            num_samples = self.n_frames - 1
+            frameid = temp_data_blob['id']
+            keyframe_index = num_frames//2
+            # 图片索引
+            inds = np.arange(num_frames)
+            inds = inds[~np.equal(inds, keyframe_index)]
+            inds = np.random.choice(inds, num_samples, replace=False)
+            inds = [keyframe_index] + inds.tolist()
+            # 添加图片数据
+            images = []
+            for i in inds:
+                image = self.images[self.images_map[temp_data_blob['images'][i]]]
+                images.append(image)
+
+            # 转换图像
+            images = np.stack(images, axis=0).astype(np.uint8)
+            # 获取深度信息
+            depth_file_name = temp_data_blob['depth']
+            # 读取深度信息
+            depth = self.depths[self.depths_map[depth_file_name]]
+            # 获取位姿信息
+            pose_vec = temp_data_blob['poses'][keyframe_index]
+            pose = pose_vec2mat(pose_vec)
+            K = temp_data_blob['intrinsics']
+            # 相机内参，转换为向量矩阵
+            kvec = K.copy()
+            # 转换深度信息
+            # depth = depth[...,None]
+            data_blob = {
+                    'images': images,
+                    'depth': depth,
+                    'pose': pose,
+                    'intrinsics': intrinsics,
+            }
+            yield data_blob
+    
     def iterate_sequence(self, sequence_name, matrix=False):
         """returns list of images, depths, and poses 返回地址位姿"""
         sequence_dir = os.path.join(self.dataset_path, sequence_name)
@@ -268,39 +349,4 @@ class TUM_RGBD:
             image = cv2.imread(image_file)
             yield image, intrinsics_mat
 
-        #     images.append(image)
 
-        # depths = []
-        # for (_, depth_file) in depth_data:
-        #     depth_file = os.path.join(sequence_dir, depth_file)
-        #     depth = cv2.imread(depth_file, cv2.IMREAD_ANYDEPTH)
-        #     depth = depth.astype(np.float32) / 5000.0
-        #     depths.append(depth)
-
-        # traj_gt = []
-        # for pose_vec in pose_data:
-        #     if matrix:
-        #         traj_gt.append(transform44(pose_vec))
-        #     else:
-        #         traj_gt.append(pose_vec)
-
-        # image_times = image_data[:,0].astype(np.float64)
-        # depth_times = depth_data[:,0].astype(np.float64)
-        # pose_times = pose_data[:,0].astype(np.float64)
-        # indicies = associate_frames(image_times, depth_times, pose_times)
-
-        # rgbd_images = []
-        # rgbd_depths = []
-        # timestamps = []
-        # for (img_ix, depth_ix, pose_ix) in indicies:
-        #     timestamps.append(image_times[img_ix])
-        #     rgbd_images.append(images[img_ix])
-        #     rgbd_depths.append(depths[depth_ix])
-            
-        # timestamps = np.stack(timestamps, axis=0)
-        # rgbd_images = np.stack(rgbd_images, axis=0)
-        # rgbd_depths = np.stack(rgbd_depths, axis=0)
-        # intrinsics_mat = intrinsics.copy()
-
-        # for img in rgbd_images:
-        #     yield img, intrinsics_mat

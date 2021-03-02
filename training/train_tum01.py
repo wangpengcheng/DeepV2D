@@ -1,8 +1,7 @@
 import sys
 sys.path.append('deepv2d')
-
+import torch
 import numpy as np
-import tensorflow as tf
 import matplotlib.pyplot as plt
 
 import cv2
@@ -12,7 +11,7 @@ import random
 import argparse
 
 from core import config
-from trainer import DeepV2DTrainer
+from my_trainer import DeepV2DTrainer
 
 from data_stream.tum import TUM_RGBD
 
@@ -24,7 +23,7 @@ def main(args):
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
 
-    checkpoint_dir = os.path.join('checkpoints/tum', args.name)
+    checkpoint_dir = os.path.join('pytorch/tum', args.name)
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
 
@@ -37,7 +36,7 @@ def main(args):
     cfg.CHECKPOINT_DIR = checkpoint_dir
     cfg.TMP_DIR = tmp_dir
     # 创建数据集
-    db = TUM_RGBD(args.dataset_dir, r=args.r)
+    db = TUM_RGBD(cfg.INPUT.RESIZE, args.dataset_dir, r=args.r)
 
     solver = DeepV2DTrainer(cfg)
     ckpt = None
@@ -50,7 +49,7 @@ if __name__ == '__main__':
    
     #设置value的显示长度为100，默认为50
     seed = 1234
-    tf.set_random_seed(seed)
+    torch.manual_seed(seed)
     np.random.seed(seed)
     random.seed(seed)
     

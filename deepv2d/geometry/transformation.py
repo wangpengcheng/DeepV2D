@@ -6,10 +6,11 @@ from core.config import cfg
 from .se3 import *
 from .intrinsics import *
 from . import projective_ops as pops
-from . import cholesky
+#from . import cholesky
 
 #cholesky_solve = cholesky.solve
-
+def my_gather(input, indexs,dim=1):
+    return input.index_select(dim, indexs)
 
 MIN_DEPTH = 0.1
 MAX_RESIDUAL = 250.0
@@ -309,11 +310,11 @@ class VideoSE3Transformation(SE3):
 
     def gather(self, inds):
         if self.internal == 'matrix':
-            G = torch.gather(self.G, inds, dim=1)
+            G = my_gather(self.G, inds, dim=1)
             return VideoSE3Transformation(matrix=G, internal=self.internal)
         elif self.internal == 'quaternion':
-            t = torch.gather(self.translation, inds, dim=1)
-            so3 = torch.gather(self.so3, inds, dim=1)
+            t = my_gather(self.translation, inds, dim=1)
+            so3 = my_gather(self.so3, inds, dim=1)
             return VideoSE3Transformation(so3=so3, translation=t, internal=self.internal)
 
     def shape(self):
