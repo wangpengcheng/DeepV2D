@@ -7,7 +7,7 @@ demo_videos/nyu/
 checkpoints
 logs
 models
-tmp
+tmp/*
 *.tfrecords
 *.pkl
 data/
