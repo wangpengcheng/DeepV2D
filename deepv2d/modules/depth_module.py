@@ -89,18 +89,19 @@ class DepthModule(nn.Module):
         cfg = self.cfg
         # 进行线性插值，构造深度数据；用来随机初始化深度特征图
         depths = torch.linspace(cfg.STRUCTURE.MIN_DEPTH, cfg.STRUCTURE.MAX_DEPTH, cfg.STRUCTURE.COST_VOLUME_DEPTH) # 进行线性插值获取深度序列
+        # 将深度数据加载到GPU上
         depths = depths.cuda()
-        # 相机参数转换
+        # 相机参数转换--将相机内参转换为四元组矩阵
         intrinsics = intrinsics_vec_to_matrix(intrinsics / 4.0) # 将相机参数转换为矩阵，并将其缩小为原来的一半
         # extract 2d feature maps from images and build cost volume # 进行编码，获取2d的图像信息
         # 进行图像编码，获取特征图 1*4*120*160*32
          # 在第5个通道上进行分离，获取数据
         batch, frames, channel, ht, wd= images.shape
-        # 将其降低维度为4维 假设数据为1*4*480*640*3->4*480*640*3
+        # 将其降低维度为4维 假设数据为1*4*480*640*3->4*480*640*3 方便卷积操作
         images = torch.reshape(images, [batch*frames, 3, ht, wd]) # 调整输入维度为图片数量*高*宽*3
         # 获取编码图片
         fmaps = self.encoder(images)
-        #再重新调整顺序
+        #再重新调整顺序，还原维度信息
         if self.cfg.STRUCTURE.ENCODER_MODE == 'resnet':
             fmaps = torch.reshape(fmaps, [batch, frames, 32, ht//4, wd//4]) # 1 4 32 60 80 
         else:

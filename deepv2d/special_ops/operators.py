@@ -23,7 +23,14 @@ def adj_to_inds(num=-1, adj_list=None):
     return ii, jj
 
 
-def backproject_avg(Ts, depths, intrinsics, fmaps, back_project, adj_list=None):
+def backproject_avg(
+            Ts, 
+            depths, 
+            intrinsics, 
+            fmaps, 
+            back_project, 
+            adj_list=None
+            ):
     """
 
     Args:
