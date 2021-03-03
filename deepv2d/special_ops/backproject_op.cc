@@ -106,25 +106,25 @@ class BackProjectGradOp: public OpKernel {
     const Tensor& inputs = context->input(0);
     const Tensor& coords = context->input(1);
     const Tensor& top_diff = context->input(2);
-
+    // 获取原始数据
     const T* inputs_data = inputs.flat<T>().data();
     const T* coords_data = coords.flat<T>().data();
     const T* top_diff_data = top_diff.flat<T>().data();
-
+    // 获取输入维度
     int b = coords.dim_size(0);
     int h = coords.dim_size(1);
     int w = coords.dim_size(2);
     int s = coords.dim_size(3);
     int f = coords.dim_size(4);
     int c = inputs.dim_size(4);
-
+    // 定义输入梯度
     int inputs_grad_dims[5];
     inputs_grad_dims[0] = b;
     inputs_grad_dims[1] = h;
     inputs_grad_dims[2] = w;
     inputs_grad_dims[3] = f;
     inputs_grad_dims[4] = c;
-
+    // 定义坐标梯度
     int coords_grad_dims[6];
     coords_grad_dims[0] = b;
     coords_grad_dims[1] = h;

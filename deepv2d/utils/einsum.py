@@ -46,6 +46,6 @@ def einsum(equation, *inputs):
                     ellipsis_axes = replace_axes
 
     equation = equation.replace('...', ellipsis_axes)
-    out = tf.einsum(equation, *inputs)
+    out = tf.einsum(equation, *inputs) #1,4,3,4 1,4,32,30,40,4
     tf.add_to_collection("checkpoints", out)
     return out

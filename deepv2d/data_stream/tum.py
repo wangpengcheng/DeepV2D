@@ -101,9 +101,14 @@ def fill_depth(depth):
     return grid
 # 将四元数组转换为旋转矩阵
 def quat2rotm(q):
-    """Convert quaternion into rotation matrix """
-    q /= np.sqrt(np.sum(q**2)) 
+    """
+    Convert quaternion into rotation matrix 
+    转换为捐助矩阵，主要是要是偏执计算
+    """
+    q /= np.sqrt(np.sum(q**2))
+    #  旋转矩阵
     x, y, z, s = q[:, 0], q[:, 1], q[:, 2], q[:, 3]
+    # 计算三个方向的旋转
     r1 = np.stack([1-2*(y**2+z**2), 2*(x*y-s*z), 2*(x*z+s*y)], axis=1)
     r2 = np.stack([2*(x*y+s*z), 1-2*(x**2+z**2), 2*(y*z-s*x)], axis=1)
     r3 = np.stack([2*(x*z-s*y), 2*(y*z+s*x), 1-2*(x**2+y**2)], axis=1)
@@ -111,7 +116,11 @@ def quat2rotm(q):
 
 # 将位姿转换为矩阵
 def pose_vec2mat(pvec, use_filler=True):
-    """Convert quaternion vector represention to SE3 group"""
+    """
+    Convert quaternion vector represention to SE3 group
+    将pose转换为se3李代数
+    """
+    # 提取位移和旋转
     t, q = pvec[np.newaxis, 0:3], pvec[np.newaxis, 3:7]
     R = quat2rotm(q)
     t = np.expand_dims(t, axis=-1)
