@@ -34,41 +34,42 @@ __global__ void BackProjectForward(const int nthreads, const Dtype* input,
     // dims: [B[0], H[1], W[2], S[3], F[4], C]
     // input: [B[0], H[1], W[2], F[4], C[5]]
     // coords: [B[0], H[1], W, S, F, 2]
-
+    // 获取当前目标索引
     int n = index;
     int f = n % dims[4]; n /= dims[4];
     int k = n % dims[3]; n /= dims[3];
     int w = n % dims[2]; n /= dims[2];
     int h = n % dims[1]; n /= dims[1];
-
+    // 计算中间维度
     Dtype x = coords[2*index];
     Dtype y = coords[2*index+1];
 
     if (x>0 && y>0 && x<dims[2]-1 && y<dims[1]-1) {
+      // 计算对应的索引
       int x0 = static_cast<int>(floor(x));
       int x1 = static_cast<int>(ceil(x));
       int y0 = static_cast<int>(floor(y));
       int y1 = static_cast<int>(ceil(y));
-
+      // 计算差值
       Dtype dx = x - static_cast<Dtype>(x0);
       Dtype dy = y - static_cast<Dtype>(y0);
-
+      // 计算权重梯度
       Dtype w00 = (1-dy)*(1-dx);
       Dtype w01 = (1-dy)*dx;
       Dtype w10 = dy*(1-dx);
       Dtype w11 = dy*dx;
-
+      // 再次计算偏移
       int offset = (n*dims[1]*dims[2]*dims[4]+f)*dims[5];
       int idx00 = offset + dims[4]*dims[5]*(y0*dims[2] + x0);
       int idx01 = offset + dims[4]*dims[5]*(y0*dims[2] + x1);
       int idx10 = offset + dims[4]*dims[5]*(y1*dims[2] + x0);
       int idx11 = offset + dims[4]*dims[5]*(y1*dims[2] + x1);
-
+      // 计算最终值
       const Dtype *im00 = input + idx00;
       const Dtype *im01 = input + idx01;
       const Dtype *im10 = input + idx10;
       const Dtype *im11 = input + idx11;
-
+      // 计算顶部数据
       Dtype *top = top_data + index*dims[5];
       for (int c=0; c<dims[5]; c++) {
         *top = (*im00)*w00+(*im01)*w01+(*im10)*w10+(*im11)*w11;
@@ -80,8 +81,13 @@ __global__ void BackProjectForward(const int nthreads, const Dtype* input,
 
 
 
-bool BackProjectForwardLauncher(const float* input, const float* coords,
-  const int dim[6], float *top, const Eigen::GpuDevice& d)
+bool BackProjectForwardLauncher(
+  const float* input, 
+  const float* coords,
+  const int dim[6], 
+  float *top, 
+  const Eigen::GpuDevice& d
+  )
 {
 
   cudaError_t err;
