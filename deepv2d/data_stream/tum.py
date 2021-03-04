@@ -33,6 +33,7 @@ def get_TUM_data(data_path,sum_data_file_name):
     data_file_path = os.path.join(data_path,sum_data_file_name)
     print("==== {} ======".format(data_file_path))
     # 不存在综合数据就进行创建
+    # 在这里进行时间戳上的文件合并
     if not os.path.isfile(data_file_path):
         # 获取图像列表
         image_list = os.path.join(data_path, 'rgb.txt')

@@ -148,8 +148,9 @@ class DataLayer(object):
         filled = tf.decode_raw(tfrecord_features['filled'], tf.float32)
         # 获取相机内参
         intrinsics = tf.decode_raw(tfrecord_features['intrinsics'], tf.float32)
-        #
+        # 获取id
         id = tf.reshape(id, [])
+        # 获取维度
         dim = tf.reshape(dim, [4])
         # 获取帧数
         frames = cfg.INPUT.FRAMES

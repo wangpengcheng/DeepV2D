@@ -137,20 +137,24 @@ class NYUv2:
         self.frame_id_mapping = {}
         self.dataset_index = []
         self.frameid = 0
-
+        # 读取场景列表
         scenes_list = 'data/nyu/train_scenes.txt'
+        # 
         reader = csv.reader(open(scenes_list))
         train_scenes = [x[0] for x in reader]
-
+        # 获取全部场景
         dataset_scenes = []
         for sceneb in train_scenes:
             seach_str = os.path.join(self.dataset_path, '%s*'%sceneb)
             for scene in glob.glob(seach_str):
                 dataset_scenes.append(os.path.basename(scene))
-
+        # 遍历每一个场景
         for scene in dataset_scenes:
+            # 场景文件夹
             scene_dir = os.path.join(self.dataset_path, scene)
+            # 获取时间戳
             timestamps, pairs, poses = self._load_trajectory(scene_dir)
+            # 通过时间戳获取训练样例
             indicies = self._gather_training_examples_from_timestamps(timestamps, max_dt=self.max_dt)
 
             for inds in indicies:
@@ -186,28 +190,38 @@ class NYUv2:
                 self.dataset_index.append(training_example)
         
     def _load_trajectory(self, scene_dir):
+        # 对应文件
         associations_file = osp.join(scene_dir, 'associations.txt')
+        # 相机位姿
         camera_file = osp.join(scene_dir, 'pose.txt')
-
+        # 检查是否存在
         if not (osp.isfile(associations_file) and osp.isfile(camera_file)):
             return [], [], []
 
         pairs_dict = {}
         with open(associations_file) as f:
+            # 进行文件读取
             reader = csv.reader(f, delimiter=' ')
+            # 构造字典
             for row in reader:
                 pairs_dict[row[0]] = (row[1], row[3])
 
         poses = []
+        # 最终合成效果
         pairs = []
         timestamps = []
         with open(camera_file) as f:
             reader = csv.reader(f, delimiter=' ')
+            # 进行遍历
             for row in reader:
                 tstamp, vec = row[0], [float(x) for x in row[1:]]
+                # 传唤类型
                 vec = np.array(vec).astype(np.float32)
+                # 添加pose
                 poses.append(vec)
+                # 将关键对添加
                 pairs.append(pairs_dict[tstamp])
+                # 构造时间戳
                 timestamps.append(float(tstamp))
 
         return timestamps, pairs, poses
@@ -217,30 +231,50 @@ class NYUv2:
         indicies = []
         if len(timestamps) == 0:
             return indicies
-
+        # 时间戳开始时间
         t0 = timestamps[0]
+        # 关键帧坐标
         keyframe_inds = [0]
+        # 帧时间
         keyframe_ts = [t0]
 
         i = 1
         while i<len(timestamps):
+            # 获取时间戳
             t1 = timestamps[i]
+            # 进行比较
             if t1-t0 > dt:
+                # 添加索引
                 keyframe_inds.append(i)
+                # 添加时间戳
                 keyframe_ts.append(t1)
+                # 更新时间戳
                 t0 = t1
             i = i + 1
-
+        # 时间戳队列
         ts = np.array(keyframe_ts, dtype=np.float64)
+        # 关键帧队列
         ki = np.array(keyframe_inds, dtype=np.int32)
+        # 筛选出关键帧
         for i, t in zip(keyframe_inds,keyframe_ts):
+            # 进行索引比较
             inds, = np.where(np.abs(t-ts) < max_dt)
+            # 将其添加到数组中
             if len(inds) > self.n_frames:
                 indicies.append(ki[inds].tolist())
 
         return indicies
 
     def load_scene(self, scene):
+        """
+        加载场景文件夹
+
+        Args:
+            scene ([type]): [description]
+
+        Returns:
+            [type]: [description]
+        """
         image_list = os.path.join(self.dataset_path, scene, 'rgb.txt')
         timestamps, images = [], []
         with open(image_list) as f:
@@ -286,3 +320,7 @@ class NYUv2:
         for image_file in image_files[::4]:
             image = cv2.imread(image_file)
             yield image, intrinsics.copy()
+
+
+
+
