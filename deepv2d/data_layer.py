@@ -53,15 +53,18 @@ class DataLayer(object):
         random_gamma = tf.random_uniform([], 0.9, 1.1)
         images = 255.0*((images/255.0)**random_gamma)
 
-        # randomly shift brightness
+        # randomly shift brightness，亮度映射
         random_brightness = tf.random_uniform([], 0.8, 1.2)
         images *= random_brightness
 
         # randomly shift color
+        # 颜色随机值创建
         random_colors = tf.random_uniform([3], 0.8, 1.2)
+        # 进行随机创建
         images *= tf.reshape(random_colors, [1, 1, 1, 3])
-
+        # 颜色映射
         images = tf.clip_by_value(images, 0.0, 255.0)
+        # 状态转换
         images = tf.cast(images, 'uint8')
 
         return images
@@ -76,16 +79,19 @@ class DataLayer(object):
         if len(cfg.INPUT.SCALES) > 1:
             scales = tf.constant(cfg.INPUT.SCALES)
             scale_ix = tf.random.uniform([], 0, len(cfg.INPUT.SCALES), dtype=tf.int32)
-
+            # 随机缩放参数
             s = tf.gather(scales, scale_ix)
             ht = cfg.INPUT.HEIGHT
             wd = cfg.INPUT.WIDTH
+            # 进行缩放
             ht1 = tf.cast(ht * s, tf.int32)
+            # 进行缩放
             wd1 = tf.cast(wd * s, tf.int32)
-
+            # 计算差距值
             dx = (wd1 - wd) // 2 
+            # 计算差距值
             dy = (ht1 - ht) // 2
-            # 图片进行缩放
+            # 图片进行缩放，之后进行边缘裁剪
             images = tf.image.resize_bilinear(images, [ht1, wd1])[:, dy:dy+ht, dx:dx+wd]
             # 深度图进行缩放，注意这里是临近插值
             depth_gt = tf.image.resize_nearest_neighbor(depth_gt[tf.newaxis], [ht1, wd1])[:, dy:dy+ht, dx:dx+wd]
@@ -219,9 +225,9 @@ def scale(id, images, poses, depth_gt, filled, pred, intrinsics):
         scale_ix = tf.random.uniform([], 0, len(cfg.INPUT.SCALES), dtype=tf.int32)
         # 索引筛选
         s = tf.gather(scales, scale_ix)
-
-        ht = cfg.INPUT.HEIGHT
-        wd = cfg.INPUT.WIDTH
+        
+        ht = int(cfg.INPUT.HEIGHT*cfg.INPUT.RESIZE)
+        wd = int(cfg.INPUT.WIDTH*cfg.INPUT.RESIZE)
         # 进行缩放
         ht1 = tf.cast(ht * s, tf.int32)
         # 进行缩放
@@ -237,7 +243,7 @@ def scale(id, images, poses, depth_gt, filled, pred, intrinsics):
         depth_gt = tf.image.resize_nearest_neighbor(depth_gt, [ht1, wd1])[:, dy:dy+ht, dx:dx+wd]
         filled = tf.image.resize_nearest_neighbor(filled, [ht1, wd1])[:, dy:dy+ht, dx:dx+wd]
 
-        images = tf.reshape(images,  [4, ht, wd, 3])
+        images = tf.reshape(images,  [5, ht, wd, 3])
         depth_gt = tf.reshape(depth_gt, [ht, wd, 1])
         filled = tf.reshape(filled, [ht, wd, 1])
         pred = tf.reshape(pred, [ht, wd, 1])
@@ -251,6 +257,7 @@ def scale(id, images, poses, depth_gt, filled, pred, intrinsics):
 
 def augument(images):
     # randomly shift gamma
+    # 随机shift变换
     images = tf.cast(images, 'float32')
     random_gamma = tf.random_uniform([], 0.9, 1.1)
     images = 255.0*((images/255.0)**random_gamma)

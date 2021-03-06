@@ -70,6 +70,7 @@ class NYUv2:
         self.dataset_path = dataset_path
         self.mode = mode
         self.use_filled = use_filled
+        # 构建数据索引
         self.build_dataset_index()
 
     def copy(self):
@@ -93,23 +94,30 @@ class NYUv2:
 
     def __getitem__(self, index):
         data_blob = self.dataset_index[index]
+        # 获取帧数
         num_frames = data_blob['n_frames']
+        # 序列帧数
         num_samples = self.n_frames
-
+        # 随机索引坐标
         inds = np.random.choice(num_frames, num_samples, replace=False)
+        # 选取第一个为关键帧
         keyframe_index = inds[0]
 
         images = []
         for i in inds:
             image_file = data_blob['images'][i]
             images.append(cv2.imread(image_file))
-
+        # 深度数据文件
         depth_file = data_blob['depths'][keyframe_index]
+        # 进行图像读取
         depth = cv2.imread(depth_file, cv2.IMREAD_ANYDEPTH)
+        # 进行深度读取
         depth = (depth.astype(np.float32)) / 5000.0
+        # 深度平滑处理
         filled = fill_depth(depth)
-        
+        # 关键帧序列
         frameid = data_blob['ids'][keyframe_index]
+        # 转换为
         frameid = np.int32(frameid)
     
         poses = []
@@ -133,19 +141,21 @@ class NYUv2:
                 yield self.__getitem__(i)
 
     def build_dataset_index(self):
+        # 获取所有的深度学习队列
         self.all_image_depth_pairs = {}
         self.frame_id_mapping = {}
         self.dataset_index = []
         self.frameid = 0
         # 读取场景列表
         scenes_list = 'data/nyu/train_scenes.txt'
-        # 
+        # 获取所有场景
         reader = csv.reader(open(scenes_list))
         train_scenes = [x[0] for x in reader]
         # 获取全部场景
         dataset_scenes = []
         for sceneb in train_scenes:
             seach_str = os.path.join(self.dataset_path, '%s*'%sceneb)
+            
             for scene in glob.glob(seach_str):
                 dataset_scenes.append(os.path.basename(scene))
         # 遍历每一个场景
@@ -202,7 +212,7 @@ class NYUv2:
         with open(associations_file) as f:
             # 进行文件读取
             reader = csv.reader(f, delimiter=' ')
-            # 构造字典
+            # 根据时间戳构造字典
             for row in reader:
                 pairs_dict[row[0]] = (row[1], row[3])
 
@@ -210,10 +220,13 @@ class NYUv2:
         # 最终合成效果
         pairs = []
         timestamps = []
+        # 打开文件位姿信息
         with open(camera_file) as f:
+            # 读取文件
             reader = csv.reader(f, delimiter=' ')
             # 进行遍历
             for row in reader:
+                # 获取时间戳和向量矩阵
                 tstamp, vec = row[0], [float(x) for x in row[1:]]
                 # 传唤类型
                 vec = np.array(vec).astype(np.float32)
@@ -223,7 +236,7 @@ class NYUv2:
                 pairs.append(pairs_dict[tstamp])
                 # 构造时间戳
                 timestamps.append(float(tstamp))
-
+        # 时间戳、深度和图像、位姿信息
         return timestamps, pairs, poses
     
     def _gather_training_examples_from_timestamps(self, timestamps, dt=0.1, max_dt=1.25):

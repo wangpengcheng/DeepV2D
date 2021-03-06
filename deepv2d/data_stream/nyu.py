@@ -12,6 +12,8 @@ from scipy import interpolate
 import argparse
 import random
 import numpy
+
+import threading, time
 import sys
 from utils.tum_associate import *
 
@@ -19,12 +21,12 @@ fx = 517.3
 fy = 516.5
 cx = 318.6
 cy = 255.3
-factor = 5000.0 # for the 16-bit PNG files 
+factor = 1.0 # for the 16-bit PNG files 
 # OR: factor = 1 # for the 32-bit float images in the ROS bag files
 intrinsics = np.array([fx, fy, cx, cy],dtype=np.float32)
 
 
-def get_TUM_data(data_path,sum_data_file_name):
+def get_data(data_path, sum_data_file_name):
     """读取tum中的数据
 
     Args:
@@ -35,22 +37,15 @@ def get_TUM_data(data_path,sum_data_file_name):
     # 不存在综合数据就进行创建
     # 在这里进行时间戳上的文件合并
     if not os.path.isfile(data_file_path):
-        # 获取图像列表
-        image_list = os.path.join(data_path, 'rgb.txt')
-        # 获取深度列表
-        depth_list = os.path.join(data_path, 'depth.txt')
-        # 获取位姿列表
-        pose_list = os.path.join(data_path, 'groundtruth.txt')
-        # 执行数据合并文件
-        tum_associate(image_list,depth_list,pose_list,data_file_path)
-
+        print("not data file {}".format(data_file_path))
     # 读取综合数据文件
     # 文件样例:
     # 1341841310.82 rgb/1341841310.821702.png 1341841310.82 depth/1341841310.822401.png 1341841310.81 -2.7366 0.1278 1.2413 0.7256 -0.5667 0.2209 -0.3217
     #
     image_names,depths_names,poses = get_data_from_sum_file(data_file_path)
-
+    # 获取图像相对路径
     image_names = [data_path+'/'+i for i in image_names ]
+    # 获取深度图像相对路径
     depth_names = [data_path+'/'+i for i in depths_names ]
     
     
@@ -132,17 +127,78 @@ def pose_vec2mat(pvec, use_filler=True):
         P = np.concatenate([P, filler], axis=1)
     return P[0]
 
-class TUM_RGBD:
-    """主要用来进行数据的加载与查找
+def build_data_map(data_blob_arr, width, height , thread_num =0):
+    images_map = {}
+    depths_map = {}
+    
+    # 读取图像
+    for data in data_blob_arr:
+        images_names = data['images']
+        depths_names = data['depths']
+        for image_name in images_names:
+            #print("read image file:{}".format(image_name))
+            image = cv2.imread(image_name)
+            image = cv2.resize(image, (int(width), int(height)))
+            images_map[image_name]= image
+
+        for depth_name in depths_names:
+            # 读取深度信息
+            depth = cv2.imread(depth_name, cv2.IMREAD_ANYDEPTH)
+            depth = cv2.resize(depth, (int(width), int(height)))
+            depth = (depth.astype(np.float32))/factor
+            depths_map[depth_name] = depth
+
+    print("thread_num:{} read depth and images file OK".format(thread_num))
+
+    return images_map, depths_map
+
+# MyThread.py线程类
+class MyThread(threading.Thread):
+    def __init__(self, func, args=()):
+        super(MyThread, self).__init__()
+        self.func = func
+        self.args = args
+ 
+    def run(self):
+        time.sleep(2)
+        self.result = self.func(*self.args)
+ 
+    def get_result(self):
+        threading.Thread.join(self) # 等待线程执行完毕
+        try:
+            return self.result
+        except Exception:
+            return None
+
+class NYU:
     """
-    def __init__(self, resize, dataset_path, test=False, n_frames=5, r=2):
+    NYU数据集加载类，主要用来加载数据集中的数据
+    主要用来进行数据的加载与查找
+    """
+    def __init__(self, resize, dataset_path, test=False, n_frames=5, r=2, buffer_len = 100, load_thread_num = 4):
+        """[summary]
+
+        Args:
+            resize ([type]): [description]
+            dataset_path ([type]): [description]
+            test (bool, optional): [description]. Defaults to False.
+            n_frames (int, optional): [description]. Defaults to 5.
+            r (int, optional): [description]. Defaults to 2.
+            buffer_len (int, optional): [description]. Defaults to 100.
+            load_thread_num (int, optional): 缓存更新加载线程数. Defaults to 4.
+        """
         self.dataset_path = dataset_path
         self.resize = resize
         self.n_frames = n_frames
         self.height = int(480*self.resize)
         self.width = int(640*self.resize)
         self.is_test = test
+        self.load_thread_num = load_thread_num
+        self.buffer_len = buffer_len
+        self.images_map = {}
+        self.depths_map = {} 
         self.build_dataset_index(r=r)
+
         
     # 获取数据长度
     def __len__(self):
@@ -152,30 +208,35 @@ class TUM_RGBD:
         return [self.n_frames, self.height, self.width]
     # 获取数据
     def __getitem__(self, index):
+        if  index % self.buffer_len == 0:
+            # 构建索引表
+            self.flash_buffer(index)
+        
         # 获取索引
         data_blob = self.dataset_index[index]
+        # 获取关键帧长度
         num_frames = data_blob['n_frames']
         # 图片样例数量
         num_samples = self.n_frames - 1
-
+        # 关键帧id
         frameid = data_blob['id']
         
         keyframe_index = num_frames // 2 # 选取中间帧作为关键帧
-        # 创建关键帧
+        # 创建关键帧,范围数组0~n-1 : 0,1,2,3,4
         inds = np.arange(num_frames)
+        # 构建索引数组 True,  True, False,  True,  True -->  [0, 1, 3, 4]
         inds = inds[~np.equal(inds, keyframe_index)]
-        
+        # 对顺序进随机组合 [2, 4, 3, 1]
         inds = np.random.choice(inds, num_samples, replace=False)
-        # 将关键帧提取到开头
+        # 将关键帧提取到开头 0,2,4,3
         inds = [keyframe_index] + inds.tolist()
         # 读取图像
         images = []
-        for i in inds:
-            image = self.images[self.images_map[data_blob['images'][i]]]
-            images.append(image)
-        # 转换位姿信息
         poses = []
+        # 获取图像
         for i in inds:
+            image = self.images_map[data_blob['images'][i]]
+            images.append(image)
             pose_vec = data_blob['poses'][i]
             pose_mat = pose_vec2mat(pose_vec)
             poses.append(np.linalg.inv(pose_mat))
@@ -185,7 +246,7 @@ class TUM_RGBD:
         # 获取深度信息
         depth_file = data_blob['depth']
         # 读取深度信息
-        depth = self.depths[self.depths_map[depth_file]]
+        depth = self.depths_map[depth_file]
         filled = fill_depth(depth)
         K = data_blob['intrinsics']
         # 相机内参，转换为向量矩阵
@@ -213,38 +274,53 @@ class TUM_RGBD:
             str: 最终为文件属性
         """
         sequence_dir = os.path.join(self.dataset_path, sequence_name)
-        # 创建序列化文件
-        datum_file = os.path.join(sequence_dir, 'pickle-TUM.pkl')
-        # 如果序列化文件不存在就进行创建
+
         #if not os.path.isfile(datum_file):
             # 获取对齐之后的数据 
         if self.is_test :
-            sum_data_file_name = "rgb_depth_ground.txt"
+            sum_data_file_name = "rgb_depth_ground_test.txt"  # 注意这里测试数据的生成
         else:
-            sum_data_file_name = "rgb_depth_ground_test.txt" # 注意这里测试数据的生成
-        images, depths, poses = get_TUM_data(sequence_dir,sum_data_file_name)
+            sum_data_file_name = "rgb_depth_ground.txt"
+        # 获取相关的数据
+        images, depths, poses = get_data(sequence_dir, sum_data_file_name)
+
         depth_intrinsics = intrinsics.copy()
         color_intrinsics = intrinsics.copy()
         # 写入序列化数据
         datum = images, depths, poses, color_intrinsics, depth_intrinsics
 
         return datum
+    def get_dirs(self, file_name):
+        """
+        读取指定文件夹下的所有文件目录
+        Args:
+            dataset_path ([type]): [description]
+            file_name ([type]): [description]
+        """
+        # 打开文件，按行读取
+        reader = csv.reader(open(file_name))
+        scenes = [x[0] for x in reader]
+        return scenes
 
-
-    def build_dataset_index(self, r=4, skip=12):
+    def build_dataset_index(self, r=2, skip=12):
         self.dataset_index = []
         data_id = 0
+        # 读取所有文件
+        scenes_list_file = 'data/nyu/train_scenes.txt'
+        
+        scenes_names = self.get_dirs(scenes_list_file)
+        scenes_names.sort()
         # 访问数据文件夹，并列举所有数据文件夹
-        for scan in sorted(os.listdir(self.dataset_path)):
-
+        for scene in scenes_names:
+            
             # 访问数据文件夹，构造对应的数据
-            images, depths, poses, color_intrinsics, depth_intrinsics = self._load_scan(scan)
+            images, depths, poses, color_intrinsics, depth_intrinsics = self._load_scan(scene)
             # 注意这里的参数直接进行变换
-            color_intrinsics = color_intrinsics*self.resize 
+            color_intrinsics = color_intrinsics*self.resize
+            # 
             depth_intrinsics = depth_intrinsics*self.resize
-            # 构建索引表
-            self.build_data_map(images,depths,poses)
-            # 加载数据
+            
+            # 进行数据加载和 
             for i in range(r, len(images)-r, skip):
                 # some poses in scannet are nans
                 if np.any(np.isnan(poses[i-r:i+r+1])):
@@ -261,45 +337,36 @@ class TUM_RGBD:
                 self.dataset_index.append(training_example)
                 data_id += 1
 
+    def flash_buffer(self, index):
+        """
+        刷新缓存数量
+        Args:
+            index ([type]): [description]
+        """
+        # 按照线程进行数据分割
+        data_blob_arr = [self.dataset_index[i:i+self.load_thread_num] for i in range(index, index+self.buffer_len, self.load_thread_num)]
+        image_map = {}
+        depth_map = {}
+        # 创建线程队列
+        threads = []
+        # 执行循环并行加载数据
+        for i in  self.load_thread_num:
+            thread = MyThread(build_data_map, (data_blob_arr[i], self.width, self.height, i))
+            thread.start()
+            threads.append(thread)
+
+        # 等待线程执行结束
+        for thread in threads:
+            temp_image_map, temp_depth_map = thread.get_result()
+            image_map.update(temp_image_map)
+            depth_map.update(temp_depth_map)
+        
+        self.images_map = image_map
+        self.depths_map = depth_map
+
+
     #def test_set_iterator(self):
-    def build_data_map(self,images_names,depths_names,poses):
-        # 读取图像
-        self.images = []
-        self.images_map = {}
-        i=0
-        for image_name in images_names:
-            #print("read image file:{}".format(image_name))
-            image = cv2.imread(image_name)
-            image = cv2.resize(image, (self.width, self.height))
-            self.images.append(image)
-            self.images_map[image_name]= i
-            i=i+1
-        print("read image file OK")
-        # 转换位姿信息
-        #self.poses = []
-        
-        # for poses_name in poses_names:
-            
-        #     pose_vec = poses_name
-        #     pose_mat = pose_vec2mat(pose_vec)
-        #     self.poses.append(np.linalg.inv(pose_mat))
-        
-        # 读取深度
-        self.depths = []
-        self.depths_map={}
-        i=0
-        for depth_name in depths_names:
-            
-            # 读取深度信息
-            depth = cv2.imread(depth_name, cv2.IMREAD_ANYDEPTH)
-            depth = cv2.resize(depth, (int(self.width), int(self.height)))
-
-            depth = (depth.astype(np.float32))/factor
-
-            self.depths.append(depth)
-            self.depths_map[depth_name]=i
-            i=i+1
-        print("read depth file OK")
+    
 
     def test_set_iterator(self):
         """

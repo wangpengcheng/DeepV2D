@@ -29,13 +29,20 @@
             //     "--sequence=data/tum/cabinet",
             //     "--inference_file_name=data/tum/cabinet/rgb_depth_ground_test.txt"
             // ],
-            "program": "training/train_tum.py",
+            "program": "training/train_nyu.py",
             "args": [
-                "--cfg=cfgs/tum_2_2_fast_shufflev2.yaml",
-                "--name=tmu_model",
-                "--restore=checkpoints/tum/tmu_model/_stage_2.ckpt",
-                "--dataset_dir=data/tum"//,
+                "--cfg=cfgs/nyu.yaml",
+                "--name=nyu_model",
+                "--dataset_dir=data/nyu2",
+                "--restore=checkpoints/tum/tmu_model/_stage_2.ckpt"
              ],
+            // "program": "training/train_tum.py",
+            // "args": [
+            //     "--cfg=cfgs/tum_2_2_fast_shufflev2.yaml",
+            //     "--name=tmu_model",
+            //     "--restore=checkpoints/tum/tmu_model/_stage_2.ckpt",
+            //     "--dataset_dir=data/tum"//,
+            //  ],
             // "program": "./evaluation/eval_tum.py",
             // "args": [
             //     "--cfg=cfgs/tum_2_2_fast_shuffle.yaml",

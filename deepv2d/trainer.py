@@ -407,11 +407,12 @@ class DeepV2DTrainer(object):
                     train_writer.add_summary(result['summary'], step)
 
                 if step % LOG_FREQ == 0:
-                    loss_str = "[stage={}, {:>5d}] loss: {:.9f}".format(stage, step, running_loss / LOG_FREQ)
+                    loss_str = "[stage={}, {:>5d}] loss: {:.9f} ".format(stage, step, running_loss / LOG_FREQ)
                     print(loss_str)
                     # 需要记录loss值
                     if loss_file is not None:
-                        loss_file.write(loss_str) 
+                        loss_file.writelines(loss_str+"\n") 
+                        loss_file.flush()
 
                     running_loss = 0.0
                 # 存储模型文件
