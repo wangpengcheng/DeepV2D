@@ -35,13 +35,16 @@ def _write_prediction_py(ids, prediction):
 
 class DataLayer(object):
     """数据加载基础类,主要是字符串类型的数据源加载
+    主要用于直接加载tfrecoder相关文件
 
     Args:
         object ([type]): [description]
     """
 
     def __init__(self, tfrecords_file, batch_size=2):
+        # 记录文件名称
         self.tfrecords_file = tfrecords_file
+        # batch size大小
         self.batch_size = batch_size
 
     def augument(self, images):
@@ -50,45 +53,59 @@ class DataLayer(object):
         random_gamma = tf.random_uniform([], 0.9, 1.1)
         images = 255.0*((images/255.0)**random_gamma)
 
-        # randomly shift brightness
+        # randomly shift brightness，亮度映射
         random_brightness = tf.random_uniform([], 0.8, 1.2)
         images *= random_brightness
 
         # randomly shift color
+        # 颜色随机值创建
         random_colors = tf.random_uniform([3], 0.8, 1.2)
+        # 进行随机创建
         images *= tf.reshape(random_colors, [1, 1, 1, 3])
-
+        # 颜色映射
         images = tf.clip_by_value(images, 0.0, 255.0)
+        # 状态转换
         images = tf.cast(images, 'uint8')
 
         return images
 
 
     def scale(self, id, images, poses, depth_gt, filled, intrinsics):
-        """ Random scale augumentation """
+        """
+        Random scale augumentation
+        随机缩放增加数据可行量
+        """
         
         if len(cfg.INPUT.SCALES) > 1:
             scales = tf.constant(cfg.INPUT.SCALES)
             scale_ix = tf.random.uniform([], 0, len(cfg.INPUT.SCALES), dtype=tf.int32)
-
+            # 随机缩放参数
             s = tf.gather(scales, scale_ix)
             ht = cfg.INPUT.HEIGHT
             wd = cfg.INPUT.WIDTH
+            # 进行缩放
             ht1 = tf.cast(ht * s, tf.int32)
+            # 进行缩放
             wd1 = tf.cast(wd * s, tf.int32)
-
+            # 计算差距值
             dx = (wd1 - wd) // 2 
+            # 计算差距值
             dy = (ht1 - ht) // 2
-
+            # 图片进行缩放，之后进行边缘裁剪
             images = tf.image.resize_bilinear(images, [ht1, wd1])[:, dy:dy+ht, dx:dx+wd]
+            # 深度图进行缩放，注意这里是临近插值
             depth_gt = tf.image.resize_nearest_neighbor(depth_gt[tf.newaxis], [ht1, wd1])[:, dy:dy+ht, dx:dx+wd]
+            # 填充进行缩放
             filled = tf.image.resize_nearest_neighbor(filled[tf.newaxis], [ht1, wd1])[:, dy:dy+ht, dx:dx+wd]
-
+            # 
             images = tf.reshape(images,  [cfg.INPUT.SAMPLES+1, ht, wd, 3])
+            # 再次进行缩放
             depth_gt = tf.reshape(depth_gt, [ht, wd, 1])
+            # 再次进行缩放
             filled = tf.reshape(filled, [ht, wd, 1])
-
+            # 相机参数
             intrinsics = (intrinsics * s) - [0, 0, dx, dy]
+            # 缩放参数
             id = id + tf.constant(FLIP_OFFSET) * scale_ix
 
         return id, images, poses, depth_gt, filled, intrinsics
@@ -113,7 +130,7 @@ class DataLayer(object):
 
 
     def read_example(self, tfrecord_serialized):
-        # 数据
+        # 读取数据
         tfrecord_features = tf.parse_single_example(tfrecord_serialized,
             features={
                 'id': tf.FixedLenFeature([], tf.string),
@@ -124,23 +141,30 @@ class DataLayer(object):
                 'filled': tf.FixedLenFeature([], tf.string),
                 'intrinsics': tf.FixedLenFeature([], tf.string),
             }, name='features')
-
+        # 获取id
         id = tf.decode_raw(tfrecord_features['id'], tf.int32)
         dim = tf.decode_raw(tfrecord_features['dim'], tf.int32)
-
+        # 获取图像
         images = tf.decode_raw(tfrecord_features['images'], tf.uint8)
+        # 获取位姿
         poses = tf.decode_raw(tfrecord_features['poses'], tf.float32)
+        # 获取深度
         depth = tf.decode_raw(tfrecord_features['depth'], tf.float32)
+        # 获取填充图像
         filled = tf.decode_raw(tfrecord_features['filled'], tf.float32)
+        # 获取相机内参
         intrinsics = tf.decode_raw(tfrecord_features['intrinsics'], tf.float32)
-
+        # 获取id
         id = tf.reshape(id, [])
+        # 获取维度
         dim = tf.reshape(dim, [4])
-
+        # 获取帧数
         frames = cfg.INPUT.FRAMES
+        # 获取高度
         height = cfg.INPUT.HEIGHT
+        # 获取宽度
         width = cfg.INPUT.WIDTH
-
+        # 获取图像
         images = tf.reshape(images, [frames, height, width, 3])
         poses = tf.reshape(poses, [frames, 4, 4])
         depth = tf.reshape(depth, [height, width, 1])
@@ -157,28 +181,33 @@ class DataLayer(object):
 
         do_augument = tf.random_uniform([], 0, 1)
         images = tf.cond(do_augument<0.5, lambda: self.augument(images), lambda: images)
-
+        # 在这里进行随机缩放
         id, images, poses, depth, filled, intrinsics = \
             self.scale(id, images, poses, depth, filled, intrinsics)
-
+        # 执行相关操作
         prediction = tf.py_func(_read_prediction_py, [id, filled], tf.float32)
+        # 进行变换
         prediction = tf.reshape(prediction, [height, width, 1])
 
         return id, images, poses, depth, filled, prediction, intrinsics
 
 
     def next(self):
-        # 产生
-        filename_queue = tf.train.string_input_producer([self.tfrecords_file])
-        tfreader = tf.TFRecordReader()
-        # 获取数据和迭代器
-        _, serialized = tfreader.read(filename_queue)
 
+        # 获取文件名称
+        filename_queue = tf.train.string_input_producer([self.tfrecords_file])
+        # 创建阅读器
+        tfreader = tf.TFRecordReader()
+        # 进行数据读取
+        _, serialized = tfreader.read(filename_queue)
+        # 读取数据
         example = self.read_example(serialized)
+        # 获取相关数据
         id, images, poses, depth_gt, filled, depth_pred, intrinsics \
             = tf.train.batch(example, batch_size=self.batch_size, num_threads=2, capacity=64)
-
+        # 转换数据类型
         images = tf.cast(images, tf.float32)
+        # 获取数据
         return id, images, poses, depth_gt, filled, depth_pred, intrinsics
 
 
@@ -190,17 +219,20 @@ class DataLayer(object):
 def scale(id, images, poses, depth_gt, filled, pred, intrinsics):
     """ Random scale augumentation """
     if len(cfg.INPUT.SCALES) > 1:
+        # 将scales转换为常量
         scales = tf.constant(cfg.INPUT.SCALES)
+        # 创建索引
         scale_ix = tf.random.uniform([], 0, len(cfg.INPUT.SCALES), dtype=tf.int32)
-
+        # 索引筛选
         s = tf.gather(scales, scale_ix)
-        print(s)
-        ht = cfg.INPUT.HEIGHT
-        wd = cfg.INPUT.WIDTH
-
+        
+        ht = int(cfg.INPUT.HEIGHT*cfg.INPUT.RESIZE)
+        wd = int(cfg.INPUT.WIDTH*cfg.INPUT.RESIZE)
+        # 进行缩放
         ht1 = tf.cast(ht * s, tf.int32)
+        # 进行缩放
         wd1 = tf.cast(wd * s, tf.int32)
-
+        # 计算偏执
         dx = (wd1 - wd) // 2 
         dy = (ht1 - ht) // 2
 
@@ -211,7 +243,7 @@ def scale(id, images, poses, depth_gt, filled, pred, intrinsics):
         depth_gt = tf.image.resize_nearest_neighbor(depth_gt, [ht1, wd1])[:, dy:dy+ht, dx:dx+wd]
         filled = tf.image.resize_nearest_neighbor(filled, [ht1, wd1])[:, dy:dy+ht, dx:dx+wd]
 
-        images = tf.reshape(images,  [4, ht, wd, 3])
+        images = tf.reshape(images,  [5, ht, wd, 3])
         depth_gt = tf.reshape(depth_gt, [ht, wd, 1])
         filled = tf.reshape(filled, [ht, wd, 1])
         pred = tf.reshape(pred, [ht, wd, 1])
@@ -225,6 +257,7 @@ def scale(id, images, poses, depth_gt, filled, pred, intrinsics):
 
 def augument(images):
     # randomly shift gamma
+    # 随机shift变换
     images = tf.cast(images, 'float32')
     random_gamma = tf.random_uniform([], 0.9, 1.1)
     images = 255.0*((images/255.0)**random_gamma)

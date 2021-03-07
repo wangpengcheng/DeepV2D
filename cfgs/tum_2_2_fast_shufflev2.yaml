@@ -10,8 +10,8 @@ TRAIN:
   LR: 0.001
   CLIP_GRADS: True
   DEPTH_WEIGHT: 1.0
-  USE_GPU: '0,1'
-  GPU_MEMORY: 0.5
+  USE_GPU: '0'
+  GPU_MEMORY: 0.3
 MOTION:
   USE_MOTION: False
   STACK_FRAMES: False
@@ -28,6 +28,16 @@ STRUCTURE:
   HG_2D_COUNT: 1
   HG_2D_DEPTH_COUNT: 2
   USE_FAST_RESNET: True
+STORE: # 存储相关参数
+  RESRORE_PATH: "checkpoints/tum/fast_shufflenetv2/_stage_2.ckpt" # 加载已有模型存储位置 一般为路径文件夹+数据集名称+模型名称
+  CHECKPOINT_DIR: "checkpoints/tum" # 训练模型存储位置，一般为路径文件夹+数据集名称+模型名称
+  TMP_DIR: "tmp/tmu" # 临时文件路径，一般是数据集名称+模型名称
+  LOG_DIR: "log/tmu"  # 日志存储位置，日志存储位置 路径文件夹+数据集名称+模型名称
+  IS_SAVE_LOSS_LOG: True # 是否存储loss 相关日志文件，开启则在日志文件中添加当前训练日志
+  MODLE_NAME: "fast_shufflenetv2" # 模型名称 当前模型的名称--一般为网络结构名称
+  LOG_LEVEL: "3" # 输出日志级别
+  
+
 
 # new fast 0.037686747854406184 s
 # resnet  0.046844121542843904

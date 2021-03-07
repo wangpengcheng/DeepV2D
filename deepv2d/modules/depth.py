@@ -495,7 +495,7 @@ class DepthNetwork(object):
 
                 # 将其维度进行强制转换 4*30*40*32*64
                 volume = tf.reshape(volume, [dim[0]*dim[1], dim[2], dim[3], dim[4], 64])
-                # 进行三维特征卷积，卷积核大小为
+                # 进行三维特征卷积，卷积核大小为，这里主要目的是为了降低维度
                 x = slim.conv3d(volume, 32, [1, 1, 1])
                 # 添加变量
                 tf.add_to_collection("checkpoints", x)
@@ -632,7 +632,7 @@ class DepthNetwork(object):
     def fast_stereo_head(self, x):
         """ Predict probability volume from hg features hg 的特征概率"""
         x = bnrelu(x)
-        x = slim.conv3d(x, 32, [1, 1, 1], activation_fn=tf.nn.relu)
+        #x = slim.conv3d(x, 32, [1, 1, 1], activation_fn=tf.nn.relu)
         x = slim.conv3d(x, 32, [3, 3, 3], activation_fn=tf.nn.relu)
         #x = slim.conv3d(x, 32, [3, 3, 3], activation_fn=tf.nn.relu)
         tf.add_to_collection("checkpoints", x)

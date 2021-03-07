@@ -30,9 +30,10 @@ def get_TUM_data(data_path,sum_data_file_name):
     Args:
         data_path ([str]): 数据存在的路径 
     """
-    data_file_path = os.path.join(data_path,sum_data_file_name)
+    data_file_path = os.path.join(data_path, sum_data_file_name)
     print("==== {} ======".format(data_file_path))
     # 不存在综合数据就进行创建
+    # 在这里进行时间戳上的文件合并
     if not os.path.isfile(data_file_path):
         # 获取图像列表
         image_list = os.path.join(data_path, 'rgb.txt')
@@ -239,10 +240,11 @@ class TUM_RGBD:
 
             # 访问数据文件夹，构造对应的数据
             images, depths, poses, color_intrinsics, depth_intrinsics = self._load_scan(scan)
-            color_intrinsics = color_intrinsics*self.resize 
+            # 注意这里的参数直接进行变换
+            #color_intrinsics = color_intrinsics*self.resize 
             depth_intrinsics = depth_intrinsics*self.resize
             # 构建索引表
-            self.build_data_map(images,depths,poses)
+            self.build_data_map(images, depths, poses)
             # 加载数据
             for i in range(r, len(images)-r, skip):
                 # some poses in scannet are nans
