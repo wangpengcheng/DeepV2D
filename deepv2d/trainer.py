@@ -130,7 +130,7 @@ class DeepV2DTrainer(object):
             stereo_optim = tf.train.RMSPropOptimizer(lr)
             if cfg.MOTION.USE_MOTION:
                 motion_optim = tf.train.RMSPropOptimizer(MOTION_LR_FRACTION*lr)
-        # 进行数据读取
+        # 进行数据读取,获取下一个
         id_batch, images_batch, poses_batch, gt_batch, filled_batch, pred_batch, intrinsics_batch = self.dl.next()
 
         # 在这里进行数据分割，方便多GPU运算
@@ -358,17 +358,18 @@ class DeepV2DTrainer(object):
 
             kwargs = {}
             # 训练阶段大于2，两次训练都结束,保存姿态网络数据
-            if stage >= 2 and cfg.MOTION.USE_MOTION:
-                # 位姿估计的所有变量
-                motion_vars = tf.get_collection(tf.GraphKeys.MODEL_VARIABLES, scope="motion")
-                # 创建存储
-                motion_saver = tf.train.Saver(motion_vars)
-                # 进行中间参数保存，保存的模型
-                if ckpt is not None:
-                    motion_saver.restore(sess, ckpt)
-                # 存储的临时文件
-                if restore_ckpt is not None:
-                    saver.restore(sess, restore_ckpt)
+            if stage >= 2:
+                if cfg.MOTION.USE_MOTION:
+                    # 位姿估计的所有变量
+                    motion_vars = tf.get_collection(tf.GraphKeys.MODEL_VARIABLES, scope="motion")
+                    # 创建存储
+                    motion_saver = tf.train.Saver(motion_vars)
+                    # 进行中间参数保存，保存的模型
+                    if ckpt is not None:
+                        motion_saver.restore(sess, ckpt)
+                # # 存储的临时文件
+                # if restore_ckpt is not None:
+                #     saver.restore(sess, restore_ckpt)
             
             # 运行时的loss
             running_loss = 0.0

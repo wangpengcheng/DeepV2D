@@ -211,6 +211,7 @@ class SE3:
         # 根据深度图和相机内参映射到三维点云图
         pt = pops.backproject(depth, intrinsics) # 根据深度和相机内参获取三维点云
         pt_new = self.__call__(pt) # 获取新的三维点云图像
+        
         coords = pops.project(pt_new, intrinsics) # 将矫正坐标重新投影到深度
         if return3d: 
             return coords, pt_new

@@ -56,6 +56,7 @@ def main_nyu(args):
             print("Writing example %d of %d"%(i, len(ix)))
         data_blob = db[ix[i]]
         data_blob['id'] = ix[i]
+        # 将其写入
         record = to_tfrecord(data_blob)
         tfwriter.write(record.SerializeToString())
 

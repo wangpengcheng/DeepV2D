@@ -123,6 +123,7 @@ def pose_vec2mat(pvec, use_filler=True):
     # 提取位移和旋转
     t, q = pvec[np.newaxis, 0:3], pvec[np.newaxis, 3:7]
     R = quat2rotm(q)
+    # 位移矩阵
     t = np.expand_dims(t, axis=-1)
     # 最终的转换矩阵
     P = np.concatenate([R, t], axis=2)
