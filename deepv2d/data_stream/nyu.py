@@ -17,13 +17,15 @@ import threading, time
 import sys
 from utils.tum_associate import *
 
-fx = 517.3
-fy = 516.5
-cx = 318.6
-cy = 255.3
-factor = 1.0 # for the 16-bit PNG files 
+
+factor = 5000.0 # for the 16-bit PNG files 
 # OR: factor = 1 # for the 32-bit float images in the ROS bag files
-intrinsics = np.array([fx, fy, cx, cy],dtype=np.float32)
+fx = 5.1885790117450188e+02
+fy = 5.1946961112127485e+02
+cx = 3.2558244941119034e+02
+cy = 2.5373616633400465e+02
+# 相机基本参数
+intrinsics = np.array([fx, fy, cx, cy], dtype=np.float32)
 
 
 def get_data(data_path, sum_data_file_name):
@@ -134,19 +136,18 @@ def build_data_map(data_blob_arr, width, height , thread_num =0):
     # 读取图像
     for data in data_blob_arr:
         images_names = data['images']
-        depths_names = data['depths']
+        depth_name = data['depth']
         for image_name in images_names:
             #print("read image file:{}".format(image_name))
             image = cv2.imread(image_name)
             image = cv2.resize(image, (int(width), int(height)))
             images_map[image_name]= image
 
-        for depth_name in depths_names:
-            # 读取深度信息
-            depth = cv2.imread(depth_name, cv2.IMREAD_ANYDEPTH)
-            depth = cv2.resize(depth, (int(width), int(height)))
-            depth = (depth.astype(np.float32))/factor
-            depths_map[depth_name] = depth
+        # 读取深度信息
+        depth = cv2.imread(depth_name, cv2.IMREAD_ANYDEPTH)
+        depth = cv2.resize(depth, (int(width), int(height)))
+        depth = (depth.astype(np.float32))/factor
+        depths_map[depth_name] = depth
 
     print("thread_num:{} read depth and images file OK".format(thread_num))
 
@@ -198,8 +199,13 @@ class NYU:
         self.images_map = {}
         self.depths_map = {} 
         self.build_dataset_index(r=r)
+        #self.check_files()
 
-        
+    def check_files(self):
+        for i in range(len(self.dataset_index)):
+            test = self.__getitem__(i)
+        print("check ok")
+
     # 获取数据长度
     def __len__(self):
         return len(self.dataset_index)
@@ -208,9 +214,9 @@ class NYU:
         return [self.n_frames, self.height, self.width]
     # 获取数据
     def __getitem__(self, index):
-        if  index % self.buffer_len == 0:
-            # 构建索引表
-            self.flash_buffer(index)
+        # if index+1 % self.buffer_len == 0:
+        #     # 构建索引表
+        #     self.flash_buffer(index)
         
         # 获取索引
         data_blob = self.dataset_index[index]
@@ -230,28 +236,37 @@ class NYU:
         inds = np.random.choice(inds, num_samples, replace=False)
         # 将关键帧提取到开头 0,2,4,3
         inds = [keyframe_index] + inds.tolist()
+        
+        # 读取深度数据
+          # 深度数据文件
+        depth_file = data_blob['depth']
+        # 进行图像读取
+        depth = cv2.imread(depth_file, cv2.IMREAD_ANYDEPTH)
+        depth = cv2.resize(depth, (int(self.width), int(self.height)))
+        # 进行深度读取
+        depth = (depth.astype(np.float32)) / factor
+         # 深度平滑处理
+        filled = fill_depth(depth)
+        # 关键帧序列
+        frameid = data_blob['id']
+        # 转换为
+        frameid = np.int32(frameid)
         # 读取图像
         images = []
         poses = []
-        # 获取图像
+        # 读取rgb
         for i in inds:
-            image = self.images_map[data_blob['images'][i]]
-            images.append(image)
+            image_file = data_blob['images'][i]
+            img = cv2.imread(image_file)
+            img = cv2.resize(img, (int(self.width), int(self.height)))
+            images.append(img)
             pose_vec = data_blob['poses'][i]
             pose_mat = pose_vec2mat(pose_vec)
             poses.append(np.linalg.inv(pose_mat))
-        # 转换图像和深度信息
-        images = np.stack(images, axis=0).astype(np.uint8)
-        poses = np.stack(poses, axis=0).astype(np.float32)
-        # 获取深度信息
-        depth_file = data_blob['depth']
-        # 读取深度信息
-        depth = self.depths_map[depth_file]
-        filled = fill_depth(depth)
+       
         K = data_blob['intrinsics']
         # 相机内参，转换为向量矩阵
         kvec = K.copy()
-
         depth = depth[...,None]
         return images, poses, depth, filled, filled, kvec, frameid
 
@@ -335,8 +350,8 @@ class NYU:
                 training_example['n_frames'] = 2*r+1
                 training_example['id'] = data_id
                 self.dataset_index.append(training_example)
-                data_id += 1
 
+                data_id += 1
     def flash_buffer(self, index):
         """
         刷新缓存数量
@@ -350,7 +365,7 @@ class NYU:
         # 创建线程队列
         threads = []
         # 执行循环并行加载数据
-        for i in  self.load_thread_num:
+        for i in range(self.load_thread_num):
             thread = MyThread(build_data_map, (data_blob_arr[i], self.width, self.height, i))
             thread.start()
             threads.append(thread)

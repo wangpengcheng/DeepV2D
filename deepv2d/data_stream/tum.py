@@ -240,10 +240,10 @@ class TUM_RGBD:
             # 访问数据文件夹，构造对应的数据
             images, depths, poses, color_intrinsics, depth_intrinsics = self._load_scan(scan)
             # 注意这里的参数直接进行变换
-            color_intrinsics = color_intrinsics*self.resize 
+            #color_intrinsics = color_intrinsics*self.resize 
             depth_intrinsics = depth_intrinsics*self.resize
             # 构建索引表
-            self.build_data_map(images,depths,poses)
+            self.build_data_map(images, depths, poses)
             # 加载数据
             for i in range(r, len(images)-r, skip):
                 # some poses in scannet are nans
