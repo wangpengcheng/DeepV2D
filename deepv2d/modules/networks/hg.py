@@ -197,6 +197,7 @@ def aspp_2d(net, dim, expand=64):
 
 def aspp_3d(net, dim, expand=48):
     out_dim = dim + expand
+
     with tf.variable_scope('aspp3d', [net]) as sc:
         aspp_list = []
         # 进行二维卷积1*1卷积
@@ -224,6 +225,6 @@ def aspp_3d(net, dim, expand=48):
         # 进行多维卷积
         out = conv3d_1x1(temp_concat, dim)
 
-        tf.add_to_collection("checkpoints", out)
+        #tf.add_to_collection("checkpoints", out)
     return out
         

@@ -346,7 +346,7 @@ class DeepV2DTrainer(object):
         # 设置日志频率
         LOG_FREQ = 100
         # 设置checkpoint中间输出频率
-        CHECKPOINT_FREQ = 5000
+        CHECKPOINT_FREQ = 2000
 
         sess = set_gpus(cfg)
 
