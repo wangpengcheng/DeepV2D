@@ -198,7 +198,7 @@ class NYU:
         self.buffer_len = buffer_len
         self.images_map = {}
         self.depths_map = {} 
-        self.build_dataset_index(r=r)
+        self.build_dataset_index(r=r, skip = 2*r+1)
         #self.check_files()
 
     def check_files(self):

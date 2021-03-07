@@ -81,6 +81,7 @@ class DataLayer(object):
             scale_ix = tf.random.uniform([], 0, len(cfg.INPUT.SCALES), dtype=tf.int32)
             # 随机缩放参数
             s = tf.gather(scales, scale_ix)
+            # 设置宽度和高度
             ht = int(cfg.INPUT.HEIGHT*cfg.INPUT.RESIZE)
             wd = int(cfg.INPUT.WIDTH*cfg.INPUT.RESIZE)
             # 进行缩放
@@ -97,7 +98,7 @@ class DataLayer(object):
             depth_gt = tf.image.resize_nearest_neighbor(depth_gt[tf.newaxis], [ht1, wd1])[:, dy:dy+ht, dx:dx+wd]
             # 填充进行缩放
             filled = tf.image.resize_nearest_neighbor(filled[tf.newaxis], [ht1, wd1])[:, dy:dy+ht, dx:dx+wd]
-            # 
+            # 进行采样
             images = tf.reshape(images,  [cfg.INPUT.SAMPLES+1, ht, wd, 3])
             # 再次进行缩放
             depth_gt = tf.reshape(depth_gt, [ht, wd, 1])

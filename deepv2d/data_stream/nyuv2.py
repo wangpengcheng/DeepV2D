@@ -269,7 +269,7 @@ class NYUv2:
         # 关键帧队列
         ki = np.array(keyframe_inds, dtype=np.int32)
         # 筛选出关键帧
-        for i, t in zip(keyframe_inds,keyframe_ts):
+        for i, t in zip(keyframe_inds, keyframe_ts):
             # 进行索引比较
             inds, = np.where(np.abs(t-ts) < max_dt)
             # 将其添加到数组中

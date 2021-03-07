@@ -37,11 +37,12 @@
                 "--records_file=data/nyu/nyu_train.tfrecords"
             ],
 
-            // "program": "training/train_nyu.py",
+            // "program": "training/train_nyuv2.py",
             // "args": [
             //     "--cfg=cfgs/nyu.yaml",
             //     "--name=nyu_model",
             //     "--dataset_dir=data/nyu2",
+            //     "--tfrecords=data/nyu/nyu_train.tfrecords",
             //     "--restore=checkpoints/tum/tmu_model/_stage_2.ckpt"
             //  ],
             // "program": "training/train_tum.py",
