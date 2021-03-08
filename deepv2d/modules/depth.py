@@ -600,7 +600,7 @@ class DepthNetwork(object):
                         x = hg.fast_hourglass_3d(x, self.cfg.HG_DEPTH_COUNT, 32)
                         #x = hg.aspp_3d(x,32)
                         # 将金字塔的结果进行输入
-                        self.pred_logits.append(self.fast_stereo_head(x))
+                        self.pred_logits.append(self.stereo_head(x))
                         #self.pred_logits.append(self.stereo_head(x))
         
     def aspp_decoder(self, volume):
@@ -642,7 +642,7 @@ class DepthNetwork(object):
                         #x = hg.fast_hourglass_3d(x, self.cfg.HG_DEPTH_COUNT, 32)
                         x = hg.aspp_3d(x,32)
                         # 将金字塔的结果进行输入
-                        self.pred_logits.append(self.fast_stereo_head(x))
+                        self.pred_logits.append(self.stereo_head(x))
                         #self.pred_logits.append(self.stereo_head(x))
 
         
