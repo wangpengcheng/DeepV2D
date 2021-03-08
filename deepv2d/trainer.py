@@ -378,8 +378,14 @@ class DeepV2DTrainer(object):
                 if restore_ckpt is not None:
                     saver.restore(sess, restore_ckpt)
                     # 加载存储的临时文件
+<<<<<<< HEAD
                     # if restore_ckpt is not None:
                     #     saver.restore(sess, restore_ckpt)
+=======
+            # 加载已经存在的模型
+            if cfg.STORE.IS_USE_RESRORE:
+                saver.restore(sess, cfg.STORE.RESRORE_PATH)
+>>>>>>> 9b4fc2c9ddf575e9a613e84d818a0197d93ff184
             
             # 运行时的loss
             running_loss = 0.0
