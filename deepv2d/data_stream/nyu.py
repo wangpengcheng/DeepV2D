@@ -44,7 +44,7 @@ def get_data(data_path, sum_data_file_name):
     # 文件样例:
     # 1341841310.82 rgb/1341841310.821702.png 1341841310.82 depth/1341841310.822401.png 1341841310.81 -2.7366 0.1278 1.2413 0.7256 -0.5667 0.2209 -0.3217
     #
-    image_names,depths_names,poses = get_data_from_sum_file(data_file_path)
+    image_names, depths_names, poses = get_data_from_sum_file(data_file_path)
     # 获取图像相对路径
     image_names = [data_path+'/'+i for i in image_names ]
     # 获取深度图像相对路径
@@ -198,7 +198,7 @@ class NYU:
         self.buffer_len = buffer_len
         self.images_map = {}
         self.depths_map = {} 
-        self.build_dataset_index(r=r, skip = 2*r+1)
+        self.build_dataset_index(r=r, skip = 10)
         #self.check_files()
 
     def check_files(self):
@@ -233,7 +233,7 @@ class NYU:
         # 构建索引数组 True,  True, False,  True,  True -->  [0, 1, 3, 4]
         inds = inds[~np.equal(inds, keyframe_index)]
         # 对顺序进随机组合 [2, 4, 3, 1]
-        inds = np.random.choice(inds, num_samples, replace=False)
+        #inds = np.random.choice(inds, num_samples, replace=False)
         # 将关键帧提取到开头 0,2,4,3
         inds = [keyframe_index] + inds.tolist()
         
