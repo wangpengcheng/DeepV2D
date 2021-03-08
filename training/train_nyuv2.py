@@ -27,6 +27,7 @@ def main(args):
         os.makedirs(log_dir)
     # 输出文件夹
     checkpoint_dir = os.path.join(cfg.STORE.CHECKPOINT_DIR, cfg.STORE.MODLE_NAME)
+
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
     # 临时文件夹名称
@@ -47,7 +48,7 @@ def main(args):
     ckpt = None
     # 注意这里直接使用tfrecords进行训练
     if args.restore is not None:
-        solver.train(args.tfrecords, cfg, stage=2, restore_ckpt=args.restore, num_gpus=args.num_gpus)
+        solver.train(args.tfrecords, cfg, stage=2, restore_ckpt=restore_ckpt_path, num_gpus=args.num_gpus)
 
     else:
         for stage in [1, 2]:
