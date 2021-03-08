@@ -150,6 +150,7 @@ __C.STORE.IS_SAVE_LOSS_LOG = False
 __C.STORE.MODLE_NAME = 'resnet'
 # 输出日志级别
 __C.STORE.LOG_LEVEL = "3"
+__C.STORE.IS_USE_RESRORE = False
 
 def _merge_a_into_b(a, b):
     """Merge config dictionary a into config dictionary b, clobbering the
