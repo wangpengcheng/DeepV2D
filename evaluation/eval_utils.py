@@ -29,7 +29,7 @@ def scale_invariant(gt, pr):
     """
     gt = gt.reshape(-1)
     pr = pr.reshape(-1)
-
+    # 查找大于0.1的坐标点
     v = gt > 0.1
     gt = gt[v]
     pr = pr[v]

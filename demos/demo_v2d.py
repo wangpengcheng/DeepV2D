@@ -125,7 +125,7 @@ def main(args):
             iter_number = int(len(images)/frames_len)
             time_sum =0.0
             # 遍历进行
-            for i in range(0,iter_number):
+            for i in range(0, iter_number):
                 temp_images = images[i*frames_len:(i+1)*frames_len]
                 temp_poses = poses[i*frames_len:(i+1)*frames_len]
                 temp_intrinsics = intrinsics.copy()
@@ -135,7 +135,7 @@ def main(args):
                 # 计算时间
                 time_start=time.time()
                 # 进行推理
-                depths = deepv2d.inference(temp_images,temp_poses,temp_intrinsics)
+                depths = deepv2d.inference(temp_images, temp_poses, temp_intrinsics)
                 time_end=time.time()
                 print('time cost',time_end-time_start,'s')
                 if i != 0:

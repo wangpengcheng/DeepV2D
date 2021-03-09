@@ -176,7 +176,7 @@ class NYU:
     NYU数据集加载类，主要用来加载数据集中的数据
     主要用来进行数据的加载与查找
     """
-    def __init__(self, resize, dataset_path, test=False, n_frames=5, r=2, buffer_len = 100, load_thread_num = 4):
+    def __init__(self, resize, dataset_path, test=False, n_frames=5, r=2, scenes_file='data/nyu/train_scenes.txt', buffer_len = 100, load_thread_num = 4):
         """[summary]
 
         Args:
@@ -185,6 +185,7 @@ class NYU:
             test (bool, optional): [description]. Defaults to False.
             n_frames (int, optional): [description]. Defaults to 5.
             r (int, optional): [description]. Defaults to 2.
+            scenes_file: 数据集使用的场景文件夹
             buffer_len (int, optional): [description]. Defaults to 100.
             load_thread_num (int, optional): 缓存更新加载线程数. Defaults to 4.
         """
@@ -198,6 +199,7 @@ class NYU:
         self.buffer_len = buffer_len
         self.images_map = {}
         self.depths_map = {} 
+        self.scenes_list_file = scenes_file
         self.build_dataset_index(r=r, skip = 10)
         #self.check_files()
 
@@ -320,10 +322,9 @@ class NYU:
     def build_dataset_index(self, r=2, skip=12):
         self.dataset_index = []
         data_id = 0
-        # 读取所有文件
-        scenes_list_file = 'data/nyu/train_scenes.txt'
-        
-        scenes_names = self.get_dirs(scenes_list_file)
+       
+        # 扫描场景名称
+        scenes_names = self.get_dirs(self.scenes_list_file)
         scenes_names.sort()
         # 访问数据文件夹，并列举所有数据文件夹
         for scene in scenes_names:
@@ -385,7 +386,7 @@ class NYU:
 
     def test_set_iterator(self):
         """
-        测试数据迭代器
+        测试数据迭代器,用来获取测试数据
         """
         
         # 遍历预加载的数据集
