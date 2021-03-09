@@ -433,9 +433,8 @@ class DepthNetwork(object):
                         for i in range(self.cfg.HG_2D_COUNT):
                             with tf.variable_scope("2d_hg1_%d"%i):
                                 # 沙漏网络,4*120*160*128
-                                net = hg.fast_res_hourglass_2d(net, self.cfg.HG_2D_DEPTH_COUNT, 64)
-                        # # 沙漏网络,4*120*160*128
-                        # net = hg.hourglass_2d(net, 4, 64) # 52
+                                #net = hg.fast_res_hourglass_2d(net, self.cfg.HG_2D_DEPTH_COUNT, 64)
+                                net = hg.hourglass_2d(net, 4, 64) # 52
                         # # 沙漏网络，4*120*160*64
                         # net = hg.hourglass_2d(net, 4, 64) # 52
 

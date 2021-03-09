@@ -173,9 +173,16 @@ class DeepV2DTrainer(object):
             # 获取相关数据
             batch, frames, height, width, _ = images.get_shape().as_list()
             # 使用命名空间，并设置深度网络的学习参数
+            # 定义输出命名空间
             with tf.name_scope("depth_input"):
                 # 定义学习率和指数衰减 https://blog.csdn.net/lllxxq141592654/article/details/84110600
-                input_prob = tf.train.exponential_decay(2.0, global_step, LR_DECAY, 0.02, staircase=False)
+                input_prob = tf.train.exponential_decay(
+                    2.0, 
+                    global_step, 
+                    LR_DECAY, 
+                    0.02,
+                    staircase=False
+                    )
                 rnd = tf.random_uniform([], 0, 1)
                 depth_input = tf.cond(rnd<input_prob, lambda: depth_filled, lambda: depth_pred)
 
@@ -378,14 +385,9 @@ class DeepV2DTrainer(object):
                 if restore_ckpt is not None:
                     saver.restore(sess, restore_ckpt)
                     # 加载存储的临时文件
-<<<<<<< HEAD
-                    # if restore_ckpt is not None:
-                    #     saver.restore(sess, restore_ckpt)
-=======
             # 加载已经存在的模型
             if cfg.STORE.IS_USE_RESRORE:
                 saver.restore(sess, cfg.STORE.RESRORE_PATH)
->>>>>>> 9b4fc2c9ddf575e9a613e84d818a0197d93ff184
             
             # 运行时的loss
             running_loss = 0.0

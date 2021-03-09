@@ -246,7 +246,10 @@ class DeepV2D:
 
 
     def _build_reprojection_graph(self):
-        """ Used to project depth from keyframes onto new frame 用于将深度从关键帧投影到新帧上"""
+        """
+        Used to project depth from keyframes onto new frame
+        用于将深度从关键帧投影到新帧上
+        """
 
         EPS = 1e-8
         depths = self.depths_placeholder[tf.newaxis]
@@ -254,11 +257,15 @@ class DeepV2D:
         intrinsics = self.intrinsics_placeholder[tf.newaxis]
 
         batch, num, ht, wd = tf.unstack(tf.shape(depths), num=4)
+        # 将相机位姿转换为SE3
         Ts = VideoSE3Transformation(matrix=poses)
+        # 将内参转换为矩阵
         intrinsics = intrinsics_vec_to_matrix(intrinsics) # 将相机参数转换为矩阵
 
         ii, jj = tf.meshgrid(tf.range(0, num), tf.range(num, num+1)) # 构建多帧的数量，ii为num,jj为1
+        
         ii = tf.reshape(ii, [-1]) # 将其转换为1维度向量
+        
         jj = tf.reshape(jj, [-1]) # 
 
         Tij = Ts.gather(jj) * Ts.gather(ii).inv() # 获取对应的照片位姿i*j;注意j一般为1，进行取反
@@ -266,6 +273,7 @@ class DeepV2D:
         X1 = Tij(X0) # 获取对应点的位姿，注意这里的点应该是n,w,h,x,y,d的6维度数据
 
         coords = projective_ops.project(X1, intrinsics) # 获取每个点对应的x,y
+        
         depths = X1[..., 2] #获取深度图
 
         indicies = tf.cast(coords[..., ::-1] + .5, tf.int32) #
@@ -276,6 +284,7 @@ class DeepV2D:
         count = tf.scatter_nd(indicies, tf.ones_like(depths), [ht, wd]) # 将其分散到新的张量中,来统计是否有深度数据
 
         depth = depth / (count + EPS) #在这里对深度进行均一化
+        
         self.outputs['depth_reprojection'] = depth # 获取深度映射信息
 
     def _build_visibility_graph(self):
@@ -492,9 +501,12 @@ class DeepV2D:
         print("Press q to exit")
         vis.visualize_prediction(point_cloud, point_colors, self.poses)
 
-    def inference(self, images, poses,intrinsics=None, iters=2, viz=False,i_step=-1):
+    def inference(self, images, poses, intrinsics=None, iters=2, viz=False, i_step=-1):
+        # 图片
         self.images = images
+        # 位姿
         self.poses = poses
+        # 内参
         self.intrinsics = intrinsics
         # 进行数据绑定
         feed_dict = {
@@ -526,6 +538,7 @@ class DeepV2D:
                 )
         
         return self.depths
+        
     # call基本函数,用来执行推理
     def __call__(self, images, intrinsics=None, iters=2, viz=False):
         n_frames = len(images) # 8张图像
