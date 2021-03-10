@@ -154,7 +154,7 @@ def aspp_2d(net, dim, expand=64):
 
     Args:
         net ([type]): [description]
-        dim ([type]): [description]
+        dim ([type]): 输出维度
         expand (int, optional): [description]. Defaults to 64.
 
     Returns:
@@ -171,6 +171,13 @@ def aspp_2d(net, dim, expand=64):
         # 进行均值池化
         # branch_1 = slim.avg_pool2d(net,out_dim,1, padding='SAME',scope = 'aspp_2d_avg_pool')
         #branch_1 = avg_pool(net, 1, 1, 1, 1,)
+        # 计算均值
+        # image_feature = tf.reduce_mean(net, [1, 2], keepdims=True)
+        # image_feature = tf.layers.conv2d(inputs=image_feature, filters=filters, kernel_size=(1, 1),
+        #                              padding='same')
+        # image_feature = tf.image.resize_bilinear(images=image_feature,
+        #                                      size=[resize_height, resize_width],
+        #                                      align_corners=True, name='image_pool_feature')
         # 进行二维卷积1*1卷积
         branch_1 = slim.conv2d(net, out_dim, [1, 1], stride=1, scope='1x1conv')
         #tf.add_to_collection("checkpoints", branch_1)
@@ -182,7 +189,7 @@ def aspp_2d(net, dim, expand=64):
             #branch_2 = dilated_conv2d(net, out_dim, stride=1, my_rate=6*(i+1))
             aspp_list.append(branch_2)
         # 进行维度合并
-        temp_concat = tf.concat(aspp_list, 1)
+        temp_concat = tf.concat(aspp_list, -1)
         # out =net1 + conv2d_1x1(temp_concat, dim)
         out = conv(temp_concat, dim, 1, activation=True)
         #tf.add_to_collection("checkpoints", out)
@@ -190,6 +197,7 @@ def aspp_2d(net, dim, expand=64):
 
 def aspp_3d(net, dim, expand=48):
     out_dim = dim + expand
+
     with tf.variable_scope('aspp3d', [net]) as sc:
         aspp_list = []
         # 进行二维卷积1*1卷积
@@ -199,27 +207,24 @@ def aspp_3d(net, dim, expand=48):
 
         # tf.add_to_collection("checkpoints", net)
         # 进行均值池化,再进行卷积,注意这里是没有进行扩充
-        pool1 = slim.avg_pool3d(net,[2,2,2],padding='SAME', scope = 'aspp_3d_avg_pool')
+        # pool1 = slim.avg_pool3d(net,[2,2,2],padding='SAME', scope = 'aspp_3d_avg_pool')
 
         # 进行上采样
-        low1 = conv3d(pool1,out_dim)
+        #low1 = conv3d(pool1,out_dim)
         
         # 添加第一个卷积
-        aspp_list.append(conv3d_1x1(pool1, out_dim))
+        aspp_list.append(conv3d_1x1(net, out_dim))
 
         # 进行空洞卷积
         for i in range(3):
-            branch_2 = dilated_conv3d(low1, out_dim, my_rate = 6*(i+ 1))
+            branch_2 = dilated_conv3d(net, out_dim, my_rate = 6*(i+ 1))
             aspp_list.append(branch_2)
 
         # 进行维度合并
-        temp_concat = tf.concat(aspp_list, 1)
+        temp_concat = tf.concat(aspp_list, -1)
         # 进行多维卷积
-        low3 = conv3d_1x1(temp_concat, dim)
+        out = conv3d_1x1(temp_concat, dim)
 
-        up2 = upnn3d(low3, net)
-        out = up2 + net
-
-        tf.add_to_collection("checkpoints", out)
+        #tf.add_to_collection("checkpoints", out)
     return out
         

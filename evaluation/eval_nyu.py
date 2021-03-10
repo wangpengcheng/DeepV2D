@@ -20,7 +20,9 @@ import eval_utils
 
 
 def load_test_sequence(path, n_frames=-1):
-    """ loads images and intrinsics from demo folder """
+    """
+    loads images and intrinsics from demo folder
+    """
     images = []
     for imfile in sorted(glob.glob(os.path.join(path, "*.png"))):
         img = cv2.imread(imfile)
@@ -40,7 +42,9 @@ def load_test_sequence(path, n_frames=-1):
 
 
 def make_predictions(args):
-    """ runs inference on the test images """
+    """
+    runs inference on the test images
+    """
 
     np.random.seed(1234)
     cfg = config.cfg_from_file(args.cfg)
@@ -57,7 +61,9 @@ def make_predictions(args):
 
         predictions = []
         for test_id in tqdm(range(num_test)):
+            # 
             images, intrinsics = load_test_sequence(os.path.join(test_path, test_paths[test_id]), args.n_frames)
+            # 相机参数，执行预测
             depth_predictions, _ = deepv2d(images, intrinsics, iters=args.n_iters)
         
             keyframe_depth = depth_predictions[0]

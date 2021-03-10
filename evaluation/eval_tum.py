@@ -51,7 +51,7 @@ def make_predictions(args):
         depth_predictions, pose_predictions = [], []
         depth_groundtruth, pose_groundtruth = [], []
         # 构建数据加载器
-        db = TUM_RGBD(cfg.INPUT.RESIZE, args.dataset_dir,test=True,n_frames=5, r=2)
+        db = TUM_RGBD(cfg.INPUT.RESIZE, args.dataset_dir, test=True,n_frames=5, r=2)
         #提取数据集
         for test_id, test_blob in enumerate(db.test_set_iterator()):
             # 获取图像和相机位姿

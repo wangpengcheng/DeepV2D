@@ -3,6 +3,7 @@ import tensorflow as tf
 import os
 
 def set_gpus(cfg):
+    os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
     # 定义使用的GPU
     os.environ["CUDA_VISIBLE_DEVICES"] = cfg.TRAIN.USE_GPU
     # 定义TensorFlow配置

@@ -268,7 +268,53 @@ wirte image:data/tum/cabinet/inference_result/220.png
 
 
 
+
 start iterator 0
 time cost 0.016034841537475586 s
 sc-inv, a10, a1, a2, a3, rmse, log_rmse, rel, sq_rel1, sq_rel2, log10, 
     0.0913,     0.9780,     0.9834,     0.9879,     0.9906,     0.1231,     0.0917,     0.0277,     0.0157,     0.0230,     0.0099, 
+
+
+[stage=2,   100] loss: 1.382913452
+[stage=2,   200] loss: 0.308222526
+[stage=2,   300] loss: 0.213866438
+[stage=2,   400] loss: 0.175285060
+[stage=2,   500] loss: 0.143383240
+[stage=2,   600] loss: 0.138253719
+[stage=2,   700] loss: 0.121988138
+[stage=2,   800] loss: 0.117526790
+[stage=2,   900] loss: 0.100468562
+[stage=2,  1000] loss: 0.110015118
+[stage=2,  1100] loss: 0.100074471
+[stage=2,  1200] loss: 0.094608780
+[stage=2,  1300] loss: 0.087087601
+[stage=2,  1400] loss: 0.089206605
+[stage=2,  1500] loss: 0.085683061
+[stage=2,  1600] loss: 0.083259776
+[stage=2,  1700] loss: 0.069519913
+[stage=2,  1800] loss: 0.062709479
+[stage=2,  1900] loss: 0.060113499
+
+0.022706954045729203 s
+
+[stage=2,   100] loss: 1.130170947
+[stage=2,   200] loss: 0.245753851
+[stage=2,   300] loss: 0.189016953
+[stage=2,   400] loss: 0.151031523
+[stage=2,   500] loss: 0.128803463
+[stage=2,   600] loss: 0.126358530
+[stage=2,   700] loss: 0.110837874
+[stage=2,   800] loss: 0.108630335
+[stage=2,   900] loss: 0.093478674
+[stage=2,  1000] loss: 0.098405972
+[stage=2,  1100] loss: 0.090654366
+[stage=2,  1200] loss: 0.087626628
+[stage=2,  1300] loss: 0.083972092
+[stage=2,  1400] loss: 0.083514291
+[stage=2,  1500] loss: 0.079256485
+[stage=2,  1600] loss: 0.079857329
+[stage=2,  1700] loss: 0.065135725
+[stage=2,  1800] loss: 0.060141062
+[stage=2,  1900] loss: 0.057419895
+
+0.023930963602933016 s

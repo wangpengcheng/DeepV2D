@@ -2,25 +2,25 @@ import tensorflow as tf
 import numpy as np
 
 def gather_nd(image, indicies, batch_dims=0):
-    indicies_shape = tf.shape(indicies)
-    batch_inds = [tf.range(indicies_shape[i]) for i in range(batch_dims)]
-    batch_inds = tf.meshgrid(*batch_inds, indexing='ij')
-    batch_inds = tf.stack(batch_inds, axis=-1)
-
-    batch_shape, batch_tile = [], []
+    indicies_shape = tf.shape(indicies) # 获取目标参数形状
+    batch_inds = [tf.range(indicies_shape[i]) for i in range(batch_dims)] # 1*4
+    batch_inds = tf.meshgrid(*batch_inds, indexing='ij') # 将其转换为矩阵
+    batch_inds = tf.stack(batch_inds, axis=-1) # 1 4 2
+    # 步长形状,步长重合 ，构造新的形状，主要是方便维度转换
+    batch_shape, batch_tile = [], [] 
     for i in range(len(indicies.get_shape().as_list())-1):
-        if i < batch_dims:
+        if i < batch_dims: # 
             batch_shape.append(indicies_shape[i])
             batch_tile.append(1)
         else:
             batch_shape.append(1)
             batch_tile.append(indicies_shape[i])
 
-    batch_shape.append(batch_dims)
-    batch_tile.append(1)
-    batch_inds = tf.reshape(batch_inds, batch_shape)
-    batch_inds = tf.tile(batch_inds, batch_tile)
-
+    batch_shape.append(batch_dims) # 1 4 1 1 1 2
+    batch_tile.append(1) # 1 1 30 40 32 1 
+    batch_inds = tf.reshape(batch_inds, batch_shape) #1 4 1 1 1 2
+    batch_inds = tf.tile(batch_inds, batch_tile)  # 1 4 30 40 32 2
+    # 1,4,30,40,32,4 1,4,30,40,32
     indicies = tf.concat([batch_inds, indicies], axis=-1)
     return tf.gather_nd(image, indicies)
 
@@ -57,17 +57,17 @@ def bilinear_sampler(image, coords, batch_dims=1, return_valid=False):
     # 对数据进行筛选，y对应高度，
     y0c = tf.clip_by_value(y0, 0, img_shape[-3]-1)
     y1c = tf.clip_by_value(y1, 0, img_shape[-3]-1)
-    # 
+    # 是否相等--没有梯度
     valid = tf.equal(x0c, x0) & tf.equal(x1c, x1) & \
         tf.equal(y0c, y0) & tf.equal(y1c, y1)
     valid = tf.cast(valid, 'float32')
-    # 合成新坐标，主要是个坐标
+    # 合成新坐标，主要是个坐标，[x,y] [x+1,y] [x,y+1] [x+1,y+1]
     coords00 = tf.concat([y0c,x0c], axis=-1)
     coords01 = tf.concat([y0c,x1c], axis=-1)
     coords10 = tf.concat([y1c,x0c], axis=-1)
     coords11 = tf.concat([y1c,x1c], axis=-1)
     # 获取坐标对应的值，对应的值
-    img00 = gather_nd(image, coords00, batch_dims=batch_dims)
+    img00 = gather_nd(image, coords00, batch_dims=batch_dims) #1 4 30 42 32 32
     img01 = gather_nd(image, coords01, batch_dims=batch_dims)
     img10 = gather_nd(image, coords10, batch_dims=batch_dims)
     img11 = gather_nd(image, coords11, batch_dims=batch_dims)

@@ -20,13 +20,15 @@ def coords_grid(shape, homogeneous=True):
     new_shape = (tf.ones_like(shape[:-2]), shape[-2:], [-1])
     new_shape = tf.concat(new_shape, axis=0)
     coords = tf.reshape(coords, new_shape)
-
+    # 1,1,3,30,40
     tile = tf.concat((shape[:-2], [1,1,1]), axis=0) # 获取小块
-    coords = tf.tile(coords, tile) # 对坐标点张量进行扩张
+    coords = tf.tile(coords, tile) # 对坐标点张量进行扩张 1*4*32*30*40*3 
     return coords
 
 def extract_and_reshape_intrinsics(intrinsics, shape=None):
-    """ Extracts (fx, fy, cx, cy) from intrinsics matrix """
+    """ Extracts (fx, fy, cx, cy) from intrinsics matrix 
+        更改fx,fy,cx,,cy 相关系数
+    """
 
     fx = intrinsics[:, 0, 0]
     fy = intrinsics[:, 1, 1]
@@ -53,11 +55,15 @@ def backproject(depth, intrinsics, jacobian=False):
     x, y, _ = tf.unstack(coords, num=3, axis=-1)
 
     x_shape = tf.shape(x)
+    # 根据形状和相机参数，计算图像参数
     fx, fy, cx, cy = extract_and_reshape_intrinsics(intrinsics, x_shape)
-    # 在这里矫正fx
+    # 深度图复制
     Z = tf.identity(depth) # 获取全像素的真实深度
+    # 计算X值
     X = Z * (x - cx) / fx # 获取x坐标
+    # 计算Y值
     Y = Z * (y - cy) / fy
+    # 合成点云图
     points = tf.stack([X, Y, Z], axis=-1)
 
     if jacobian:
@@ -78,14 +84,18 @@ def backproject(depth, intrinsics, jacobian=False):
 def project(points, intrinsics, jacobian=False):
     
     """ project point cloud onto image 将点云投影到图像上""" 
+    # 获取三维数据
     X, Y, Z = tf.unstack(points, num=3, axis=-1)
+    # 平滑深度值
     Z = tf.maximum(Z, MIN_DEPTH) # 获取最大深度
-
+    # 获取数据的长度，1*4*30*40
     x_shape = tf.shape(X) # 获取x数据的长度
+    # 获取新的fx,fy,cx,cy
     fx, fy, cx, cy = extract_and_reshape_intrinsics(intrinsics, x_shape) # 调整相机内参矩阵
-
+    # 计算x对应值的像素,在这里计算偏移值
     x = fx * (X / Z) + cx
     y = fy * (Y / Z) + cy
+    # 进行坐标合成 新坐标点 x, y
     coords = tf.stack([x, y], axis=-1)
 
     if jacobian:

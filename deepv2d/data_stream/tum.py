@@ -30,9 +30,10 @@ def get_TUM_data(data_path,sum_data_file_name):
     Args:
         data_path ([str]): 数据存在的路径 
     """
-    data_file_path = os.path.join(data_path,sum_data_file_name)
+    data_file_path = os.path.join(data_path, sum_data_file_name)
     print("==== {} ======".format(data_file_path))
     # 不存在综合数据就进行创建
+    # 在这里进行时间戳上的文件合并
     if not os.path.isfile(data_file_path):
         # 获取图像列表
         image_list = os.path.join(data_path, 'rgb.txt')
@@ -101,9 +102,14 @@ def fill_depth(depth):
     return grid
 # 将四元数组转换为旋转矩阵
 def quat2rotm(q):
-    """Convert quaternion into rotation matrix """
-    q /= np.sqrt(np.sum(q**2)) 
+    """
+    Convert quaternion into rotation matrix 
+    转换为捐助矩阵，主要是要是偏执计算
+    """
+    q /= np.sqrt(np.sum(q**2))
+    #  旋转矩阵
     x, y, z, s = q[:, 0], q[:, 1], q[:, 2], q[:, 3]
+    # 计算三个方向的旋转
     r1 = np.stack([1-2*(y**2+z**2), 2*(x*y-s*z), 2*(x*z+s*y)], axis=1)
     r2 = np.stack([2*(x*y+s*z), 1-2*(x**2+z**2), 2*(y*z-s*x)], axis=1)
     r3 = np.stack([2*(x*z-s*y), 2*(y*z+s*x), 1-2*(x**2+y**2)], axis=1)
@@ -111,9 +117,14 @@ def quat2rotm(q):
 
 # 将位姿转换为矩阵
 def pose_vec2mat(pvec, use_filler=True):
-    """Convert quaternion vector represention to SE3 group"""
+    """
+    Convert quaternion vector represention to SE3 group
+    将pose转换为se3李代数
+    """
+    # 提取位移和旋转
     t, q = pvec[np.newaxis, 0:3], pvec[np.newaxis, 3:7]
     R = quat2rotm(q)
+    # 位移矩阵
     t = np.expand_dims(t, axis=-1)
     # 最终的转换矩阵
     P = np.concatenate([R, t], axis=2)
@@ -229,10 +240,11 @@ class TUM_RGBD:
 
             # 访问数据文件夹，构造对应的数据
             images, depths, poses, color_intrinsics, depth_intrinsics = self._load_scan(scan)
-            color_intrinsics = color_intrinsics*self.resize 
+            # 注意这里的参数直接进行变换
+            #color_intrinsics = color_intrinsics*self.resize 
             depth_intrinsics = depth_intrinsics*self.resize
             # 构建索引表
-            self.build_data_map(images,depths,poses)
+            self.build_data_map(images, depths, poses)
             # 加载数据
             for i in range(r, len(images)-r, skip):
                 # some poses in scannet are nans

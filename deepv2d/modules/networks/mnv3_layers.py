@@ -332,7 +332,7 @@ def mnv3_block(input, k_s, expansion_ratio, output_dim, stride, is_train, name, 
             # 获取网络维度
             net_dim = int(net.get_shape().as_list()[-1])
             if in_dim == net_dim:
-                net += input
+                net = net + input
                 net = tf.identity(net, name='output')
 
         return net

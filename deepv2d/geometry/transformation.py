@@ -57,12 +57,18 @@ def cond_transform(cond, T1, T2):
 
 # SE3初始化
 class SE3:
+    """
+    三维变换基础转换类，特殊欧式群，将
+    https://blog.csdn.net/qq_28105413/article/details/86585485
+    """
     def __init__(self, upsilon=None, matrix=None, so3=None, translation=None, eq=None, internal=DEFAULT_INTERNAL):
+        
         self.eq = eq
         self.internal = internal
 
         if internal == 'matrix':
             if upsilon is not None:
+                # 获取李代数数据
                 self.G = se3_matrix_expm(upsilon)
             elif matrix is not None:
                 self.G = matrix
@@ -79,10 +85,15 @@ class SE3:
                 self.translation = translation
 
     def __call__(self, pt, jacobian=False):
-        """ Transform set of points """
+        """ 
+        Transform set of points 
+        将矩阵转换为se3
+        """
 
         if self.internal == 'matrix':
+            # 构建SE矩阵
             pt = tf.concat([pt, tf.ones_like(pt[...,:1])], axis=-1) # convert to homogenous
+            # 执行矩阵乘法
             pt = einsum(self.eq, self.G[..., :3, :], pt)
         
         elif self.internal == 'quaternion':
@@ -197,9 +208,11 @@ class SE3:
             return mat
     # 将深度图像，转换为(X，Y,Z)点云图
     def transform(self, depth, intrinsics, valid_mask=False, return3d=False):
+        # 根据深度图和相机内参映射到三维点云图
         pt = pops.backproject(depth, intrinsics) # 根据深度和相机内参获取三维点云
         pt_new = self.__call__(pt) # 获取新的三维点云图像
-        coords = pops.project(pt_new, intrinsics)
+        
+        coords = pops.project(pt_new, intrinsics) # 将矫正坐标重新投影到深度
         if return3d: 
             return coords, pt_new
         if valid_mask:
@@ -278,7 +291,9 @@ class EgoSE3Transformation(SE3):
 class VideoSE3Transformation(SE3):
     """ Stores collection of SE3 objects """
     def __init__(self, upsilon=None, matrix=None, so3=None, translation=None, internal=DEFAULT_INTERNAL):
+        # 调用父函数
         super(VideoSE3Transformation, self).__init__(upsilon, matrix, so3, translation, internal=internal)
+        # 注意这里设置的eq相当于设置了矩阵乘法
         self.eq = "aijk,ai...k->ai...j"
 
     def __call__(self, pt, inds=None, jacobian=False):
@@ -293,6 +308,7 @@ class VideoSE3Transformation(SE3):
 
     def gather(self, inds):
         if self.internal == 'matrix':
+            # 根据坐标筛选矩阵
             G = tf.gather(self.G, inds, axis=1)
             return VideoSE3Transformation(matrix=G, internal=self.internal)
         elif self.internal == 'quaternion':

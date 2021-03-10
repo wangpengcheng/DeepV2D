@@ -10,10 +10,13 @@ import numpy as np
 # scale of the scene through SfM, we report all results (both ours and all other approaches) 
 # using scale matched depth."
 def compute_scaling_factor(gt, pr, min_depth=0.5, max_depth=8.0):
+    # 真实值
     gt = np.array(gt, dtype=np.float64).reshape(-1)
+    # 估计值
     pr = np.array(pr, dtype=np.float64).reshape(-1)
 
     # only use valid depth values
+    # 筛选存在的值
     v = (gt > min_depth) & (gt < max_depth)
     return np.median(gt[v] / pr[v])
 
@@ -29,7 +32,7 @@ def scale_invariant(gt, pr):
     """
     gt = gt.reshape(-1)
     pr = pr.reshape(-1)
-
+    # 查找大于0.1的坐标点
     v = gt > 0.1
     gt = gt[v]
     pr = pr[v]
@@ -71,6 +74,7 @@ def compute_depth_errors(gt, pr, min_depth=0.1, max_depth=10.0):
    
     if isinstance(pr, list):
         scinv_list = []
+        # 遍历计算尺度缩放参数
         for i in range(len(gt)):
             scinv_list.append(scale_invariant(gt[i], pr[i]))
         scinv = np.mean(scinv_list)
