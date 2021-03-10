@@ -4,7 +4,7 @@ sys.path.append('deepv2d')
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
-
+from data_stream.nyu import NYU
 import cv2
 import os
 import time
@@ -42,13 +42,29 @@ def write_to_folder(images, intrinsics, test_id):
 
 
 def make_predictions(args):
+    """
+    进行初始化够造函数
+    Args:
+        args ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """
+    # 设置随机数种子
+
     # 读取参数
     cfg = config.cfg_from_file(args.cfg)
 
-    deepv2d = DeepV2D(cfg, args.model, use_fcrn=False, mode=args.mode)
+    deepv2d = DeepV2D(
+        cfg, 
+        args.model, 
+        use_fcrn=False, 
+        mode=args.mode
+        )
     # 进行初始化
     # init_op = tf.group(tf.global_variables_initializer(),
     #         tf.local_variables_initializer())
+
     # 设置运行环境
     set_gpus(cfg)
     # 开启运行
@@ -60,29 +76,26 @@ def make_predictions(args):
         depth_predictions, pose_predictions = [], []
         depth_groundtruth, pose_groundtruth = [], []
         # 创建数据集
+        test_sence_file = 'data/nyu/test_scenes.txt'
         # 构建数据加载器
-        db = TUM_RGBD(cfg.INPUT.RESIZE, args.dataset_dir, test=True,n_frames=5, r=2)
+        db = NYU(cfg.INPUT.RESIZE, args.dataset_dir, test_sence_file, test=False, n_frames=5, r=2, skip1 = 15)
         #提取数据集
         for test_id, test_blob in enumerate(db.test_set_iterator()):
             # 获取图像和相机位姿
-            images, intrinsics = test_blob['images'], test_blob['intrinsics']
+            images, intrinsics, poses = test_blob['images'], test_blob['intrinsics'], test_blob['poses']
             # 进行推理
-            depth_pred, poses_pred = deepv2d(images, intrinsics, iters=1)
-            # 
+            depth_pred  = deepv2d.inference(images, poses, intrinsics)
+            # 进行预测
             # use keyframe depth for evaluation
             depth_predictions.append(depth_pred[0])
-            
-            # BA-Net evaluates pose as the relative transformation between two frames
-            delta_pose = poses_pred[1] @ np.linalg.inv(poses_pred[0])
-            pose_predictions.append(delta_pose)
             # 添加真实数据
             depth_groundtruth.append(test_blob['depth'])
-            pose_groundtruth.append(test_blob['pose'])
+
 
     # 预测深度与位姿
-    predictions = (depth_predictions, pose_predictions)
+    predictions = depth_predictions
     # 真实值
-    groundtruth = (depth_groundtruth, pose_groundtruth)
+    groundtruth = depth_groundtruth
     # 返回预测值与真实值
     return groundtruth, predictions
 
@@ -95,6 +108,7 @@ def evaluate(groundtruth, predictions):
     pr_list = []
 
     num_test = len(predictions)
+    # 进行数据遍历
     for i in range(num_test):
         depth_gt = groundtruth[i]
         depth_pr = predictions[i]

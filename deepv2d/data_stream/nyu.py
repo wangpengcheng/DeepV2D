@@ -176,9 +176,8 @@ class NYU:
     NYU数据集加载类，主要用来加载数据集中的数据
     主要用来进行数据的加载与查找
     """
-    def __init__(self, resize, dataset_path, test=False, n_frames=5, r=2, scenes_file='data/nyu/train_scenes.txt', buffer_len = 100, load_thread_num = 4):
+    def __init__(self, resize, dataset_path, scenes_file='data/nyu/train_scenes.txt', test=False, skip1 = 10, n_frames=5, r=2, buffer_len = 100, load_thread_num = 4):
         """[summary]
-
         Args:
             resize ([type]): [description]
             dataset_path ([type]): [description]
@@ -200,7 +199,7 @@ class NYU:
         self.images_map = {}
         self.depths_map = {} 
         self.scenes_list_file = scenes_file
-        self.build_dataset_index(r=r, skip = 10)
+        self.build_dataset_index(r=r, skip = skip1)
         #self.check_files()
 
     def check_files(self):
@@ -325,6 +324,7 @@ class NYU:
        
         # 扫描场景名称
         scenes_names = self.get_dirs(self.scenes_list_file)
+        # 对文件夹进行排序
         scenes_names.sort()
         # 访问数据文件夹，并列举所有数据文件夹
         for scene in scenes_names:
@@ -332,7 +332,7 @@ class NYU:
             # 访问数据文件夹，构造对应的数据
             images, depths, poses, color_intrinsics, depth_intrinsics = self._load_scan(scene)
             # 注意这里的参数直接进行变换
-            color_intrinsics = color_intrinsics*self.resize
+            #color_intrinsics = color_intrinsics*self.resize
             # 
             depth_intrinsics = depth_intrinsics*self.resize
             
@@ -391,6 +391,7 @@ class NYU:
         
         # 遍历预加载的数据集
         for temp_data_blob in self.dataset_index:
+
             num_frames = temp_data_blob['n_frames']
             num_samples = self.n_frames - 1
             frameid = temp_data_blob['id']
@@ -398,23 +399,35 @@ class NYU:
             # 图片索引
             inds = np.arange(num_frames)
             inds = inds[~np.equal(inds, keyframe_index)]
-            inds = np.random.choice(inds, num_samples, replace=False)
             inds = [keyframe_index] + inds.tolist()
-            # 添加图片数据
-            images = []
-            for i in inds:
-                image = self.images[self.images_map[temp_data_blob['images'][i]]]
-                images.append(image)
 
-            # 转换图像
+            # 深度数据文件
+            depth_file = temp_data_blob['depth']
+            # 进行图像读取
+            depth = cv2.imread(depth_file, cv2.IMREAD_ANYDEPTH)
+            depth = cv2.resize(depth, (int(self.width), int(self.height)))
+            # 进行深度读取
+            depth = (depth.astype(np.float32)) / factor
+            # 深度平滑处理
+            filled = fill_depth(depth)
+            # 读取图像
+            images = []
+            poses = []
+            # 读取rgb
+            for i in inds:
+                # 添加图像
+                image_file = temp_data_blob['images'][i]
+                img = cv2.imread(image_file)
+                img = cv2.resize(img, (int(self.width), int(self.height)))
+                images.append(img)
+                # 添加位姿
+                pose_vec = temp_data_blob['poses'][i]
+                pose_mat = pose_vec2mat(pose_vec)
+                poses.append(np.linalg.inv(pose_mat))
+           
+            # 转换图像整合
             images = np.stack(images, axis=0).astype(np.uint8)
-            # 获取深度信息
-            depth_file_name = temp_data_blob['depth']
-            # 读取深度信息
-            depth = self.depths[self.depths_map[depth_file_name]]
-            # 获取位姿信息
-            pose_vec = temp_data_blob['poses'][keyframe_index]
-            pose = pose_vec2mat(pose_vec)
+
             K = temp_data_blob['intrinsics']
             # 相机内参，转换为向量矩阵
             kvec = K.copy()
@@ -423,7 +436,7 @@ class NYU:
             data_blob = {
                     'images': images,
                     'depth': depth,
-                    'pose': pose,
+                    'poses': poses,
                     'intrinsics': intrinsics,
             }
             yield data_blob

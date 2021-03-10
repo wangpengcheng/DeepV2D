@@ -433,9 +433,8 @@ class DepthNetwork(object):
                         for i in range(self.cfg.HG_2D_COUNT):
                             with tf.variable_scope("2d_hg1_%d"%i):
                                 # 沙漏网络,4*120*160*128
-                                net = hg.fast_res_hourglass_2d(net, self.cfg.HG_2D_DEPTH_COUNT, 64)
-                        # # 沙漏网络,4*120*160*128
-                        # net = hg.hourglass_2d(net, 4, 64) # 52
+                                #net = hg.fast_res_hourglass_2d(net, self.cfg.HG_2D_DEPTH_COUNT, 64)
+                                net = hg.hourglass_2d(net, 4, 64) # 52
                         # # 沙漏网络，4*120*160*64
                         # net = hg.hourglass_2d(net, 4, 64) # 52
 
@@ -791,9 +790,9 @@ class DepthNetwork(object):
         Returns:
             [type]: 误差值
         """
-        # 获取形状
+        # 获取深度图的大小和形状
         b_gt, h_gt, w_gt, _ = depth_gt.get_shape().as_list()
-
+        # 初始化loss
         total_loss = 0.0
         # 遍历推理出来的深度图想
         for i, logits in enumerate(self.pred_logits):
@@ -804,7 +803,7 @@ class DepthNetwork(object):
             # 维度转换
             pred = tf.squeeze(pred, axis=-1)
             gt = tf.squeeze(depth_gt, axis=-1)
-            # 所有深度大于0的值
+            # 所有深度大于0的值 ，对于负数不进行统计
             valid = tf.to_float(gt>0.0)
             # 计算所有元素的均值
             s = 1.0 / (tf.reduce_mean(valid) + 1e-8)
@@ -815,14 +814,17 @@ class DepthNetwork(object):
             vy = valid[:, 1:, :] * valid[:, :-1, :]
 
             # take l1 smoothness loss where gt depth is missing
+            # 计算l1平滑系数
             loss_smooth = \
                 tf.reduce_mean((1-vx)*tf.abs(gx)) + \
                 tf.reduce_mean((1-vy)*tf.abs(gy))
-
+            # 计算
             loss_depth = s*tf.reduce_mean(valid*tf.abs(gt-pred))
+            # 计算loss
             loss_i = self.cfg.TRAIN.SMOOTH_W * loss_smooth + loss_depth
-
+            # 计算权重
             w = .5**(len(self.pred_logits)-i-1)
+            # 计算总loss
             total_loss += w * loss_i
 
         if log_error:
