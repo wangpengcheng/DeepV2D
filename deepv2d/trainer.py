@@ -381,9 +381,9 @@ class DeepV2DTrainer(object):
                     # 进行中间参数保存，保存的模型
                     if ckpt is not None:
                         motion_saver.restore(sess, ckpt)
-                # 存储的临时文件
-                if restore_ckpt is not None:
-                    saver.restore(sess, restore_ckpt)
+                # # 存储的临时文件
+                # if restore_ckpt is not None:
+                #     saver.restore(sess, restore_ckpt)
                     # 加载存储的临时文件
             # 加载已经存在的模型
             if cfg.STORE.IS_USE_RESRORE:
