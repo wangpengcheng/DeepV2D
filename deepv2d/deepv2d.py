@@ -538,11 +538,20 @@ class DeepV2D:
                 )
         
         return self.depths
-        
+
     # call基本函数,用来执行推理
-    def __call__(self, images, intrinsics=None, iters=2, viz=False):
-        n_frames = len(images) # 8张图像
-        self.images = np.stack(images, axis=0) # 将所有图片进行维度叠加
+    def __call__(
+        self, 
+        images, 
+        intrinsics=None, 
+        iters=2, 
+        viz=False
+        ):
+
+        # 8张图像
+        n_frames = len(images) 
+        # 将所有图片进行维度叠加
+        self.images = np.stack(images, axis=0) 
 
         if intrinsics is None:
             # initialize intrinsics

@@ -141,12 +141,14 @@ def main(args):
                 # 计算时间
                 time_start=time.time()
                 # 进行推理
-                depths = deepv2d.inference(temp_images,temp_poses,temp_intrinsics)
+                depths = deepv2d.inference(temp_images, temp_poses, temp_intrinsics)
                 time_end=time.time()
                 print('time cost',time_end-time_start,'s')
                 if i != 0:
                     time_sum = time_sum + (time_end-time_start)
+                # 关键帧
                 key_frame_depth=depths[0]
+                # 关键
                 key_frame_image = temp_images[int(frames_len/2)]
                 
                 image_depth = vis.create_image_depth_figure(key_frame_image,key_frame_depth)
@@ -158,7 +160,7 @@ def main(args):
                 # 写入图片
                 cv2.imwrite("{}/{}.png".format(result_out_dir,i),image_depth)
                 print("wirte image:{}/{}.png".format(result_out_dir,i))
-                
+
             print("{} images,totle time: {} s, avg time: {} s".format(iter_number-1,time_sum,time_sum/(iter_number-1)))
         elif is_calibrated:
             depths, poses = deepv2d(images, intrinsics, viz=True, iters=args.n_iters)

@@ -17,6 +17,7 @@ def gray2rgb(im, cmap='gray'):
 
 def normalize_depth_for_display(depth, pc=98, crop_percent=0, normalizer=None, cmap='gray'):
     # convert to disparity
+    # 将深度图图像映射到0~1
     vinds = depth>0
     depth = 1./(depth + 1)
 
