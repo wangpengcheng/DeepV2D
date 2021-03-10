@@ -6,7 +6,8 @@ MIN_DEPTH = 0.1
 # 按照形状进行网格化
 def coords_grid(shape, homogeneous=True):
     """ grid of pixel coordinates 获取每个像素的网格坐标点"""
-    xx,yy= torch.meshgrid(torch.arange(shape[-2]),torch.arange(shape[-1]))
+    # 进行平滑操作
+    xx, yy= torch.meshgrid(torch.arange(shape[-2]),torch.arange(shape[-1]))
     xx = xx.float()
     yy = yy.float()
     if homogeneous:
