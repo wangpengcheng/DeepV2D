@@ -43,13 +43,13 @@ def main(args):
     # 已存在模型位置
     restore_ckpt_path = cfg.STORE.RESRORE_PATH
 
-
+    db = NYU(cfg.INPUT.RESIZE, args.dataset_dir, r=args.r)
     solver = DeepV2DTrainer(cfg)
     ckpt = None
     # 注意这里直接使用tfrecords进行训练
     if args.restore is not None:
-        solver.train(args.tfrecords, cfg, stage=2, restore_ckpt=restore_ckpt_path, num_gpus=args.num_gpus)
-
+        #solver.train(args.tfrecords, cfg, stage=2, restore_ckpt=restore_ckpt_path, num_gpus=args.num_gpus)
+        solver.train(db, cfg, stage=2, restore_ckpt=restore_ckpt_path, num_gpus=args.num_gpus)
     else:
         for stage in [1, 2]:
             ckpt = solver.train(args.tfrecords, cfg, stage=stage, ckpt=ckpt, num_gpus=args.num_gpus)
@@ -68,6 +68,7 @@ if __name__ == '__main__':
     parser.add_argument('--cfg', default='cfgs/nyu.yaml', help='path to yaml config file')
     parser.add_argument('--tfrecords', default='datasets/nyu_train.tfrecords', help='path to tfrecords training file')
     parser.add_argument('--restore',  help='use restore checkpoint')
+    parser.add_argument('--dataset_dir', default='data/nyu2', help='number of gpus to use')
     parser.add_argument('--num_gpus',  type=int, default=1, help='number of gpus to use')
     parser.add_argument('--r', type=int, default=2, help='frame radius') # 帧半径
     args = parser.parse_args()

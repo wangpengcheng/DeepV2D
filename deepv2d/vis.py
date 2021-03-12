@@ -10,8 +10,11 @@ from multiprocessing import Process, Queue
 import matplotlib.pyplot as plt
 
 def gray2rgb(im, cmap='gray'):
+    # 获取彩色图像
     cmap = plt.get_cmap(cmap)
+    # rgba 的彩色图像映射
     rgba_img = cmap(im.astype(np.float32))
+    # 转换为rgb图像
     rgb_img = np.delete(rgba_img, 3, 2)
     return rgb_img
 
@@ -26,14 +29,17 @@ def normalize_depth_for_display(depth, pc=98, crop_percent=0, normalizer=None, c
 
     depth = (depth - z2) / (z1 - z2)
     depth = np.clip(depth, 0, 1)
-
+    # 将图像映射到灰度
     depth = gray2rgb(depth, cmap=cmap)
     keep_H = int(depth.shape[0] * (1-crop_percent))
     depth = depth[:keep_H]
     return depth
 
 def create_image_depth_figure(image, depth):
+    # 将均一化的图像映射到0~255
     depth_image = 255 * normalize_depth_for_display(depth)
+    
+    # 将图像进行连接
     figure = np.concatenate([image, depth_image], axis=1)
     return figure
 

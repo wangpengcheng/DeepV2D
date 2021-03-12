@@ -295,7 +295,7 @@ class DBDataLayer:
         training_set = tf.data.Dataset.from_generator(lambda: training_generator, generator_data_type)
         training_set = training_set.map(prepare_inputs)
         
-        training_set = training_set.prefetch(buffer_size=20)
+        training_set = training_set.prefetch(buffer_size=64)
         training_set = training_set.batch(batch_size)
         self.training_iterator = training_set.make_initializable_iterator()
         

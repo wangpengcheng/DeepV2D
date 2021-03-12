@@ -16,10 +16,10 @@ from data_stream.nyu import NYU
 from data_stream.kitti import KittiRaw
 
 
-def to_tfrecord(data_blob):
+def to_tfrecord(data_blob, xi ):
     """Write (image, depth) pair to tfrecords example"""
 
-    id = np.array(data_blob[6], dtype=np.int32).tobytes()
+    id = np.array(xi, dtype=np.int32).tobytes()
     dim = np.array([5, 240, 320, 3], dtype=np.int32).tobytes()
 
     images = np.array(data_blob[0], dtype=np.uint8).tobytes()
@@ -55,8 +55,7 @@ def main_nyu(args):
         if i%100 == 0:
             print("Writing example %d of %d"%(i, len(ix)))
         data_blob = db[ix[i]]
-        #data_blob['id'] = ix[i]
-        record = to_tfrecord(data_blob)
+        record = to_tfrecord(data_blob, ix[i])
         tfwriter.write(record.SerializeToString())
 
     tfwriter.close()
@@ -67,6 +66,7 @@ def main_kitti(args):
     np.random.seed(1234)
 
     db = KittiRaw(args.dataset_dir)
+    # 构建数组
     ix = np.arange(len(db))
     np.random.shuffle(ix)
 
@@ -75,8 +75,7 @@ def main_kitti(args):
         if i%100 == 0:
             print("Writing example %d of %d"%(i, len(ix)))
         data_blob = db[ix[i]]
-        data_blob['id'] = ix[i]
-        record = to_tfrecord(data_blob)
+        record = to_tfrecord(data_blob, ix[i])
         tfwriter.write(record.SerializeToString())
 
     tfwriter.close()

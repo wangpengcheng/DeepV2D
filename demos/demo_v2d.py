@@ -1,7 +1,7 @@
 # -*- coding:UTF-8 -*-
 import sys
 sys.path.append('deepv2d')
-
+sys.path.append('evaluation')
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
@@ -18,14 +18,12 @@ from deepv2d import vis
 from core import config
 from deepv2d import DeepV2D
 from utils.my_utils import set_gpus
+import eval_utils 
 
-gpu_no = '0' # or '1'
-os.environ["CUDA_VISIBLE_DEVICES"] = gpu_no
-
-fx = 517.3
-fy = 516.5
-cx = 318.6
-cy = 255.3
+fx = 535.4
+fy = 539.2
+cx = 320.1
+cy = 247.6
 # fx = 6.359763793945312500e+02
 # fy = 5.777985229492187500e+02
 # cx = 5.292523803710937500e+02
@@ -60,10 +58,11 @@ def load_test_sequence(path, n_frames=-1):
 
 def load_sorted_test_sequence(data_path, inference_file_name, scale):
 
-    image_names,depths_names,pre_poses = get_data_from_sum_file(inference_file_name)
+    image_names, depths_names, pre_poses = get_data_from_sum_file(inference_file_name)
     
     # 文件参数
     image_names = [data_path+'/'+i for i in image_names ]
+    depths_names = [data_path+'/'+i for i in depths_names ]
     images= []
     # 加载所有图片信息
     for image_name in image_names:
@@ -76,13 +75,19 @@ def load_sorted_test_sequence(data_path, inference_file_name, scale):
     for pre_pose in pre_poses:
         pose_mat = pose_vec2mat(pre_pose)
         poses.append(np.linalg.inv(pose_mat))
-
+    depths = []
+    for depth_name in depths_names:
+        depth = cv2.imread(depth_name, cv2.IMREAD_ANYDEPTH)
+        depth = cv2.resize(depth, (int(640*scale), int(480*scale)))
+        depth = (depth.astype(np.float32))/factor
+        depths.append(depth)
+    print("load rgb depths: OK")
     #相机内参
     my_intrinsics = np.loadtxt(os.path.join(data_path, 'intrinsics.txt'))
     # 注意这里的相机内参缩放
     my_intrinsics = my_intrinsics*scale 
     
-    return images, poses, my_intrinsics
+    return images, poses, depths, my_intrinsics
 
 def main(args):
 
@@ -126,7 +131,7 @@ def main(args):
         # 根据相机是否标定，来执行函数
         if is_pose:
             # 进行参数加载
-            images ,poses, intrinsics = load_sorted_test_sequence(args.sequence, args.inference_file_name, cfg.INPUT.RESIZE)
+            images ,poses, depths_gt, intrinsics = load_sorted_test_sequence(args.sequence, args.inference_file_name, cfg.INPUT.RESIZE)
             # 根据数据进行迭代，根据前面n帧的内容，推断最后帧的内容,注意这里推理的是中间关键帧的内容
             iter_number = int(len(images)/frames_len)
             time_sum =0.0
@@ -147,18 +152,24 @@ def main(args):
                 if i != 0:
                     time_sum = time_sum + (time_end-time_start)
                 # 关键帧
-                key_frame_depth=depths[0]
-                # 关键
-                key_frame_image = temp_images[int(frames_len/2)]
-                
-                image_depth = vis.create_image_depth_figure(key_frame_image,key_frame_depth)
+                key_frame_depth = depths[0]
+                # 关键rgb帧
+                key_frame_image = temp_images[0]
+                # 关键深度帧
+                depth_gt = depths_gt[i*frames_len]
+                # 计算深度缩放
+                scalor = eval_utils.compute_scaling_factor(depth_gt, key_frame_depth, min_depth=0.2, max_depth=8.0)
+                key_frame_depth =  scalor * key_frame_depth
+                # 对深度图像进行平滑处理
+                # key_frame_depth = cv2.medianBlur(key_frame_depth,5)
+                image_depth = vis.create_image_depth_figure(key_frame_image, key_frame_depth)
                 # 创建结果文件夹
                 result_out_dir = "{}/{}".format(args.sequence,"inference_result")
                 # 检测路径文件夹
                 if not os.path.exists(result_out_dir):
                     os.makedirs(result_out_dir)
                 # 写入图片
-                cv2.imwrite("{}/{}.png".format(result_out_dir,i),image_depth)
+                cv2.imwrite("{}/{}.png".format(result_out_dir, i), image_depth)
                 print("wirte image:{}/{}.png".format(result_out_dir,i))
 
             print("{} images,totle time: {} s, avg time: {} s".format(iter_number-1,time_sum,time_sum/(iter_number-1)))
