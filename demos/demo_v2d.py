@@ -164,7 +164,7 @@ def main(args):
                 # key_frame_depth = cv2.medianBlur(key_frame_depth,5)
                 image_depth = vis.create_image_depth_figure(key_frame_image, key_frame_depth)
                 # 创建结果文件夹
-                result_out_dir = "{}/{}".format(args.sequence,"inference_result")
+                result_out_dir = "{}/{}".format(args.sequence, "inference_result")
                 # 检测路径文件夹
                 if not os.path.exists(result_out_dir):
                     os.makedirs(result_out_dir)

@@ -349,7 +349,7 @@ class DeepV2DTrainer(object):
         init_op = tf.group(tf.global_variables_initializer(),
                    tf.local_variables_initializer())
         # 设置存储频率
-        SUMMARY_FREQ = 10
+        SUMMARY_FREQ = 100
         # 设置日志频率
         LOG_FREQ = 100
         # 设置checkpoint中间输出频率
@@ -381,9 +381,6 @@ class DeepV2DTrainer(object):
                     # 进行中间参数保存，保存的模型
                     if ckpt is not None:
                         motion_saver.restore(sess, ckpt)
-                # # 存储的临时文件
-                # if restore_ckpt is not None:
-                #     saver.restore(sess, restore_ckpt)
                     # 加载存储的临时文件
                 # 加载已经存在的模型
             if cfg.STORE.IS_USE_RESRORE:
