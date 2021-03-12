@@ -157,12 +157,16 @@ def transform44(l):
 
 
 def fill_depth(depth):
+    # 获取宽和高
     x, y = np.meshgrid(np.arange(depth.shape[1]).astype("float32"),
                        np.arange(depth.shape[0]).astype("float32"))
+    # 获取相关坐标
     xx = x[depth > 0]
     yy = y[depth > 0]
     zz = depth[depth > 0]
-
+    # if (xx is None) or (yy is None) or (zz is None):
+    #     return depth
+    
     grid = interpolate.griddata((xx, yy), zz.ravel(),
                                 (x, y), method='nearest')
     return grid
@@ -231,47 +235,51 @@ class TUM_RGBD:
         return [self.n_frames, self.height, self.width]
     # 获取数据
     def __getitem__(self, index):
-        # 获取索引
-        data_blob = self.dataset_index[index]
-        num_frames = data_blob['n_frames']
-        # 图片样例数量
-        num_samples = self.n_frames - 1
+        try:
+            # 获取索引
+            data_blob = self.dataset_index[index]
+            num_frames = data_blob['n_frames']
+            # 图片样例数量
+            num_samples = self.n_frames - 1
 
-        frameid = data_blob['id']
-        
-        keyframe_index = num_frames // 2 # 选取中间帧作为关键帧
-        # 创建关键帧
-        inds = np.arange(num_frames)
-        inds = inds[~np.equal(inds, keyframe_index)]
-        
-        inds = np.random.choice(inds, num_samples, replace=False)
-        # 将关键帧提取到开头
-        inds = [keyframe_index] + inds.tolist()
-        # 读取图像
-        images = []
-        for i in inds:
-            image = self.images[self.images_map[data_blob['images'][i]]]
-            images.append(image)
-        # 转换位姿信息
-        poses = []
-        for i in inds:
-            pose_vec = data_blob['poses'][i]
-            pose_mat = pose_vec2mat(pose_vec)
-            poses.append(np.linalg.inv(pose_mat))
-        # 转换图像和深度信息
-        images = np.stack(images, axis=0).astype(np.uint8)
-        poses = np.stack(poses, axis=0).astype(np.float32)
-        # 获取深度信息
-        depth_file = data_blob['depth']
-        # 读取深度信息
-        depth = self.depths[self.depths_map[depth_file]]
-        filled = fill_depth(depth)
-        K = data_blob['intrinsics']
-        # 相机内参，转换为向量矩阵
-        kvec = K.copy()
+            frameid = data_blob['id']
+            
+            keyframe_index = num_frames // 2 # 选取中间帧作为关键帧
+            # 创建关键帧
+            inds = np.arange(num_frames)
+            inds = inds[~np.equal(inds, keyframe_index)]
+            
+            inds = np.random.choice(inds, num_samples, replace=False)
+            # 将关键帧提取到开头
+            inds = [keyframe_index] + inds.tolist()
+            # 读取图像
+            images = []
+            for i in inds:
+                image = self.images[self.images_map[data_blob['images'][i]]]
+                images.append(image)
+            # 转换位姿信息
+            poses = []
+            for i in inds:
+                pose_vec = data_blob['poses'][i]
+                pose_mat = pose_vec2mat(pose_vec)
+                poses.append(np.linalg.inv(pose_mat))
+            # 转换图像和深度信息
+            images = np.stack(images, axis=0).astype(np.uint8)
+            poses = np.stack(poses, axis=0).astype(np.float32)
+            # 获取深度信息
+            depth_file = data_blob['depth']
+            # 读取深度信息
+            depth = self.depths[self.depths_map[depth_file]]
+            myfilled = fill_depth(depth)
+            K = data_blob['intrinsics']
+            # 相机内参，转换为向量矩阵
+            kvec = K.copy()
 
-        depth = depth[..., None]
-        return images, poses, depth, filled, filled, kvec, frameid
+            depth = depth[..., None]
+            return images, poses, depth, myfilled, myfilled, kvec, frameid
+        except BaseException:
+            print(" error ", index, depth_file)
+        
 
 
     def __iter__(self):
