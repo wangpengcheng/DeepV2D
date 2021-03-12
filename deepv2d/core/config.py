@@ -94,6 +94,7 @@ __C.STRUCTURE.USE_FAST_RESNET = True # 是否使用快速卷积
 
 __C.STRUCTURE.TRAIN = edict()
 # small smoothing loss over missing depth values
+
 __C.STRUCTURE.TRAIN.SMOOTH_W = 0.02
 
 __C.MOTION = edict()
