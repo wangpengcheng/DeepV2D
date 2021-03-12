@@ -353,7 +353,7 @@ class DeepV2DTrainer(object):
         # 设置日志频率
         LOG_FREQ = 100
         # 设置checkpoint中间输出频率
-        CHECKPOINT_FREQ = 2000
+        CHECKPOINT_FREQ = 200
 
         sess = set_gpus(cfg)
 
@@ -382,7 +382,7 @@ class DeepV2DTrainer(object):
                     if ckpt is not None:
                         motion_saver.restore(sess, ckpt)
                     # 加载存储的临时文件
-            # 加载已经存在的模型
+                # 加载已经存在的模型
             if cfg.STORE.IS_USE_RESRORE:
                 saver.restore(sess, cfg.STORE.RESRORE_PATH)
             

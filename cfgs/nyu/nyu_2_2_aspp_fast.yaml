@@ -2,8 +2,6 @@
 INPUT:
   FRAMES: 5
   HEIGHT: 480
-  WIDTH: 640
-  SAMPLES: 3
   SAMPLES: 4 # 取样报道
   SCALES: [1.0, 1.1, 1.2] # 缩放参数
   RESIZE: 0.5

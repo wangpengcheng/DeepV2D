@@ -103,7 +103,8 @@ class DeepV2D:
         self.sess = sess
         # 初始化所有变脸
         sess.run(tf.global_variables_initializer())
-        # 进行存储
+        sess.run(tf.local_variables_initializer())
+        # 进行模型恢复
         self.saver.restore(self.sess, self.ckpt)
 
         if self.use_fcrn:
