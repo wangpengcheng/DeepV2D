@@ -60,7 +60,7 @@ def load_test_sequence(path, n_frames=-1):
 
 def load_sorted_test_sequence(data_path, inference_file_name, scale):
 
-    image_names,depths_names,pre_poses = get_data_from_sum_file(inference_file_name)
+    image_names, depths_names, pre_poses = get_data_from_sum_file(inference_file_name)
     
     # 文件参数
     image_names = [data_path+'/'+i for i in image_names ]
@@ -126,7 +126,7 @@ def main(args):
         # 根据相机是否标定，来执行函数
         if is_pose:
             # 进行参数加载
-            images ,poses, intrinsics = load_sorted_test_sequence(args.sequence, args.inference_file_name, cfg.INPUT.RESIZE)
+            images , poses, intrinsics = load_sorted_test_sequence(args.sequence, args.inference_file_name, cfg.INPUT.RESIZE)
             # 根据数据进行迭代，根据前面n帧的内容，推断最后帧的内容,注意这里推理的是中间关键帧的内容
             iter_number = int(len(images)/frames_len)
             time_sum =0.0
@@ -150,10 +150,10 @@ def main(args):
                 key_frame_depth=depths[0]
                 # 关键
                 key_frame_image = temp_images[int(frames_len/2)]
-                
-                image_depth = vis.create_image_depth_figure(key_frame_image,key_frame_depth)
+                # 对图像进行合并
+                image_depth = vis.create_image_depth_figure(key_frame_image, key_frame_depth)
                 # 创建结果文件夹
-                result_out_dir = "{}/{}".format(args.sequence,"inference_result")
+                result_out_dir = "{}/{}".format(args.sequence, "inference_result")
                 # 检测路径文件夹
                 if not os.path.exists(result_out_dir):
                     os.makedirs(result_out_dir)

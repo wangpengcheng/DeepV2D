@@ -119,7 +119,7 @@ def evaluate(groundtruth, predictions):
         depth_gt = depth_gt[crop[0]:crop[1], crop[2]:crop[3]]
 
         # scale predicted depth to match gt
-        scalor = eval_utils.compute_scaling_factor(depth_gt, depth_pr, min_depth=0.8, max_depth=10.0)
+        scalor = eval_utils.compute_scaling_factor(depth_gt, depth_pr, min_depth=0.2, max_depth=10.0)
         depth_pr = scalor * depth_pr
 
         gt_list.append(depth_gt)
