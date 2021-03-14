@@ -99,7 +99,7 @@ def pose_regressor_stack(image_star, images, sc=2):
     # 冲新调整数据为:1x640*480*4*8；注意这里将通道中的数据进行了混合
     images = tf.reshape(images, [batch, height, width, 3*(frames+1)])
     # 将图像尺寸缩放到原来的一半
-    with tf.device('/cpu:0'):
+    with tf.device('/XLA_CPU:0'):
         inputs = tf.image.resize_area(images, [height//sc, width//sc])
 
     with tf.variable_scope('pose') as sc:
@@ -158,7 +158,7 @@ def pose_regressor_indv(image1, image2, sc=2):
     wd = image2.get_shape().as_list()[2]
     inputs = tf.concat([image1, image2], axis=-1)
 
-    with tf.device('/cpu:0'):
+    with tf.device('/XLA_CPU:0'):
         # 进行缩放
         inputs = tf.image.resize_area(inputs, [ht//sc, wd//sc])
 

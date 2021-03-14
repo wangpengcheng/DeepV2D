@@ -3,7 +3,7 @@ import tensorflow as tf
 with tf.device('/cpu:0'):
     a = tf.constant([1.0, 2.0, 3.0], shape=[3], name='a')
     b = tf.constant([1.0, 2.0, 3.0], shape=[3], name='b')
-with tf.device('/gpu:0'):
+with tf.device("/device:XLA_GPU:0"):
     c = a + b
 
 # 注意：allow_soft_placement=True表明：计算设备可自行选择，如果没有这个参数，会报错。

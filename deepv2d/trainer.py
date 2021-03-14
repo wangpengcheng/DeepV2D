@@ -58,7 +58,7 @@ class DeepV2DTrainer(object):
             # 创建位姿估计网络
             motion_net = MotionNetwork(cfg.MOTION, bn_is_training=True, reuse=gpu_id>0)
 
-            with tf.device('/gpu:%d' % gpu_id):
+            with tf.device('/device:XLA_GPU:%d' % gpu_id):
                 # 获取深度信息
                 depth_input = tf.expand_dims(depth_filled, 1)
                 # 前向计算
@@ -186,7 +186,7 @@ class DeepV2DTrainer(object):
                 rnd = tf.random_uniform([], 0, 1)
                 depth_input = tf.cond(rnd<input_prob, lambda: depth_filled, lambda: depth_pred)
 
-            with tf.device('/gpu:%d' % gpu_id):
+            with tf.device('/device:XLA_GPU:%d' % gpu_id):
                 if cfg.MOTION.USE_MOTION:
                     # 位姿估计网络
                     # 前向推理获取位姿矩阵，和相机参数
@@ -381,12 +381,9 @@ class DeepV2DTrainer(object):
                     # 进行中间参数保存，保存的模型
                     if ckpt is not None:
                         motion_saver.restore(sess, ckpt)
-<<<<<<< HEAD
-=======
                 # # 存储的临时文件
                 # if restore_ckpt is not None:
                 #     saver.restore(sess, restore_ckpt)
->>>>>>> 8318d3aebca61f04a4ae415db560649cf1beb49c
                     # 加载存储的临时文件
             # 加载已经存在的模型
             if cfg.STORE.IS_USE_RESRORE:
