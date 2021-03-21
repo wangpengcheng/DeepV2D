@@ -96,7 +96,7 @@ class DepthModule(nn.Module):
         # extract 2d feature maps from images and build cost volume # 进行编码，获取2d的图像信息
         # 进行图像编码，获取特征图 1*4*120*160*32
          # 在第5个通道上进行分离，获取数据
-        batch, frames, channel, ht, wd= images.shape
+        batch, frames, channel, ht, wd = images.shape
         # 将其降低维度为4维 假设数据为1*4*480*640*3->4*480*640*3 方便卷积操作
         images = torch.reshape(images, [batch*frames, 3, ht, wd]) # 调整输入维度为图片数量*高*宽*3
         # 获取编码图片
@@ -107,13 +107,13 @@ class DepthModule(nn.Module):
         else:
             fmaps = torch.reshape(fmaps, [batch, frames, 32, ht//8, wd//8]) # 1 4 32 30 40 
         # #反投影，获取对应坐标对上的反向投影插值 1 4 30 40 32 64
-        volume = operators.backproject_avg(Ts, depths, intrinsics, fmaps, self.back_project ,adj_list)
+        volume = operators.backproject_avg(Ts, depths, intrinsics, fmaps, self.back_project, adj_list)
         # volume = torch.rand(1,4,30,40,32,64)
         #volume = volume.permute(0, 1, 5, 4, 2, 3)
         # 
-        fmaps = torch.reshape(fmaps,[batch,frames,32, 1 ,ht//8 ,wd//8])
+        fmaps = torch.reshape(fmaps, [batch, frames, 32, 1, ht//8, wd//8])
 
-        volume = fmaps.repeat(1,1,2,32,1,1)
+        volume = fmaps.repeat(1, 1, 2, 32, 1, 1)
         # pred = 
         # 进行编码模块,将数据添加进去
         pred = self.decoder(volume) # 1 32 240 320

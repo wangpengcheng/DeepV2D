@@ -68,11 +68,12 @@ def backproject_avg(
     coords1 = Tii.transform(depths, intrinsics) # 进行坐标转换，转换为x,y,z的三维空间坐标点
     coords2 = Tij.transform(depths, intrinsics) # 坐标2
     # 1*4*30*40*32
-    fmap1 = my_gather(fmaps, ii, dim=1).permute(0,1,3,4,2) # 获取数组切片，主要是获取ii中的数据
-    fmap2 = my_gather(fmaps, jj, dim=1).permute(0,1,3,4,2) # 进行数据转换
+    fmap1 = my_gather(fmaps, ii, dim=1).permute(0, 1, 3, 4, 2) # 获取数组切片，主要是获取ii中的数据
+    fmap2 = my_gather(fmaps, jj, dim=1).permute(0, 1, 3, 4, 2) # 进行数据转换
+    
     if use_cuda_backproject:
         # 进行数据合并
-        coords = torch.cat([coords1, coords2],dim = -1)
+        coords = torch.cat([coords1, coords2], dim = -1)
         # 进行
         coords = torch.reshape(coords, [batch*num, dd, ht, wd, 2, 2]) # 4 32 30 40 2 2
         # 

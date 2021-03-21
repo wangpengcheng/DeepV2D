@@ -40,14 +40,14 @@ class BackProject(Module):
     def forward(self, input, coords):
         return BackProjectFunction.apply(input, coords)
 
-if __name__ == '__main__':
+# if __name__ == '__main__':
     
-    # 创建特征图
-    fmaps = torch.load("./coords.pt")
-    # 坐标 
-    coords = torch.load("./fmaps_stack.pt")
-    dense1 = BackProject()
+#     # 创建特征图
+#     fmaps = torch.load("./coords.pt")
+#     # 坐标 
+#     coords = torch.load("./fmaps_stack.pt")
+#     dense1 = BackProject()
     
-    a = dense1(fmaps.cuda(), coords.cuda())
+#     a = dense1(fmaps.cuda(), coords.cuda())
 
-    print(np.all(a.cpu().detach().numpy())==0)
+#     print(np.all(a.cpu().detach().numpy())==0)
