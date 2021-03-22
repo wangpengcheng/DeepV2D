@@ -117,7 +117,7 @@ def main(args):
     with tf.Session() as sess:
 
         deepv2d.set_session(sess)
-        summary_writer = tf.summary.FileWriter('./log/', sess.graph)
+        #summary_writer = tf.summary.FileWriter('./log/', sess.graph)
         #加载图像和相机位姿初始值
         #call deepv2d on a video sequence
         # 加载测试数据集
