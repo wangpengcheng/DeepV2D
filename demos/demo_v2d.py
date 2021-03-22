@@ -16,7 +16,8 @@ from data_stream.tum import *
 from utils.count import * 
 from deepv2d import vis
 from core import config
-from deepv2d import DeepV2D
+from deepv2d_clear import DeepV2D
+#from deepv2d import DeepV2D
 from utils.my_utils import set_gpus
 import eval_utils 
 
@@ -110,7 +111,7 @@ def main(args):
     frames_len = args.n_frames
     #build the DeepV2D graph
     # 构建深度推理图
-    deepv2d = DeepV2D(cfg, args.model, use_fcrn=args.fcrn, is_calibrated=is_calibrated, mode=args.mode)
+    deepv2d = DeepV2D(cfg, args.model, mode=args.mode)
     
     set_gpus(cfg)
     
@@ -173,6 +174,8 @@ def main(args):
                 print("wirte image:{}/{}.png".format(result_out_dir,i))
 
             print("{} images,totle time: {} s, avg time: {} s".format(iter_number-1,time_sum,time_sum/(iter_number-1)))
+            dp_name = "deep_model.pb"
+            deepv2d.toPb(dp_name)
         elif is_calibrated:
             depths, poses = deepv2d(images, intrinsics, viz=True, iters=args.n_iters)
         else:

@@ -3,7 +3,7 @@
 
 import numpy as np
 import time
-import vtk
+#import vtk
 import os
 
 from multiprocessing import Process, Queue

@@ -1,6 +1,6 @@
 # nyu推理测试脚本
 # 主要是进行推理和测试时间
-python ./demos/demo_v2d.py --cfg=cfgs/nyu/nyu_2_2_resnet_resnet.yaml  --model=checkpoints/nyu/resnet_resnet2/_stage_2.ckpt --use_pose --sequence=data/nyu2/bedroom_0129 --inference_file_name=data/nyu2/bedroom_0129/rgb_depth_ground.txt
+python ./demos/demo_v2d.py --cfg=cfgs/nyu/nyu_2_2_shufflev2_fast.yaml  --model=checkpoints/nyu/shufflenetv2_fast/_stage_2.ckpt --use_pose --sequence=data/nyu2/bedroom_0129 --inference_file_name=data/nyu2/bedroom_0129/rgb_depth_ground.txt
 
 
 # nyu 训练执行脚本

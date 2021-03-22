@@ -262,7 +262,8 @@ class TUM_RGBD:
             for i in inds:
                 pose_vec = data_blob['poses'][i]
                 pose_mat = pose_vec2mat(pose_vec)
-                poses.append(np.linalg.inv(pose_mat))
+                #poses.append(np.linalg.inv(pose_mat))
+                poses.append(pose_mat)
             # 转换图像和深度信息
             images = np.stack(images, axis=0).astype(np.uint8)
             poses = np.stack(poses, axis=0).astype(np.float32)
