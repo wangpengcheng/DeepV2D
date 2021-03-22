@@ -43,13 +43,13 @@ def main(args):
     # 已存在模型位置
     restore_ckpt_path = cfg.STORE.RESRORE_PATH
 
-    db = NYU(cfg.INPUT.RESIZE, args.dataset_dir, r=args.r)
+    #db = NYU(cfg.INPUT.RESIZE, args.dataset_dir, r=args.r)
     solver = DeepV2DTrainer(cfg)
     ckpt = None
     # 注意这里直接使用tfrecords进行训练
     if args.restore is not None:
-        #solver.train(args.tfrecords, cfg, stage=2, restore_ckpt=restore_ckpt_path, num_gpus=args.num_gpus)
-        solver.train(db, cfg, stage=2, restore_ckpt=restore_ckpt_path, num_gpus=args.num_gpus)
+        solver.train(args.tfrecords, cfg, stage=2, restore_ckpt=restore_ckpt_path, num_gpus=args.num_gpus)
+        #solver.train(db, cfg, stage=2, restore_ckpt=restore_ckpt_path, num_gpus=args.num_gpus)
     else:
         for stage in [1, 2]:
             ckpt = solver.train(args.tfrecords, cfg, stage=stage, ckpt=ckpt, num_gpus=args.num_gpus)

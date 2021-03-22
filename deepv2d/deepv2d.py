@@ -138,6 +138,7 @@ class DeepV2D:
         
         self.edges_placeholder = tf.placeholder(tf.int32, [None, 2]) # 边缘函数
         self.adj_placeholder = tf.placeholder(tf.int32, [None, None]) # adj函数
+    
     # 构建位姿估计网络
     def _build_motion_graph(self):
         self.motion_net = MotionNetwork(self.cfg.MOTION, mode=self.mode,
@@ -179,7 +180,7 @@ class DeepV2D:
         intrinsics = self.intrinsics_placeholder[tf.newaxis]
 
         # convert pose matrix into SE3 object
-        Ts = VideoSE3Transformation(matrix=poses)
+        Ts = VideoSE3Transformation( matrix = poses)
 
         adj_list = None
         if self.mode == 'global':
@@ -198,7 +199,10 @@ class DeepV2D:
 
     # 创建点云图
     def _build_point_cloud_graph(self):
-        """Use poses and depth maps to create point cloud"""
+        """
+        Use poses and depth maps to create point cloud
+        使用位姿和深度图，创建点云
+        """
         depths = self.depths_placeholder[tf.newaxis]
         images = self.images_placeholder[tf.newaxis]
         poses = self.poses_placeholder[tf.newaxis]
@@ -502,7 +506,15 @@ class DeepV2D:
         print("Press q to exit")
         vis.visualize_prediction(point_cloud, point_colors, self.poses)
 
-    def inference(self, images, poses, intrinsics=None, iters=2, viz=False, i_step=-1):
+    def inference(
+        self, 
+        images, 
+        poses, 
+        intrinsics=None, 
+        iters=2, 
+        viz=False, 
+        i_step=-1
+        ):
         # 图片
         self.images = images
         # 位姿
@@ -526,7 +538,7 @@ class DeepV2D:
                 options=options,
                 run_metadata=run_metadata
                 )
-             # 将使用历史，保存为json文件
+            # 将使用历史，保存为json文件
             fetched_timeline = timeline.Timeline(run_metadata.step_stats)
             chrome_trace = fetched_timeline.generate_chrome_trace_format()
             # 写入文件夹
