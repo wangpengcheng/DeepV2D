@@ -5,6 +5,7 @@ import numpy as np
 from utils.einsum import einsum
 # 将相机参数转换为矩阵
 def intrinsics_vec_to_matrix(kvec):
+    # 将相机参数进行拼接
     fx, fy, cx, cy = torch.unbind(kvec, dim=-1)
     z = torch.zeros_like(fx) #零阶矩阵
     o = torch.ones_like(fx) #1阶矩阵

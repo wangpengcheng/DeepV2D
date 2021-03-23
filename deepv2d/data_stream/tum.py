@@ -166,6 +166,7 @@ class TUM_RGBD(Dataset):
         poses = []
         for i in inds:
             pose_vec = data_blob['poses'][i]
+            # 将pose数组转换为pose矩阵
             pose_mat = pose_vec2mat(pose_vec)
             poses.append(np.linalg.inv(pose_mat))
         # 转换图像和深度信息

@@ -75,10 +75,11 @@ class DepthModule(nn.Module):
         self.DecoderFactory(cfg)
     
     
-    def stereo_network_avg(self, 
+    def stereo_network_avg(
+        self, 
+        Ts,
         images, 
-        intrinsics, 
-        adj_list=None
+        intrinsics
         ):
         """3D Matching Network with view pooling
         Ts: collection of pose estimates correponding to images   图片位姿集合
@@ -107,7 +108,7 @@ class DepthModule(nn.Module):
         else:
             fmaps = torch.reshape(fmaps, [batch, frames, 32, ht//8, wd//8]) # 1 4 32 30 40 
         # #反投影，获取对应坐标对上的反向投影插值 1 4 30 40 32 64
-        volume = operators.backproject_avg(Ts, depths, intrinsics, fmaps, self.back_project, adj_list)
+        volume = operators.backproject_avg(Ts, depths, intrinsics, fmaps, self.back_project)
         # volume = torch.rand(1,4,30,40,32,64)
         #volume = volume.permute(0, 1, 5, 4, 2, 3)
         # 
@@ -167,8 +168,8 @@ class DepthModule(nn.Module):
             self.decoder = None
             print("cfg.FAST_MODE is error value:{}".format(self.cfg.FAST_MODE))
 
-    #def forward(self, poses, images, intrinsics, idx=None):
-    def forward(self, images, intrinsics, idx=None):
+    def forward(self, poses, images, intrinsics, idx=None):
+    #def forward(self, images, intrinsics, idx=None):
         # 映射图像数据
         images = 2 * (images / 255.0) - 1.0 # 将其映射到0-1
         # 获取宽度和高度
@@ -178,8 +179,10 @@ class DepthModule(nn.Module):
         #print("ht:{}, wd: {}".format(ht,wd))
         if self.cfg.STRUCTURE.MODE == 'avg':
             spred = self.stereo_network_avg(
-                #poses, 
-                images, intrinsics, idx)
+                poses,
+                images, 
+                intrinsics
+                )
         # perform view concatenation 执行视图连接，连接位姿图像和参数
         elif self.cfg.STRUCTURE.MODE == 'concat':
             spred = self.stereo_network_cat(poses, images, intrinsics)
