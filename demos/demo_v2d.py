@@ -16,18 +16,19 @@ from data_stream.tum import *
 from utils.count import * 
 from deepv2d import vis
 from core import config
+#from deepv2d_clear import DeepV2D
 from deepv2d import DeepV2D
 from utils.my_utils import set_gpus
 import eval_utils 
 
-fx = 535.4
-fy = 539.2
-cx = 320.1
-cy = 247.6
-# fx = 6.359763793945312500e+02
-# fy = 5.777985229492187500e+02
-# cx = 5.292523803710937500e+02
-# xy = 2.780844116210937500e+01
+# fx = 535.4
+# fy = 539.2
+# cx = 320.1
+# cy = 247.6
+fx = 6.359763793945312500e+02
+fy = 5.777985229492187500e+02
+cx = 5.292523803710937500e+02
+xy = 2.780844116210937500e+01
 factor = 5000.0 # for the 16-bit PNG files 
 # OR: factor = 1 # for the 32-bit float images in the ROS bag files
 intrinsics = np.array([fx, fy, cx, cy],dtype=np.float32)
@@ -110,14 +111,14 @@ def main(args):
     frames_len = args.n_frames
     #build the DeepV2D graph
     # 构建深度推理图
-    deepv2d = DeepV2D(cfg, args.model, use_fcrn=args.fcrn, is_calibrated=is_calibrated, mode=args.mode)
+    deepv2d = DeepV2D(cfg, args.model, mode=args.mode)
     
     set_gpus(cfg)
     
     with tf.Session() as sess:
 
         deepv2d.set_session(sess)
-        summary_writer = tf.summary.FileWriter('./log/', sess.graph)
+        #summary_writer = tf.summary.FileWriter('./log/', sess.graph)
         #加载图像和相机位姿初始值
         #call deepv2d on a video sequence
         # 加载测试数据集
@@ -173,6 +174,8 @@ def main(args):
                 print("wirte image:{}/{}.png".format(result_out_dir,i))
 
             print("{} images,totle time: {} s, avg time: {} s".format(iter_number-1,time_sum,time_sum/(iter_number-1)))
+            dp_name = "deep_model.pb"
+            deepv2d.toPb(dp_name)
         elif is_calibrated:
             depths, poses = deepv2d(images, intrinsics, viz=True, iters=args.n_iters)
         else:

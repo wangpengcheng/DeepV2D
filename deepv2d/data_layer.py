@@ -205,7 +205,7 @@ class DataLayer(object):
         example = self.read_example(serialized)
         # 获取相关数据
         id, images, poses, depth_gt, filled, depth_pred, intrinsics \
-            = tf.train.batch(example, batch_size=self.batch_size, num_threads=2, capacity=64)
+            = tf.train.batch(example, batch_size=self.batch_size, num_threads= 2, capacity=64)
         # 转换数据类型
         images = tf.cast(images, tf.float32)
         # 获取数据
