@@ -72,17 +72,21 @@ def backproject_avg(Ts, depths, intrinsics, fmaps, adj_list=None):
     depths = tf.tile(depths, [batch, 1, 1, ht, wd])
     # 根据梯度选取张数
     ii, jj = adj_to_inds(num, adj_list)
+    # 获取逆矩阵
     Tii = Ts.gather(ii) * Ts.gather(ii).inv() # this is just a set of id trans. 转化为se3矩阵
+    # Gj*Gi
     Tij = Ts.gather(jj) * Ts.gather(ii).inv() # relative camera poses in graph 图形中的相对相机姿势
     # 获取总数量
     num = tf.shape(ii)[0]
     # 重新进行维度扩展
     depths = tf.tile(depths, [1, num, 1, 1, 1])
-
+    # 原始数据坐标点
     coords1 = Tii.transform(depths, intrinsics) # 进行坐标转换，转换为x,y,z的三维空间坐标点
+    # 其它数据坐标点
     coords2 = Tij.transform(depths, intrinsics) # 坐标2
-
+    # 获取数组切片，其中都是1
     fmap1 = tf.gather(fmaps, ii, axis=1) # 获取数组切片，主要是获取ii中的数据 1.4,30,40,32
+    # 获取其它特征切片
     fmap2 = tf.gather(fmaps, jj, axis=1) #
     # 使用cuda反向映射
     if use_cuda_backproject:

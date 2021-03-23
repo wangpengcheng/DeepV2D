@@ -71,6 +71,8 @@ def build_fast_data_map(
             depth = cv2.imread(depth_name, cv2.IMREAD_ANYDEPTH)
             depth = cv2.resize(depth, (int(width), int(height)))
             depth = (depth.astype(np.float32))/factor
+            # if np.any( depth == 0 ):
+            #     print("{} is empty".format(depth_name))
             depth_index = start_index+i
 
             depth_buffer[depth_index] = depth
@@ -164,8 +166,8 @@ def fill_depth(depth):
     xx = x[depth > 0]
     yy = y[depth > 0]
     zz = depth[depth > 0]
-    # if (xx is None) or (yy is None) or (zz is None):
-    #     return depth
+    if (xx.size == 0 ) or (yy.size == 0) or (zz.size == 0):
+        return depth
     
     grid = interpolate.griddata((xx, yy), zz.ravel(),
                                 (x, y), method='nearest')
@@ -214,7 +216,7 @@ class TUM_RGBD:
         self.width = int(640*self.resize)
         self.is_test = test
         # 多线程加载数据数目
-        self.load_thread_num = 12
+        self.load_thread_num = 16
         # 读取图像
         self.images = []
         self.images_map = {}
