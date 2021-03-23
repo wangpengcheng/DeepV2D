@@ -1,6 +1,6 @@
 # nyu推理测试脚本
 
-python ./demos/demo_v2d_origin.py --cfg=cfgs/tum/tum_2_2_shufflev2_fast.yaml  --model=checkpoints/tum/shufflenetv2_fast/_stage_2.ckpt --use_pose --sequence=data/tum/rgbd_dataset_freiburg3_cabinet --inference_file_name=data/tum/rgbd_dataset_freiburg3_cabinet/rgb_depth_ground.txt
+python ./demos/demo_v2d.py --cfg=cfgs/tum/tum_2_2_shufflev2_fast.yaml  --model=checkpoints/tum/shufflenetv2_fast/_stage_2.ckpt --use_pose --sequence=data/tum/rgbd_dataset_freiburg3_cabinet --inference_file_name=data/tum/rgbd_dataset_freiburg3_cabinet/rgb_depth_ground.txt
 
 
 # nyu 训练执行脚本
