@@ -50,7 +50,7 @@ def backproject_avg(
     dd = depths.shape[0]
     # 将特征图进行矩阵分解，获取batch、num、ht和wd等，
     batch, num, _, ht, wd = fmaps.shape[0:] # 获取特征图信息
-
+    # Ts 8*4*4*4
     # make depth volume
     depths = torch.reshape(depths, [1, 1, dd, 1, 1])
     # 对其进行扩张，扩张到和fmaps维度基本相同
