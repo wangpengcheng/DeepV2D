@@ -89,7 +89,7 @@ if __name__ == '__main__':
     #output_graph_path='/home/ls/workspace_2021_01_17/DeepV2D/tensorrt_model/DeepNet.pb'
     # 开始进行
     #freeze_graph(ckpt_path, output_graph_path)
-    output_graph_path = "deep_model.pb"
+    output_graph_path = "model_tf_FP32.pb"
     # #将Pb文件的节点打印出来，看看有没有问题
     print_tensors(output_graph_path)
     #dispTensorboard(ckpt_path,"/home/ls/workspace_2021_01_17/DeepV2D/log/test")

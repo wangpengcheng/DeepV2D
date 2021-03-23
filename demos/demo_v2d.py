@@ -16,8 +16,8 @@ from data_stream.tum import *
 from utils.count import * 
 from deepv2d import vis
 from core import config
-from deepv2d_clear import DeepV2D
-#from deepv2d import DeepV2D
+#from deepv2d_clear import DeepV2D
+from deepv2d import DeepV2D
 from utils.my_utils import set_gpus
 import eval_utils 
 

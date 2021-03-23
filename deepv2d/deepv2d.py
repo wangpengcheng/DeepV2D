@@ -178,15 +178,16 @@ class DeepV2D:
         return self.depths
 
     def toPb(self, pb_name):
-        """
-        将模型存储为pb文件
-        Args:
-            pb_name ([type]): [description]
-        """
-        # 将节点作为输出
-        output_graph_def = graph_util.convert_variables_to_constants(self.sess, self.sess.graph_def, ["my_result"])
-        # constant_graph = graph_util.remove_training_nodes(constant_graph)
-        # 
-        with tf.gfile.GFile(pb_name, "wb") as f: #保存模型
-            f.write(output_graph_def.SerializeToString()) #序列化输出
-        print("%d ops in the final graph." % len(output_graph_def.node)) #得到当前图有几个操作节点
+        # """
+        # 将模型存储为pb文件
+        # Args:
+        #     pb_name ([type]): [description]
+        # """
+        # # 将节点作为输出
+        # output_graph_def = graph_util.convert_variables_to_constants(self.sess, self.sess.graph_def, ["my_result"])
+        # # constant_graph = graph_util.remove_training_nodes(constant_graph)
+        # # 
+        # with tf.gfile.GFile(pb_name, "wb") as f: #保存模型
+        #     f.write(output_graph_def.SerializeToString()) #序列化输出
+        # print("%d ops in the final graph." % len(output_graph_def.node)) #得到当前图有几个操作节点
+        print("no opeart")
