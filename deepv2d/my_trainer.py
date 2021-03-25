@@ -6,6 +6,14 @@ import numpy as np
 import os
 import cv2
 import torch.optim as optim
+<<<<<<< HEAD
+
+from geometry.transformation import *
+
+from modules.depth_module import DepthModule
+
+
+=======
 from torchsummary import summary
 from geometry.transformation import *
 
@@ -56,6 +64,7 @@ class data_prefetcher():
             targets = [targets[xaf].record_stream(torch.cuda.current_stream()) for xaf in targets.keys()]
         self.preload()
         return features, targets
+>>>>>>> 5381cefe6ddf5719e983acecf30288546f1e7034
 
 MOTION_LR_FRACTION = 0.1
 
@@ -73,6 +82,10 @@ class DeepV2DTrainer(object):
     """
     def __init__(self, cfg):
         self.cfg = cfg
+<<<<<<< HEAD
+
+=======
+>>>>>>> 5381cefe6ddf5719e983acecf30288546f1e7034
     def train(self, data_source, cfg, stage=1, ckpt=None, restore_ckpt=None, num_gpus=1):
         """主要的训练函数
 

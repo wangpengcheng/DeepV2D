@@ -142,11 +142,11 @@ class BR2d(nn.Module):
         '''
         super().__init__()
         self.bn = nn.BatchNorm2d(nOut, eps=1e-05)
+<<<<<<< HEAD
+        self.act = nn.ReLU(nOut)
+=======
         self.act = nn.ReLU()
-
-    def forward(self, input):
         '''
-        :param input: input feature map
         :return: normalized and thresholded feature map
         '''
         output = self.bn(input)
@@ -229,6 +229,7 @@ class Conv3dBnRel(nn.Module):
         self.conv = nn.Conv3d(nIn, nOut, (kSize, kSize, kSize), stride=stride, padding=(padding, padding, padding), bias=True)
         self.bn = nn.BatchNorm3d(nOut, eps=1e-05)
         self.act = nn.ReLU()
+
 
     def forward(self, input):
         '''

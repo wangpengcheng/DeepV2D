@@ -124,7 +124,11 @@ def pose_vec2mat(pvec, use_filler=True):
 class TUM_RGBD(Dataset):
     """主要用来进行数据的加载与查找
     """
+<<<<<<< HEAD
+    def __init__(self,resize, dataset_path, test=False, n_frames=4, r=6):
+=======
     def __init__(self, resize, dataset_path, test=False, n_frames=4, r=6):
+>>>>>>> 5381cefe6ddf5719e983acecf30288546f1e7034
         self.dataset_path = dataset_path
         self.resize = resize
         self.n_frames = n_frames
@@ -132,7 +136,10 @@ class TUM_RGBD(Dataset):
         self.width = int(640*self.resize)
         self.is_test = test
         self.build_dataset_index(r=r)
+<<<<<<< HEAD
+=======
         
+>>>>>>> 5381cefe6ddf5719e983acecf30288546f1e7034
 
     # 获取数据长度
     def __len__(self):
@@ -255,7 +262,10 @@ class TUM_RGBD(Dataset):
             #print("read image file:{}".format(image_name))
             image = cv2.imread(image_name)
             image = cv2.resize(image, (self.width, self.height))
+<<<<<<< HEAD
+=======
            # image = self.transform2(image).cuda()
+>>>>>>> 5381cefe6ddf5719e983acecf30288546f1e7034
             self.images.append(image)
             self.images_map[image_name]= i
             i=i+1
@@ -278,10 +288,15 @@ class TUM_RGBD(Dataset):
             # 读取深度信息
             depth = cv2.imread(depth_name, cv2.IMREAD_ANYDEPTH)
             depth = cv2.resize(depth, (int(self.width), int(self.height)))
+<<<<<<< HEAD
+
+            depth = (depth.astype(np.float32))/factor
+=======
 
             depth = (depth.astype(np.float32))/factor
 
             #depth = self.transform2(depth).cuda()
+>>>>>>> 5381cefe6ddf5719e983acecf30288546f1e7034
 
             self.depths.append(depth)
             self.depths_map[depth_name]=i

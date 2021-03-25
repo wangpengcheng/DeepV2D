@@ -37,9 +37,6 @@ from project.back_project import BackProject
 #         # 写入相关数据
 #         tf.summary.scalar("a1", delta)
 #         tf.summary.scalar("rel", abs_rel)
-class SoftArgmax(nn.Module):
-    def __init__(self):
-        super(SoftArgmax, self).__init__()
 
     def forward(self, depths, prob_volume):
         """ Convert probability volume into point estimate of depth 转换概率体积为深度的点估计"""
@@ -50,7 +47,6 @@ class SoftArgmax(nn.Module):
         return pred # 返回深度估计值
 
 class DepthModule(nn.Module):
-    def __init__(self,  cfg, schedule=None, is_training=True, reuse=False):
         """
         深度网络基础类型
 
@@ -101,7 +97,6 @@ class DepthModule(nn.Module):
         # 将其降低维度为4维 假设数据为1*4*480*640*3->4*480*640*3 方便卷积操作
         images = torch.reshape(images, [batch*frames, 3, ht, wd]) # 调整输入维度为图片数量*高*宽*3
         # 获取编码图片
-        fmaps = self.encoder(images)
         #再重新调整顺序，还原维度信息
         if self.cfg.STRUCTURE.ENCODER_MODE == 'resnet':
             fmaps = torch.reshape(fmaps, [batch, frames, 32, ht//4, wd//4]) # 1 4 32 60 80 
@@ -118,7 +113,6 @@ class DepthModule(nn.Module):
      
     def stereo_network_cat(self, 
         Ts, 
-        images, 
         intrinsics, 
         adj_list=None
         ):
@@ -162,11 +156,14 @@ class DepthModule(nn.Module):
             print("cfg.FAST_MODE is error value:{}".format(self.cfg.FAST_MODE))
 
     def forward(self, poses, images, intrinsics, idx=None):
+<<<<<<< HEAD
     #def forward(self, images, intrinsics, idx=None):
         # 映射图像数据
+=======
+    #def forward(self, poses, images, intrinsics, idx=None):
+>>>>>>> 22329f0b9ace34e920b278a5444ffecd48d11fb4
         images = 2 * (images / 255.0) - 1.0 # 将其映射到0-1
         # 获取宽度和高度
-        ht = images.shape[-2]
         wd = images.shape[-1]
         self.input_dims = [ht, wd] # 获取输入信息
         #print("ht:{}, wd: {}".format(ht,wd))
@@ -182,8 +179,23 @@ class DepthModule(nn.Module):
         # 返回最终的深度估计值
         return spred
 
-    
+     # 计算loss
+    def compute_loss(self, depth_gt, log_error=True):
+        """[summary]
+
+        Args:
+            # take l1 smoothness loss where gt depth is missing
+            loss_smooth = \
+                torch.mean((1-vy)*torch.abs(gy))
+
+            loss_depth = s*torch.mean(valid*torch.abs(gt-pred))
+            loss_i = self.cfg.TRAIN.SMOOTH_W * loss_smooth + loss_depth
+
+            w = .5**(len(self.pred_logits)-i-1)
+            total_loss += w * loss_i
+
+        # if log_error:
+        #     #add_depth_summaries(gt, pred)
+        
+        return total_loss
    
-
-
-
