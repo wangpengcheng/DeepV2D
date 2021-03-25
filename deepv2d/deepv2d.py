@@ -42,6 +42,21 @@ def pose_distance(G):
     dt = np.sqrt(np.sum(t**2))
     return dR, dt
 
+def print_tensors(pb_file):
+    print('Model File: {}\n'.format(pb_file))
+    # read pb into graph_def
+    with tf.gfile.GFile(pb_file, "rb") as f:
+        graph_def = tf.GraphDef()
+        graph_def.ParseFromString(f.read())
+
+    # import graph_def
+    with tf.Graph().as_default() as graph:
+        tf.import_graph_def(graph_def)
+
+    # print operations
+    for op in graph.get_operations():
+        print(op.name + '\t' + str(op.values()))
+
 
 class DeepV2D:
     """
@@ -74,7 +89,7 @@ class DeepV2D:
         self.depths = []
 
         # 加载模型
-        self.saver = tf.train.Saver(tf.model_variables()) #构建存储模型
+        #self.saver = tf.train.Saver(tf.model_variables()) #构建存储模型
 
     # 创建session
     def set_session(self, sess):
@@ -98,8 +113,11 @@ class DeepV2D:
             graph_def.ParseFromString(f.read())
 
         # import graph_def
-        with tf.Graph().as_default() as graph:
-            tf.import_graph_def(graph_def)
+        tf.import_graph_def(graph_def)
+        
+        # # print operations
+        # for op in tf.Graph().get_operations():
+        #     print(op.name + '\t' + str(op.values()))
 
         # 输入数据占位，注意这里的输入是3张图片
         self.images_placeholder = tf.get_default_graph().get_tensor_by_name("import/images:0")
@@ -107,7 +125,8 @@ class DeepV2D:
         self.poses_placeholder = tf.get_default_graph().get_tensor_by_name("import/poses:0")
         # 相机内参矩阵一维数组
         self.intrinsics_placeholder = tf.get_default_graph().get_tensor_by_name("import/intrinsics:0")
-    
+        print("hello word")
+
     def _build_depth_graph(self):
         """
         构建深度图信息
@@ -151,7 +170,7 @@ class DeepV2D:
                 self.intrinsics_placeholder: self.intrinsics
             }
         # 输出文件
-        res_opt = tf.get_default_graph().get_tensor_by_name("my_result")
+        res_opt = tf.get_default_graph().get_tensor_by_name("import/my_result:0")
         # 设置推理时间统计
         if i_step >= 0:
             options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)

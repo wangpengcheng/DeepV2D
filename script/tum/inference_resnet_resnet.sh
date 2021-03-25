@@ -1,6 +1,6 @@
 # nyu推理测试脚本
 
-python ./demos/demo_v2d.py --cfg=cfgs/nyu/nyu_2_2_resnet_resnet.yaml  --model=checkpoints/nyu/resnet_resnet/_stage_2.ckpt --use_pose --sequence=data/demos/bathroom_0001 --inference_file_name=data/demos/bathroom_0001/rgb_depth_ground.txt
+python ./demos/demo_v2d_origin.py --cfg=cfgs/tum/tum_2_2_resnet_resnet.yaml  --model=checkpoints/tum/resnet_resnet/_stage_2.ckpt --use_pose --sequence=data/tum/rgbd_dataset_freiburg3_cabinet --inference_file_name=data/tum/rgbd_dataset_freiburg3_cabinet/rgb_depth_ground.txt
 
 
 # nyu 训练执行脚本

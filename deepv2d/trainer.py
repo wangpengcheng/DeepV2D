@@ -184,7 +184,8 @@ class DeepV2DTrainer(object):
                     staircase=False
                     )
                 rnd = tf.random_uniform([], 0, 1)
-                depth_input = tf.cond(rnd<input_prob, lambda: depth_filled, lambda: depth_pred)
+                # 设置学习衰减指数
+                depth_input = tf.cond(rnd< input_prob, lambda: depth_filled, lambda: depth_pred)
 
             with tf.device('/gpu:%d' % gpu_id):
                 if cfg.MOTION.USE_MOTION:
@@ -304,7 +305,7 @@ class DeepV2DTrainer(object):
         tf.summary.scalar("total_loss", self.total_loss)
         # 输出学习率
         tf.summary.scalar("learning_rate", lr)
-        # 输出输入形状
+        # 输入学习率
         tf.summary.scalar("input_prob", input_prob)
 
 
@@ -353,7 +354,7 @@ class DeepV2DTrainer(object):
         # 设置日志频率
         LOG_FREQ = 100
         # 设置checkpoint中间输出频率
-        CHECKPOINT_FREQ = 200
+        CHECKPOINT_FREQ = 2000
 
         sess = set_gpus(cfg)
 

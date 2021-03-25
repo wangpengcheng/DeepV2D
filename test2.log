@@ -1,0 +1,6 @@
+Could not import cuda Backproject Module, using python implementation
+hello word
+data/tum/rgbd_dataset_freiburg3_cabinet/rgb_depth_ground.txt
+load rgb image: OK
+load rgb depths: OK
+time cost 11.1141357421875 s

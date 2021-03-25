@@ -153,13 +153,13 @@ def main(args):
                 if i != 0:
                     time_sum = time_sum + (time_end-time_start)
                 # 关键帧
-                key_frame_depth = depths[0]
+                key_frame_depth = depths[0][0]
                 # 关键rgb帧
                 key_frame_image = temp_images[0]
                 # 关键深度帧
                 depth_gt = depths_gt[i*frames_len]
                 # 计算深度缩放
-                scalor = eval_utils.compute_scaling_factor(depth_gt, key_frame_depth, min_depth=0.2, max_depth=8.0)
+                scalor = eval_utils.compute_scaling_factor(depth_gt, key_frame_depth, min_depth=0.1, max_depth=10.0)
                 key_frame_depth =  scalor * key_frame_depth
                 # 对深度图像进行平滑处理
                 # key_frame_depth = cv2.medianBlur(key_frame_depth,5)
