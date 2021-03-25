@@ -10,7 +10,7 @@ def coords_grid(shape, homogeneous=True):
     xx, yy = tf.meshgrid(tf.range(shape[-1]), tf.range(shape[-2]))
 
     xx = tf.cast(xx, tf.float32) # 转换坐标
-    yy = tf.cast(yy, tf.float32)
+    yy = tf.cast(yy, tf.float32) # 基础工具值
 
     if homogeneous:
         coords = tf.stack([xx, yy, tf.ones_like(xx)], axis=-1)
