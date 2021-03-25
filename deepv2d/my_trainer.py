@@ -87,7 +87,7 @@ class DeepV2DTrainer(object):
         Returns:
             [type]: [description]
         """
-        is_use_gpu = False
+        is_use_gpu = True
         torch.autograd.set_detect_anomaly(True)
         # 获取深度步长
         batch_size = num_gpus * cfg.TRAIN.BATCH[stage-1]
@@ -102,7 +102,7 @@ class DeepV2DTrainer(object):
         # 设置日志频率
         LOG_FREQ = 100
         # 设置checkpoint中间输出频率
-        CHECKPOINT_FREQ = 5000
+        CHECKPOINT_FREQ = 500
         # 设置最大步长
         self.training_steps = max_steps
         # 开始加载数据模型
@@ -127,6 +127,7 @@ class DeepV2DTrainer(object):
         optimizer = optim.SGD(deepModel.parameters(), lr=cfg.TRAIN.LR, momentum=0.9)
         # 设置学习策略
         model_lr_scheduler = optim.lr_scheduler.StepLR(optimizer, max_steps, 0.1)
+        # 计算loss值
         running_loss = 0.0
 
         # 设置训练数据集
@@ -141,8 +142,7 @@ class DeepV2DTrainer(object):
                 
                 images_batch, poses_batch, gt_batch, filled_batch, pred_batch, intrinsics_batch, frame_id= data
                 #images_batch, gt_batch, intrinsics_batch =  prefetcher.next()
-                # 进行数据预处理
-                
+                # 进行数据预处理,主要是维度交换
                 images = images_batch.permute(0, 1, 4, 2, 3)
                 
                 #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -152,10 +152,10 @@ class DeepV2DTrainer(object):
                 #summary(deepModel, [(Ts.shape[0:]), (images.shape[0:]), (intrinsics_batch.shape[0:])])
                 # 前向计算
               
-                Ts = poses_batch#.cuda()
-                images = images#.cuda()
-                intrinsics_batch = intrinsics_batch#.cuda()
-                gt_batch = gt_batch#.cuda()
+                Ts = poses_batch.cuda()
+                images = images.cuda()
+                intrinsics_batch = intrinsics_batch.cuda()
+                gt_batch = gt_batch.cuda()
 
                 outputs = deepModel(
                     Ts, 

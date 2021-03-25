@@ -109,14 +109,7 @@ class DepthModule(nn.Module):
             fmaps = torch.reshape(fmaps, [batch, frames, 32, ht//8, wd//8]) # 1 4 32 30 40 
         # #反投影，获取对应坐标对上的反向投影插值 1 4 30 40 32 64
         volume = operators.backproject_avg(Ts, depths, intrinsics, fmaps, self.back_project)
-        # volume = torch.rand(1,4,30,40,32,64)
-        #volume = volume.permute(0, 1, 5, 4, 2, 3)
-        # 
-        fmaps = torch.reshape(fmaps, [batch, frames, 32, 1, ht//8, wd//8])
 
-        volume = fmaps.repeat(1, 1, 2, 32, 1, 1)
-        # pred = 
-        # 进行编码模块,将数据添加进去
         pred = self.decoder(volume) # 1 32 240 320
         #self.pred_logits.append(torch.rand(1,32,240,320))
         # 返回最终产生的结果，可能存在多次三维金字塔卷积，取最后一次的结果
@@ -161,9 +154,9 @@ class DepthModule(nn.Module):
             [type]: [description]
         """
         if self.cfg.STRUCTURE.DECODER_MODE == 'resnet':
-            self.decoder = ResnetDecoder(64, 1, self.pred_logits, (self.ht, self.wd), self.cfg.STRUCTURE.HG_COUNT, self.cfg.STRUCTURE.HG_DEPTH_COUNT)
+            self.decoder = ResnetDecoder(128, 1, self.pred_logits, (self.ht, self.wd), self.cfg.STRUCTURE.HG_COUNT, self.cfg.STRUCTURE.HG_DEPTH_COUNT)
         elif self.cfg.STRUCTURE.DECODER_MODE == 'fast_resnet':
-            self.decoder = FastResnetDecoder(64, self.pred_logits, (self.ht, self.wd), self.cfg.STRUCTURE.HG_COUNT, self.cfg.STRUCTURE.HG_DEPTH_COUNT)
+            self.decoder = FastResnetDecoder(128, self.pred_logits, (self.ht, self.wd), self.cfg.STRUCTURE.HG_COUNT, self.cfg.STRUCTURE.HG_DEPTH_COUNT)
         else:
             self.decoder = None
             print("cfg.FAST_MODE is error value:{}".format(self.cfg.FAST_MODE))
@@ -180,7 +173,7 @@ class DepthModule(nn.Module):
         if self.cfg.STRUCTURE.MODE == 'avg':
             spred = self.stereo_network_avg(
                 poses,
-                images, 
+                images,
                 intrinsics
                 )
         # perform view concatenation 执行视图连接，连接位姿图像和参数

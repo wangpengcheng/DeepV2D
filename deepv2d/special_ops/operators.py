@@ -1,11 +1,11 @@
 import torch
 import os.path as osp
 import numpy as np
-
+from geometry.projective_ops import *
 from utils.bilinear_sampler import *
-
+import torch.nn.functional as F
 #cholesky_solve = cholesky.solve
-def my_gather(input, indexs,dim=1):
+def my_gather(input, indexs, dim=1):
     return input.index_select(dim, indexs)
 
 
@@ -22,6 +22,30 @@ def adj_to_inds(num=-1, adj_list=None):
     
     return ii, jj
 
+def get_cood(depths, intrinsics, Tij):
+
+    batch, num, c, ht, wd = depths.shape[:]
+    pt= backproject(depths, intrinsics)
+    # 进行向量分解出
+    X, Y, Z = torch.unbind(pt, dim=-1)
+    zero = torch.ones_like(X)
+    # 进行合并
+    PT = torch.stack([X, Y, Z, zero], dim = -1)
+    # 对Tij进行整合,方便进行乘法
+    Tij = torch.reshape(Tij, (batch, num, 1, 1, 1, 4, 4))
+
+    Tij = Tij.repeat(1, 1, c, ht, wd, 1, 1)
+    Tij = Tij.view(batch*num*c*ht*wd, 4, 4)
+    PT = PT.view(batch*num*c*ht*wd, 4, 1)
+    re = torch.bmm(Tij, PT)
+    re = re.view(batch, num, c, ht, wd, 4)
+
+
+    X, Y, Z, one = torch.unbind(re, dim=-1)
+    pt1 = torch.stack([X, Y, Z], dim = -1)
+    coords = project(pt1, intrinsics)
+
+    return coords 
 
 def backproject_avg(
             Ts, 
@@ -49,59 +73,28 @@ def backproject_avg(
     # 获取深度数量
     dd = depths.shape[0]
     # 将特征图进行矩阵分解，获取batch、num、ht和wd等，
-    batch, num, _, ht, wd = fmaps.shape[0:] # 获取特征图信息
+    batch, num, c , ht, wd = fmaps.shape[0:] # 获取特征图信息
     # Ts 8*4*4*4
     # make depth volume
     depths = torch.reshape(depths, [1, 1, dd, 1, 1])
     # 对其进行扩张，扩张到和fmaps维度基本相同
-    depths = depths.repeat([batch, 1, 1, ht, wd])
+    depths = depths.repeat([batch, num, 1, ht, wd])
     # 根据梯度选取张数
     ii, jj = torch.meshgrid(torch.arange(1), torch.arange(0, num))
     ii = ii.view([-1]).tolist()
     jj = jj.view([-1]).tolist()
-    Tii = Ts[ii]
-
-    #Tij = 
-    #Tij = Ts.gather(jj) * Ts.gather(ii).inv() # relative camera poses in graph 图形中的相对相机姿势
-    # 获取总数量
-    num = ii.shape[0]
-    # 重新进行维度扩展
-    depths = depths.repeat((1, num, 1, 1, 1))
-
-    coords1 = Tii.transform(depths, intrinsics) # 进行坐标转换，转换为x,y,z的三维空间坐标点
-    coords2 = Tij.transform(depths, intrinsics) # 坐标2
-    # 1*4*30*40*32
-    fmap1 = my_gather(fmaps, ii, dim=1).permute(0, 1, 3, 4, 2) # 获取数组切片，主要是获取ii中的数据
-    fmap2 = my_gather(fmaps, jj, dim=1).permute(0, 1, 3, 4, 2) # 进行数据转换
+    Tii = Ts[:,ii,]
+    Tjj = Ts[:,jj,]
+    # 计算对应矩阵 
+    Tij = Tjj * torch.inverse(Tii)
+    # 将所有深度点，映射到三维空间中
+    coords = get_cood(depths, intrinsics, Tij)
     
-    if use_cuda_backproject:
-        # 进行数据合并
-        coords = torch.cat([coords1, coords2], dim = -1)
-        # 进行
-        coords = torch.reshape(coords, [batch*num, dd, ht, wd, 2, 2]) # 4 32 30 40 2 2
-        # 
-        fmap1 = torch.reshape(fmap1, [batch*num, ht, wd, dim]) # 调整特征图 4 30 40 32
-        fmap2 = torch.reshape(fmap2, [batch*num, ht, wd, dim]) # 4 30 40 32
-        fmaps_stack = torch.stack([fmap1, fmap2], dim = -2) # 4 30 40 2 32
-     
-        # 进行数据筛选
-        volume = back_project(fmaps_stack.cuda(), coords.cuda())
-      
-    else:
-        # 将坐标进行维度转换，，将x,y,z->z,x,y 1*4*30*40*32*2
-        coords1 = coords1.permute(0, 1, 3, 4, 2, 5)
-        coords2 = coords2.permute(0, 1, 3, 4, 2, 5)
-        # 对应fmap,的坐标点上，进行双阶线性采样；获取比较准确的坐标样本，作为图像特征值
-        fvol1 = bilinear_sampler(fmap1, coords1, batch_dims=2) #1*4*30*40*32*32
-        # 双阶段线性采样
-        fvol2 = bilinear_sampler(fmap2, coords2, batch_dims=2)
-        # 计算特征值  1 4 30 40 32 
-        volume = torch.cat([fvol1, fvol2], dim=-1)
-
-    # 将特征值进行重组，相当于特征混合
-    volume = torch.reshape(volume, [batch, num, ht, wd, dd, 2*dim])
-
-    return volume # 3D特征组合
+    volume = my_bilinear_sampler(fmaps, coords)
+    
+    # 8*128*32*30*40
+    volume = torch.reshape(volume, [batch, c*num, dd, ht, wd])
+    return volume
 
 
 def backproject_cat(Ts, depths, intrinsics, fmaps):

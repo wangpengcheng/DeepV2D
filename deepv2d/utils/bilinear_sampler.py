@@ -1,7 +1,8 @@
 import torch
 import numpy as np
+import torch.nn.functional as F
 import itertools
-def th_gather_nd1(x,indices):
+def th_gather_nd1(x, indices):
     # 获取新文件
     newshape = indices.shape[:-1]+ x.shape[indices.shape[-1]:]
     indices = indices.view(-1, x.shape[-1]).tolist()
@@ -106,6 +107,31 @@ def gather_nd(image, indicies, batch_dims=0):
     indicies = torch.cat([batch_inds, indicies], dim=-1)
     
     return torch_gather_nd(image, indicies)
+
+
+def my_bilinear_sampler(image, coords):
+    """ 
+    performs bilinear sampling using coords grid 
+    网格坐标双阶线性采样
+    主要是对现有的图像，进行双节线性采样
+    """
+    batch, num, c , ht, wd = image.shape[:]
+    # 进行双阶段线性采样
+    fmaps = image.view(batch*num, c, 1, ht, wd)
+    fmaps = fmaps.repeat(1, 1, num, 1, 1)
+    coords = coords.view(batch*num, c, ht, wd, 2)
+    
+    # 进行坐标分解
+    coords_x, coords_y = torch.unbind(coords, dim=-1)
+    coords_x = torch.clamp(coords_x, 0, wd-1)
+    coords_y = torch.clamp(coords_y, 0, ht-1)
+    # 构造num维度
+    batch_inds = torch.arange(num)
+    batch_inds = torch.reshape(batch_inds, (num, 1, 1, 1))
+    batch_inds = batch_inds.repeat(batch, c, ht, wd).cuda()
+    my_coords = torch.stack([batch_inds, coords_x, coords_y], dim=-1)
+    volmap = F.grid_sample(fmaps, my_coords)
+    return volmap
 
 def bilinear_sampler(image, coords, batch_dims=1, return_valid=False):
     """ 

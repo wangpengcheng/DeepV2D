@@ -142,14 +142,13 @@ class ResnetDecoder(nn.Module):
         """
         dims = input.shape
         # 重新进行数据
-        volume = torch.reshape(input, [dims[0]*dims[1], 64, dims[3], dims[4], dims[5]])
         # 进行卷积
-        out = self.conv1(volume)
+        out = self.conv1(input)
         out = self.res_conv1(out) # 4 32 16 15 20
         # 重新整理输出维度为32 维度, 1*4*32*32*30*10
-        out = torch.reshape(out, [dims[0],  dims[1], 32, dims[3], dims[4], dims[5]])
-        # 求解均值
-        out = torch.mean(out, dim = 1)
+        # out = torch.reshape(out, [dims[0],  dims[1], 32, dims[3], dims[4], dims[5]])
+        # # 求解均值
+        # out = torch.mean(out, dim = 1)
         # 沙漏网络
         for i in range(self.stack_count):
             out = self.stack_conv(out)
