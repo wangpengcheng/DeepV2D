@@ -85,7 +85,6 @@ def torch_gather_nd(params: torch.Tensor,
     return output
 
 def gather_nd(image, indicies, batch_dims=0):
-<<<<<<< HEAD
     indicies_shape = list(indicies.shape)
     batch_inds = [torch.arange(indicies_shape[i]) for i in range(batch_dims)]
     batch_inds = torch.meshgrid(*batch_inds)
@@ -94,27 +93,11 @@ def gather_nd(image, indicies, batch_dims=0):
     batch_shape, batch_tile = [], []
     for i in range(len(indicies_shape)-1):
         if i < batch_dims:
-=======
-    # 获取坐标形状
-    indicies_shape = tf.shape(indicies) # 获取目标参数形状
-    # 获取前两个维度，batch,n
-    batch_inds = [tf.range(indicies_shape[i]) for i in range(batch_dims)] # 1*4
-    # 进行划分
-    batch_inds = tf.meshgrid(*batch_inds, indexing='ij') # 将其转换为矩阵
-    # 将其组合
-    batch_inds = tf.stack(batch_inds, axis=-1) # 1 4 2
-    # 步长形状,步长重合 ，构造新的形状，主要是方便维度转换
-    batch_shape, batch_tile = [], [] 
-    for i in range(len(indicies.get_shape().as_list())-1):
-        # 进行原来的维度
-        if i < batch_dims: # 
->>>>>>> test_run
             batch_shape.append(indicies_shape[i])
             batch_tile.append(1)
         else:
             batch_shape.append(1)
             batch_tile.append(indicies_shape[i])
-<<<<<<< HEAD
 
     batch_shape.append(batch_dims)
     batch_tile.append(1)
@@ -149,18 +132,6 @@ def my_bilinear_sampler(image, coords):
     my_coords = torch.stack([batch_inds, coords_x, coords_y], dim=-1)
     volmap = F.grid_sample(fmaps, my_coords)
     return volmap
-=======
-    # 
-    batch_shape.append(batch_dims) # 1 4 1 1 1 2
-    batch_tile.append(1) # 1 1 30 40 32 1 
-    # 步长增长
-    batch_inds = tf.reshape(batch_inds, batch_shape) #1 4 1 1 1 2
-    # 将所有元素进行复制
-    batch_inds = tf.tile(batch_inds, batch_tile)  # 1 4 30 40 32 2
-    # 1,4,30,40,32,4  1,4,30,40,32
-    indicies = tf.concat([batch_inds, indicies], axis=-1)
-    return tf.gather_nd(image, indicies)
->>>>>>> test_run
 
 def bilinear_sampler(image, coords, batch_dims=1, return_valid=False):
     """ 

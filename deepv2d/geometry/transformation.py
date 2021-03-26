@@ -3,7 +3,6 @@ import numpy as np
 from utils.einsum import einsum
 
 from core.config import cfg
-from .se3 import *
 from .intrinsics import *
 from . import projective_ops as pops
 #from . import cholesky
@@ -64,7 +63,6 @@ def my_transpose(val1, val2):
 
 # SE3初始化
 class SE3:
-<<<<<<< HEAD
     def __init__(
                 self, 
                 upsilon=None, 
@@ -74,102 +72,21 @@ class SE3:
                 eq=None, 
                 internal=DEFAULT_INTERNAL
                 ):
-=======
-    """
-    三维变换基础转换类，特殊欧式群，将
-    https://blog.csdn.net/qq_28105413/article/details/86585485
-    """
-    def __init__(self, upsilon=None, matrix=None, so3=None, translation=None, eq=None, internal=DEFAULT_INTERNAL):
-        
->>>>>>> test_run
         self.eq = eq
         self.internal = internal
         self.se3_matrix_expm = Se3MatrixExpm()
 
         if internal == 'matrix':
             if upsilon is not None:
-<<<<<<< HEAD
                 self.G = self.se3_matrix_expm(upsilon)
-=======
-                # 获取李代数数据
-                self.G = se3_matrix_expm(upsilon)
->>>>>>> test_run
             elif matrix is not None:
                 self.G = matrix
-
-        elif internal == 'quaternion':
-            if upsilon is not None:
-                self.so3, self.translation = se3_expm(upsilon)
-            elif matrix is not None:
-                R, t = matrix[...,:3,:3], matrix[...,:3,3]
-                self.so3 = rotation_matrix_to_quaternion(R)
-                self.translation = t
-            elif (so3 is not None) and (translation is not None):
-                self.so3 = so3
-                self.translation = translation
-
-    def __call__(self, pt, jacobian=False):
-        """ 
-        Transform set of points 
-        将矩阵转换为se3
-        """
-
-        if self.internal == 'matrix':
-<<<<<<< HEAD
-            pt = torch.cat([pt, torch.ones_like(pt[...,:1])], dim=-1) # convert to homogenous
-=======
-            # 构建SE矩阵
-            pt = tf.concat([pt, tf.ones_like(pt[...,:1])], axis=-1) # convert to homogenous
-            # 执行矩阵乘法
->>>>>>> test_run
-            pt = einsum(self.eq, self.G[..., :3, :], pt)
-        
-        elif self.internal == 'quaternion':
-            pt = quaternion_rotate_point(self.so3, pt, self.eq)
-            pt = pt + self.translation
-
-        if jacobian:
-            jacobian = jac_local_perturb(pt)
-            return pt, jacobian
-
-        return pt
-
-    def __mul__(self, other):
-        if self.internal == 'matrix':
-            G = torch.matmul(self.G, other.G)
-            return self.__class__(matrix=G, internal=self.internal)
-
-        elif self.internal == 'quaternion':
-            so3 = quaternion_multiply(self.so3, other.so3)
-            translation = self.translation + quaternion_rotate_point(self.so3, other.translation)
-            return self.__class__(so3=so3, translation=translation, internal=self.internal)
-
-
-        
-    def concat(self, other, dim=0):
-        if self.internal == 'matrix':
-            G = torch.cat([self.G, other.G], dim=axis)
-
-        elif self.internal == 'quaternion':
-            so3 = torch.cat([self.so3, other.so3], dim=axis)
-            t = torch.cat([self.translation, other.translation], dim=axis)
-            return self.__class__(so3=so3, translation=t, internal=self.internal)
-
-    def copy(self, stop_gradients=False):
-
-        if self.internal == 'matrix':
-            if stop_gradients:
-                return self.__class__(matrix=stop_gradient(self.G), internal=self.internal)
             else:
-                return self.__class__(matrix=self.G, internal=self.internal)
-
-        elif self.internal == 'quaternion':
-            if stop_gradients:
                 so3 = self.so3
                 t = stop_gradient(self.translation)
                 return self.__class__(so3=so3, translation=t, internal=self.internal)
-            else:
-                return self.__class__(so3=self.so3, translation=self.translation, internal=self.internal)
+            # else:
+            #     return self.__class__(so3=self.so3, translation=self.translation, internal=self.internal)
 
     def to_vec(self):
         return torch.cat([self.so3, self.translation], dim=-1)
@@ -313,7 +230,6 @@ class EgoSE3Transformation(SE3):
 
 class VideoSE3Transformation(SE3):
     """ Stores collection of SE3 objects """
-<<<<<<< HEAD
     def __init__(
                 self, 
                 upsilon=None, 
@@ -322,10 +238,6 @@ class VideoSE3Transformation(SE3):
                 translation=None, 
                 internal=DEFAULT_INTERNAL
                 ):
-=======
-    def __init__(self, upsilon=None, matrix=None, so3=None, translation=None, internal=DEFAULT_INTERNAL):
-        # 调用父函数
->>>>>>> test_run
         super(VideoSE3Transformation, self).__init__(upsilon, matrix, so3, translation, internal=internal)
         # 注意这里设置的eq相当于设置了矩阵乘法
         self.eq = "aijk,ai...k->ai...j"
@@ -342,12 +254,7 @@ class VideoSE3Transformation(SE3):
 
     def gather(self, inds):
         if self.internal == 'matrix':
-<<<<<<< HEAD
             G = my_gather(self.G, inds, dim=1)
-=======
-            # 根据坐标筛选矩阵
-            G = tf.gather(self.G, inds, axis=1)
->>>>>>> test_run
             return VideoSE3Transformation(matrix=G, internal=self.internal)
         elif self.internal == 'quaternion':
             t = my_gather(self.translation, inds, dim=1)
