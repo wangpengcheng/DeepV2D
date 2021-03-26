@@ -29,7 +29,7 @@
             //     "--model=models/nyu.ckpt",
             //     "--sequence=data/demos/nyu_0"
             // ],s
-            "program": "demos/demo_v2d.py",
+            "program": "demos/demo_v2d_origin.py",
             "args":[
                 "--cfg=cfgs/tum/tum_2_2_shufflev2_fast.yaml",
                 "--model=checkpoints/tum/shufflenetv2_fast/_stage_2.ckpt",

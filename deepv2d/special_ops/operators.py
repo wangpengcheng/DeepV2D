@@ -151,6 +151,7 @@ def backproject_cat(Ts, depths, intrinsics, fmaps):
 
     else:
         coords = tf.transpose(coords, [0, 1, 3, 4, 2, 5])
+        # 进行双阶段线性采样
         volume = bilinear_sampler(fmaps, coords, batch_dims=2)
         volume = tf.transpose(volume, [0, 2, 3, 4, 1, 5])
 
