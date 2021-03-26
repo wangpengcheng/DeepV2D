@@ -829,7 +829,7 @@ class DepthNetwork(object):
             w = .5**(len(self.pred_logits)-i-1)
             # 计算总loss
             total_loss += w * loss_i
-
+        # 计算loss值和
         if log_error:
             add_depth_summaries(gt, pred)
         

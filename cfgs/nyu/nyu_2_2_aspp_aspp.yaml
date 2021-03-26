@@ -8,7 +8,7 @@ INPUT:
   SCALES: [1.0, 1.1, 1.2] # 缩放参数
   RESIZE: 0.5
 TRAIN:
-  ITERS: [300, 200000]
+  ITERS: [300, 100000]
   BATCH: [1, 4]
   LR: 0.001
   CLIP_GRADS: True

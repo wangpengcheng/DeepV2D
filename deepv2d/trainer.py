@@ -168,7 +168,8 @@ class DeepV2DTrainer(object):
                     staircase=False
                     )
                 rnd = tf.random_uniform([], 0, 1)
-                depth_input = tf.cond(rnd<input_prob, lambda: depth_filled, lambda: depth_pred)
+                # 设置学习衰减指数
+                depth_input = tf.cond(rnd< input_prob, lambda: depth_filled, lambda: depth_pred)
 
             with tf.device('/device:XLA_GPU:%d' % gpu_id):
                 if cfg.MOTION.USE_MOTION:
@@ -286,7 +287,7 @@ class DeepV2DTrainer(object):
         tf.summary.scalar("total_loss", self.total_loss)
         # 输出学习率
         tf.summary.scalar("learning_rate", lr)
-        # 输出输入形状
+        # 输入学习率
         tf.summary.scalar("input_prob", input_prob)
 
 
@@ -333,7 +334,7 @@ class DeepV2DTrainer(object):
         init_op = tf.group(tf.global_variables_initializer(),
                    tf.local_variables_initializer())
         # 设置存储频率
-        SUMMARY_FREQ = 10
+        SUMMARY_FREQ = 100
         # 设置日志频率
         LOG_FREQ = 100
         # 设置checkpoint中间输出频率
@@ -356,11 +357,14 @@ class DeepV2DTrainer(object):
                 if cfg.MOTION.USE_MOTION:
                     if ckpt is not None:
                         motion_saver.restore(sess, ckpt)
+<<<<<<< HEAD
                 # # 存储的临时文件
                 # if restore_ckpt is not None:
                 #     saver.restore(sess, restore_ckpt)
+=======
+>>>>>>> db644e787a6ca8d80ebaaf0e37b6088beceb627c
                     # 加载存储的临时文件
-            # 加载已经存在的模型
+                # 加载已经存在的模型
             if cfg.STORE.IS_USE_RESRORE:
                 saver.restore(sess, cfg.STORE.RESRORE_PATH)
             

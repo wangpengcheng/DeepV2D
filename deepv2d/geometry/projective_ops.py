@@ -20,7 +20,7 @@ def coords_grid(shape, homogeneous=True):
     xx, yy = tf.meshgrid(tf.range(shape[-1]), tf.range(shape[-2]))
 
     xx = tf.cast(xx, tf.float32) # 转换坐标
-    yy = tf.cast(yy, tf.float32)
+    yy = tf.cast(yy, tf.float32) # 基础工具值
 
     if homogeneous:
         coords = tf.stack([xx, yy, tf.ones_like(xx)], axis=-1)
@@ -46,12 +46,26 @@ def extract_and_reshape_intrinsics(intrinsics, shape=None):
     cx = intrinsics[:, 0, 2]
     cy = intrinsics[:, 1, 2]
     if shape is not None:
+<<<<<<< HEAD
         batch = fx.shape[0]
         b, n, c ,h,w = shape[:]
         fx = fx.reshape(batch,1,1,1,1).repeat(1,n,c,h,w)
         fy = fy.reshape(batch,1,1,1,1).repeat(1,n,c,h,w)
         cx = cx.reshape(batch,1,1,1,1).repeat(1,n,c,h,w)
         cy = cy.reshape(batch,1,1,1,1).repeat(1,n,c,h,w)
+=======
+        # batch
+        batch = tf.shape(fx)[:1]
+        # 其余部分
+        fillr = tf.ones_like(shape[1:])
+        k_shape = tf.concat([batch, fillr], axis=0)
+
+        fx = tf.reshape(fx, k_shape)
+        fy = tf.reshape(fy, k_shape)
+        cx = tf.reshape(cx, k_shape)
+        cy = tf.reshape(cy, k_shape)
+
+>>>>>>> test_run
     return (fx, fy, cx, cy)
 
 # 将depthmap转换为点云,主要是根据相机参数还原原始的3D点云
