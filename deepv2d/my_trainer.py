@@ -6,18 +6,16 @@ import numpy as np
 import os
 import cv2
 import torch.optim as optim
-<<<<<<< HEAD
 
 from geometry.transformation import *
 
 from modules.depth_module import DepthModule
 
 
-=======
-from torchsummary import summary
-from geometry.transformation import *
+# from torchsummary import summary
+# from geometry.transformation import *
 
-from modules.depth_module import DepthModule
+# from modules.depth_module import DepthModule
 from modules.my_loss import MyLoss
 
 
@@ -64,7 +62,6 @@ class data_prefetcher():
             targets = [targets[xaf].record_stream(torch.cuda.current_stream()) for xaf in targets.keys()]
         self.preload()
         return features, targets
->>>>>>> 5381cefe6ddf5719e983acecf30288546f1e7034
 
 MOTION_LR_FRACTION = 0.1
 
@@ -82,10 +79,7 @@ class DeepV2DTrainer(object):
     """
     def __init__(self, cfg):
         self.cfg = cfg
-<<<<<<< HEAD
 
-=======
->>>>>>> 5381cefe6ddf5719e983acecf30288546f1e7034
     def train(self, data_source, cfg, stage=1, ckpt=None, restore_ckpt=None, num_gpus=1):
         """主要的训练函数
 
@@ -137,7 +131,7 @@ class DeepV2DTrainer(object):
 
         
         # 设置损失函数
-        optimizer = optim.SGD(deepModel.parameters(), lr=cfg.TRAIN.LR, momentum=0.9)
+        optimizer = optim.RMSprop(deepModel.parameters(), lr=cfg.TRAIN.LR, momentum=0.9)
         # 设置学习策略
         model_lr_scheduler = optim.lr_scheduler.StepLR(optimizer, max_steps, 0.1)
         # 计算loss值
@@ -147,6 +141,7 @@ class DeepV2DTrainer(object):
         trainloader = torch.utils.data.DataLoader(data_source, batch_size=batch_size, shuffle=False, num_workers=8)
         # 设置为训练模式
         deepModel.train()
+        print(deepModel)
         #prefetcher =  data_prefetcher(trainloader)
         for training_step in range(max_steps):
             
@@ -195,7 +190,7 @@ class DeepV2DTrainer(object):
             # 输出模型
             if training_step % CHECKPOINT_FREQ == 0 or training_step+1 == max_steps:
                 # 模型名称
-                save_file = os.path.join(cfg.CHECKPOINT_DIR, cfg.TRAIN.MODULE_NAME)
+                save_file = os.path.join(cfg.CHECKPOINT_DIR, cfg.TRAIN.MODULE_NAME) + ".pth"
                 # 模型名字
                 torch.save(deepModel.state_dict(), save_file)
 

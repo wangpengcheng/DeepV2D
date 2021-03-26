@@ -49,7 +49,7 @@ class MyLoss(nn.Module):
         #     #add_depth_summaries(gt, pred)
         
         return total_loss
-    def forward(self, depth_gt, outputs,log_error=True):
+    def forward(self, depth_gt, outputs, log_error=True):
         # 获取形状
         total_loss = 0.0
         # 将归一化的图像线性插值

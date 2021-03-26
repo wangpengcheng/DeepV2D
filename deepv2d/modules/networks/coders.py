@@ -311,12 +311,3 @@ class FastResnetDecoder(nn.Module):
 
 
 
-<<<<<<< HEAD
-
-
-
-
-
-
-=======
->>>>>>> 5381cefe6ddf5719e983acecf30288546f1e7034

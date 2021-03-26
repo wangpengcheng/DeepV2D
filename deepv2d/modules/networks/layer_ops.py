@@ -142,9 +142,6 @@ class BR2d(nn.Module):
         '''
         super().__init__()
         self.bn = nn.BatchNorm2d(nOut, eps=1e-05)
-<<<<<<< HEAD
-        self.act = nn.ReLU(nOut)
-=======
         self.act = nn.ReLU()
         '''
         :return: normalized and thresholded feature map
