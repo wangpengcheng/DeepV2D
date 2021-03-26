@@ -118,10 +118,7 @@ class DeepV2DTrainer(object):
         deepModel = DepthModule(cfg)
         # 定义损失函数
         loss_function = MyLoss(deepModel)
-         # 加载模型
-        if restore_ckpt is not None:
-            # 加载模型
-            deepModel.load_state_dict(torch.load(restore_ckpt))
+        
         if is_use_gpu:
             if torch.cuda.device_count() > 1:
                 deepModel = nn.DataParallel(deepModel)
@@ -136,14 +133,32 @@ class DeepV2DTrainer(object):
         model_lr_scheduler = optim.lr_scheduler.StepLR(optimizer, max_steps, 0.1)
         # 计算loss值
         running_loss = 0.0
-
+        start_step = 0
+        end_step = max_steps
         # 设置训练数据集
         trainloader = torch.utils.data.DataLoader(data_source, batch_size=batch_size, shuffle=False, num_workers=8)
         # 设置为训练模式
         deepModel.train()
-        print(deepModel)
+        # 加载模型
+        if restore_ckpt is not None:
+            # 加载模型
+            checkpoint = torch.load(restore_ckpt)
+            deepModel.load_state_dict(checkpoint['net'])
+            optimizer.load_state_dict(checkpoint['optimizer'])
+            start_step = checkpoint['epoch']
+            end_step = end_step + max_steps
+        #print(deepModel)
+        # 日志
+        if cfg.STORE.IS_SAVE_LOSS_LOG:
+            loss_log_file_name = os.path.join(cfg.LOG_DIR, time.strftime("%Y%m%d%H%M%S.log", time.localtime()))
+            if not os.path.exists(loss_log_file_name):
+                os.mknod(loss_log_file_name)
+            loss_file = open(loss_log_file_name, "w") 
+        else:
+            loss_file = None
+        
         #prefetcher =  data_prefetcher(trainloader)
-        for training_step in range(max_steps):
+        for training_step in range(start_step, end_step):
             
             # 开始加载数据
             for i, data in enumerate(trainloader, 0):
@@ -185,14 +200,39 @@ class DeepV2DTrainer(object):
             model_lr_scheduler.step()
             # 输出loss值
             if training_step % LOG_FREQ == 0:
-                print('[step=%5d] loss: %.9f'%(training_step, running_loss))
+                loss_str = "[step=%5d] loss: %.9f".format(training_step, running_loss / LOG_FREQ)
+                print(loss_str)
+                # 需要记录loss值
+                if loss_file is not None:
+                    loss_file.writelines(loss_str+"\n") 
+                    loss_file.flush()
                 running_loss = 0.0
-            # 输出模型
-            if training_step % CHECKPOINT_FREQ == 0 or training_step+1 == max_steps:
+            # 输出模型,注意这里主要是checkpoint的保存
+            if training_step % CHECKPOINT_FREQ == 0:
                 # 模型名称
-                save_file = os.path.join(cfg.CHECKPOINT_DIR, cfg.TRAIN.MODULE_NAME) + ".pth"
+                end = "step_{}.pth".format(training_step)
+                save_file = os.path.join(cfg.CHECKPOINT_DIR, cfg.TRAIN.MODULE_NAME) + end
+                
+                checkpoint = {
+                    "net": deepModel.state_dict(),
+                    "optimizer": optimizer.state_dict(),
+                    "epoch": training_step
+                }
                 # 模型名字
-                torch.save(deepModel.state_dict(), save_file)
+                torch.save(checkpoint, save_file)
+        # 最后进行一次模型保存
+        end = ".pth"
+        save_file = os.path.join(cfg.CHECKPOINT_DIR, cfg.TRAIN.MODULE_NAME)+ end
+        
+        checkpoint= {
+            "net": deepModel.state_dict(),
+            "optimizer": optimizer.state_dict(),
+            "epoch": training_step
+            }
+            # 模型名字
+        torch.save(checkpoint, save_file)
+        if loss_file is not None:
+            loss_file.close()
 
 
 

@@ -123,37 +123,7 @@ def get_TUM_data(data_path, sum_data_file_name):
     
     return image_names, depth_names, poses
 
-_EPS = numpy.finfo(float).eps * 4.0
 
-def transform44(l):
-    """
-    Generate a 4x4 homogeneous transformation matrix from a 3D point and unit quaternion.
-    
-    Input:
-    l -- tuple consisting of (stamp,tx,ty,tz,qx,qy,qz,qw) where
-         (tx,ty,tz) is the 3D position and (qx,qy,qz,qw) is the unit quaternion.
-         
-    Output:
-    matrix -- 4x4 homogeneous transformation matrix
-    """
-    t = l[1:4]
-    q = numpy.array(l[4:8], dtype=numpy.float64, copy=True)
-    nq = numpy.dot(q, q)
-    if nq < _EPS:
-        return numpy.array((
-        (                1.0,                 0.0,                 0.0, t[0])
-        (                0.0,                 1.0,                 0.0, t[1])
-        (                0.0,                 0.0,                 1.0, t[2])
-        (                0.0,                 0.0,                 0.0, 1.0)
-        ), dtype=numpy.float64)
-    q *= numpy.sqrt(2.0 / nq)
-    q = numpy.outer(q, q)
-    return numpy.array((
-        (1.0-q[1, 1]-q[2, 2],     q[0, 1]-q[2, 3],     q[0, 2]+q[1, 3], t[0]),
-        (    q[0, 1]+q[2, 3], 1.0-q[0, 0]-q[2, 2],     q[1, 2]-q[0, 3], t[1]),
-        (    q[0, 2]-q[1, 3],     q[1, 2]+q[0, 3], 1.0-q[0, 0]-q[1, 1], t[2]),
-        (                0.0,                 0.0,                 0.0, 1.0)
-        ), dtype=numpy.float64)
 
 
 
@@ -276,8 +246,6 @@ class TUM_RGBD:
             K = data_blob['intrinsics']
             # 相机内参，转换为向量矩阵
             kvec = K.copy()
-
-            depth = depth[..., None]
             return images, poses, depth, myfilled, myfilled, kvec, frameid
         except BaseException:
             print(" error ", index, depth_file)
@@ -312,7 +280,6 @@ class TUM_RGBD:
             sum_data_file_name = "train.txt" # 训练文件
         images, depths, poses = get_TUM_data(sequence_dir, sum_data_file_name)
         # 获取相机内参
-        #加载信息
         my_intrinsics = np.loadtxt(os.path.join(sequence_dir, 'intrinsics.txt'))
         depth_intrinsics = my_intrinsics.copy()
         color_intrinsics = my_intrinsics.copy()
@@ -462,46 +429,9 @@ class TUM_RGBD:
             secret = True
         # 获取相机参数矩阵
         intrinsics_mat = intrinsics.copy()
-
+        # 获取图像数据
         images = []
         for (tstamp, image_file) in image_data:
             image_file = os.path.join(sequence_dir, image_file)
             image = cv2.imread(image_file)
             yield image, intrinsics_mat
-
-        #     images.append(image)
-
-        # depths = []
-        # for (_, depth_file) in depth_data:
-        #     depth_file = os.path.join(sequence_dir, depth_file)
-        #     depth = cv2.imread(depth_file, cv2.IMREAD_ANYDEPTH)
-        #     depth = depth.astype(np.float32) / 5000.0
-        #     depths.append(depth)
-
-        # traj_gt = []
-        # for pose_vec in pose_data:
-        #     if matrix:
-        #         traj_gt.append(transform44(pose_vec))
-        #     else:
-        #         traj_gt.append(pose_vec)
-
-        # image_times = image_data[:,0].astype(np.float64)
-        # depth_times = depth_data[:,0].astype(np.float64)
-        # pose_times = pose_data[:,0].astype(np.float64)
-        # indicies = associate_frames(image_times, depth_times, pose_times)
-
-        # rgbd_images = []
-        # rgbd_depths = []
-        # timestamps = []
-        # for (img_ix, depth_ix, pose_ix) in indicies:
-        #     timestamps.append(image_times[img_ix])
-        #     rgbd_images.append(images[img_ix])
-        #     rgbd_depths.append(depths[depth_ix])
-            
-        # timestamps = np.stack(timestamps, axis=0)
-        # rgbd_images = np.stack(rgbd_images, axis=0)
-        # rgbd_depths = np.stack(rgbd_depths, axis=0)
-        # intrinsics_mat = intrinsics.copy()
-
-        # for img in rgbd_images:
-        #     yield img, intrinsics_mat

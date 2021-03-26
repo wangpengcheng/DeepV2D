@@ -7,7 +7,6 @@ import glob
 import random
 import pickle
 from geometry.transformation import *
-import tensorflow as tf
 from scipy import interpolate
 import argparse
 import random

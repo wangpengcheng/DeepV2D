@@ -1,13 +1,11 @@
-import tensorflow as tf
+
 import numpy as np
 import time
 import cv2
 import vis
 from scipy import interpolate
 import matplotlib.pyplot as plt
-from tensorflow.python.client import timeline
 from modules.depth import DepthNetwork
-from tensorflow.python.framework import graph_util
 from fcrn import fcrn
 from geometry.intrinsics import *
 from geometry.transformation import *
