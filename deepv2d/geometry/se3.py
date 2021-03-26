@@ -11,7 +11,11 @@ MIN_THETA = 1e-4
 
 def matdotv(A,b):
     """
+<<<<<<< HEAD
     通用矩阵乘法
+=======
+    实现矩阵乘法
+>>>>>>> test_run
     Args:
         A ([type]): [description]
         b ([type]): [description]
@@ -19,7 +23,11 @@ def matdotv(A,b):
     Returns:
         [type]: [description]
     """
+<<<<<<< HEAD
     return torch.squeeze(torch.matmul(A, torch.unsqueeze(b, -1)), -1)
+=======
+    return tf.squeeze(tf.matmul(A, tf.expand_dims(b, -1)), -1)
+>>>>>>> test_run
 
 def hat(a):
     """
@@ -30,6 +38,7 @@ def hat(a):
     Returns:
         [type]: [description]
     """
+<<<<<<< HEAD
     a1, a2, a3 = torch.split(a, [1,1,1], dim=-1)
     zz = torch.zeros_like(a1)
 
@@ -38,6 +47,18 @@ def hat(a):
         torch.cat([a3, zz, -a1], dim=-1),
         torch.cat([-a2, a1, zz], dim=-1)
     ], dim=-2)
+=======
+    # 获取基础坐标系下的值
+    a1, a2, a3 = tf.split(a, [1,1,1], axis=-1)
+    # 创建同维度的同阶矩阵
+    zz = tf.zeros_like(a1)
+    # 进行维度合并
+    ax = tf.stack([
+        tf.concat([zz,-a3,a2], axis=-1),
+        tf.concat([a3,zz,-a1], axis=-1),
+        tf.concat([-a2,a1,zz], axis=-1)
+    ], axis=-2)
+>>>>>>> test_run
 
     return ax
     
@@ -46,19 +67,34 @@ def hat(a):
 
 def quaternion_rotate_point(q, pt, eq=None):
     """
+<<<<<<< HEAD
     四元数点旋转
     Args:
         q ([type]): 四元数点
         pt ([type]): 旋转点
+=======
+    四元数旋转点
+    Args:
+        q ([type]): [description]
+        pt ([type]): [description]
+>>>>>>> test_run
         eq ([type], optional): [description]. Defaults to None.
 
     Returns:
         [type]: [description]
     """
     if eq is None:
+<<<<<<< HEAD
         # 获取，实部和虚部
         w, vec = torch.split(q, [1, 3], dim=-1)
         uv = 2*matdotv(hat(vec), pt) # 2pq^
+=======
+        # 分离原始的三维向量和，W权重指标
+        w, vec = tf.split(q, [1, 3], axis=-1)
+        # 计算旋转变化
+        uv = 2*matdotv(hat(vec), pt)
+        # 计算新的点结果
+>>>>>>> test_run
         return pt + w*uv + matdotv(hat(vec), uv)
     else:
         w, vec = torch.split(q, [1, 3], dim=-1)
@@ -239,6 +275,7 @@ def se3_logm(so3, t):
 ### matrix functions ###
 
 def se3_matrix_inverse(G):
+<<<<<<< HEAD
     """ Invert SE3 matrix """
     inp_shape = G.shape
     G = torch.reshape(G, [-1, 4, 4])
@@ -255,6 +292,30 @@ def se3_matrix_inverse(G):
     Ginv = torch.cat([Ginv, filler], dim=-2)
     return torch.reshape(Ginv, inp_shape)
 
+=======
+    """ Invert SE3 matrix 
+    se3维度变换
+    """
+    # 获取输入数据
+    inp_shape = tf.shape(G)
+    # 进行变换
+    G = tf.reshape(G, [-1, 4, 4])
+
+    R, t = G[:, :3, :3], G[:, :3, 3:]
+    R = tf.transpose(R, [0, 2, 1])
+    t = -tf.matmul(R, t)
+    # 设置静态变量
+    filler = tf.constant([0.0, 0.0, 0.0, 1.0])
+    # 
+    filler = tf.reshape(filler, [1, 1, 4])
+    # 扩展到相同维度
+    filler = tf.tile(filler, [tf.shape(G)[0], 1, 1])
+    # 进行组合
+    Ginv = tf.concat([R, t], axis=-1)
+    # 进行组合
+    Ginv = tf.concat([Ginv, filler], axis=-2)
+    return tf.reshape(Ginv, inp_shape)
+>>>>>>> test_run
 
 def _se3_matrix_expm_grad(grad):
     """
@@ -280,14 +341,27 @@ def _se3_matrix_expm_grad(grad):
 def _se3_matrix_expm_shape(op):
     return [op.inputs[0].shape[:-1] + [4, 4]]
 
+<<<<<<< HEAD
 def se3_matrix_expm(upsilon_omega):
+=======
+@function.Defun(tf.float32,
+        python_grad_func=_se3_matrix_expm_grad,
+        shape_func = _se3_matrix_expm_shape
+        )
+def se3_matrix_expm(
+    upsilon_omega
+    ):
+>>>>>>> test_run
     """ se3 matrix exponential se(3) -> SE(3), works for arbitrary batch dimensions
+    将李代数se(3)转变为SE(3) 特殊欧式群
+    主要是进行指数映射关系
     - Note: gradient is overridden with _se3_matrix_expm_grad, which approximates 
     gradient for small upsilon_omega
     - 注意，重载了梯度函数
     """
 
     eps=1e-12
+<<<<<<< HEAD
     inp_shape = upsilon_omega.shape
     out_shape = torch.cat([inp_shape[:-1], [4,4]], dim=-1)
 
@@ -297,6 +371,21 @@ def se3_matrix_expm(upsilon_omega):
 
     theta_sq = torch.sum(w**2, dim=1)
     theta_sq = torch.reshape(theta_sq, [-1, 1, 1])
+=======
+    # 获取输入维度
+    inp_shape = tf.shape(upsilon_omega)
+    # 输出维度n*4*4的矩阵
+    out_shape = tf.concat([inp_shape[:-1], [4,4]], axis=-1)
+    # 进行重新设置维度
+    upsilon_omega = tf.reshape(upsilon_omega, [-1, 6])
+    # 批次
+    batch = tf.shape(upsilon_omega)[0]
+    # 
+    v, w = tf.split(upsilon_omega, [3, 3], axis=-1)
+    # 计算对应角度值
+    theta_sq = tf.reduce_sum(w**2, axis=1)
+    theta_sq = tf.reshape(theta_sq, [-1, 1, 1])
+>>>>>>> test_run
 
     theta = torch.sqrt(theta_sq)
     theta_po4 = theta_sq * theta_sq

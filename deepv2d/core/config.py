@@ -23,12 +23,15 @@ cfg = __C
 
 __C.TMP_DIR = 'tmp'
 
+
 __C.IS_TRAINING = True
 __C.ONLINE_NORMALIZATION = False
 
 __C.TRAIN = edict()
 
 __C.INPUT = edict()
+# 存储相关变量
+
 
 # input dimensions
 __C.INPUT.FRAMES = 9
@@ -82,7 +85,6 @@ __C.STRUCTURE.HG_COUNT = 2
 # number of stacked 2D hourglass modules to use
 __C.STRUCTURE.HG_2D_COUNT = 2
 
-
 # 设置沙漏网络递归层数
 __C.STRUCTURE.HG_DEPTH_COUNT = 2
 # 
@@ -92,6 +94,7 @@ __C.STRUCTURE.USE_FAST_RESNET = True # 是否使用快速卷积
 
 __C.STRUCTURE.TRAIN = edict()
 # small smoothing loss over missing depth values
+
 __C.STRUCTURE.TRAIN.SMOOTH_W = 0.02
 
 __C.MOTION = edict()
@@ -132,6 +135,23 @@ __C.MOTION.TRAIN.WEIGHT_REG = 0.01
 # perturb input motion by small SE3 transform (form of augumentation)
 __C.MOTION.TRAIN.DELTA = [0.025, 0.025, 0.025, 0.025, 0.025, 0.025]
 
+__C.STORE = edict()
+# 设置存储相关参数
+# 设置加载模型路径
+__C.STORE.RESRORE_PATH = 'models/nyu.ckpt'
+# 设置存储模型文件夹 
+__C.STORE.CHECKPOINT_DIR = '/checkpoints/tum/tmu_model/'
+# 设置临时文件夹位置
+__C.STORE.TMP_DIR = 'temp/tmu'
+# 设置日志存储文件夹
+__C.STORE.LOG_DIR = 'logs/tmu'
+# 是否开启loss日志存储
+__C.STORE.IS_SAVE_LOSS_LOG = False
+# 设置模型名称
+__C.STORE.MODLE_NAME = 'resnet'
+# 输出日志级别
+__C.STORE.LOG_LEVEL = "3"
+__C.STORE.IS_USE_RESRORE = False
 
 def _merge_a_into_b(a, b):
     """Merge config dictionary a into config dictionary b, clobbering the

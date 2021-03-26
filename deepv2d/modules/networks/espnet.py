@@ -22,7 +22,11 @@ class CBR(nn.Module):
         self.conv = nn.Conv2d(nIn, nOut, (kSize, kSize), stride=stride, padding=(padding, padding), bias=False)
         #self.conv1 = nn.Conv2d(nOut, nOut, (1, kSize), stride=1, padding=(0, padding), bias=False)
         self.bn = nn.BatchNorm2d(nOut, eps=1e-03)
+<<<<<<< HEAD
         self.act = nn.PReLU()
+=======
+        self.act = nn.PReLU(nOut)
+>>>>>>> test_run
 
     def forward(self, input):
         '''
@@ -47,7 +51,11 @@ class BR(nn.Module):
         '''
         super().__init__()
         self.bn = nn.BatchNorm2d(nOut, eps=1e-03)
+<<<<<<< HEAD
         self.act = nn.PReLU()
+=======
+        self.act = nn.PReLU(nOut)
+>>>>>>> test_run
 
     def forward(self, input):
         '''
@@ -160,7 +168,11 @@ class DownSamplerB(nn.Module):
         # 空洞卷积 16
         self.d16 = CDilated(n, n, 3, 1, 16)
         self.bn = nn.BatchNorm2d(nOut, eps=1e-3)
+<<<<<<< HEAD
         self.act = nn.PReLU()
+=======
+        self.act = nn.PReLU(nOut)
+>>>>>>> test_run
 
     def forward(self, input):
         

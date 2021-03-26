@@ -20,18 +20,28 @@ fx = 517.3
 fy = 516.5
 cx = 318.6
 cy = 255.3
-factor = 5000.0 # for the 16-bit PNG files
+factor = 5000.0 # for the 16-bit PNG files 
+# OR: factor = 1 # for the 32-bit float images in the ROS bag files
 intrinsics = np.array([fx, fy, cx, cy],dtype=np.float32)
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> test_run
 def get_TUM_data(data_path,sum_data_file_name):
     """读取tum中的数据
 
     Args:
         data_path ([str]): 数据存在的路径 
     """
+<<<<<<< HEAD
     data_file_path = os.path.join(data_path,sum_data_file_name)
+=======
+    data_file_path = os.path.join(data_path, sum_data_file_name)
+>>>>>>> test_run
     print("==== {} ======".format(data_file_path))
     # 不存在综合数据就进行创建
+    # 在这里进行时间戳上的文件合并
     if not os.path.isfile(data_file_path):
         # 获取图像列表
         image_list = os.path.join(data_path, 'rgb.txt')
@@ -50,9 +60,15 @@ def get_TUM_data(data_path,sum_data_file_name):
 
     image_names = [data_path+'/'+i for i in image_names ]
     depth_names = [data_path+'/'+i for i in depths_names ]
+<<<<<<< HEAD
 
     return image_names, depth_names, poses
 
+=======
+    
+    
+    return image_names, depth_names, poses
+>>>>>>> test_run
 
 _EPS = numpy.finfo(float).eps * 4.0
 
@@ -100,9 +116,14 @@ def fill_depth(depth):
     return grid
 # 将四元数组转换为旋转矩阵
 def quat2rotm(q):
-    """Convert quaternion into rotation matrix """
-    q /= np.sqrt(np.sum(q**2)) 
+    """
+    Convert quaternion into rotation matrix 
+    转换为捐助矩阵，主要是要是偏执计算
+    """
+    q /= np.sqrt(np.sum(q**2))
+    #  旋转矩阵
     x, y, z, s = q[:, 0], q[:, 1], q[:, 2], q[:, 3]
+    # 计算三个方向的旋转
     r1 = np.stack([1-2*(y**2+z**2), 2*(x*y-s*z), 2*(x*z+s*y)], axis=1)
     r2 = np.stack([2*(x*y+s*z), 1-2*(x**2+z**2), 2*(y*z-s*x)], axis=1)
     r3 = np.stack([2*(x*z-s*y), 2*(y*z+s*x), 1-2*(x**2+y**2)], axis=1)
@@ -110,9 +131,14 @@ def quat2rotm(q):
 
 # 将位姿转换为矩阵
 def pose_vec2mat(pvec, use_filler=True):
-    """Convert quaternion vector represention to SE3 group"""
+    """
+    Convert quaternion vector represention to SE3 group
+    将pose转换为se3李代数
+    """
+    # 提取位移和旋转
     t, q = pvec[np.newaxis, 0:3], pvec[np.newaxis, 3:7]
     R = quat2rotm(q)
+    # 位移矩阵
     t = np.expand_dims(t, axis=-1)
     # 最终的转换矩阵
     P = np.concatenate([R, t], axis=2)
@@ -124,7 +150,11 @@ def pose_vec2mat(pvec, use_filler=True):
 class TUM_RGBD(Dataset):
     """主要用来进行数据的加载与查找
     """
+<<<<<<< HEAD
     def __init__(self,resize, dataset_path, test=False, n_frames=4, r=6):
+=======
+    def __init__(self, resize, dataset_path, test=False, n_frames=5, r=2):
+>>>>>>> test_run
         self.dataset_path = dataset_path
         self.resize = resize
         self.n_frames = n_frames
@@ -132,7 +162,11 @@ class TUM_RGBD(Dataset):
         self.width = int(640*self.resize)
         self.is_test = test
         self.build_dataset_index(r=r)
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> test_run
     # 获取数据长度
     def __len__(self):
         return len(self.dataset_index)
@@ -144,7 +178,11 @@ class TUM_RGBD(Dataset):
         # 获取索引
         data_blob = self.dataset_index[index]
         num_frames = data_blob['n_frames']
+<<<<<<< HEAD
         # 图片样例数目
+=======
+        # 图片样例数量
+>>>>>>> test_run
         num_samples = self.n_frames - 1
 
         frameid = data_blob['id']
@@ -155,6 +193,7 @@ class TUM_RGBD(Dataset):
         inds = inds[~np.equal(inds, keyframe_index)]
         
         inds = np.random.choice(inds, num_samples, replace=False)
+        # 将关键帧提取到开头
         inds = [keyframe_index] + inds.tolist()
         # 读取图像
         images = []
@@ -200,7 +239,15 @@ class TUM_RGBD(Dataset):
             str: 最终为文件属性
         """
         sequence_dir = os.path.join(self.dataset_path, sequence_name)
+<<<<<<< HEAD
     
+=======
+        # 创建序列化文件
+        datum_file = os.path.join(sequence_dir, 'pickle-TUM.pkl')
+        # 如果序列化文件不存在就进行创建
+        #if not os.path.isfile(datum_file):
+            # 获取对齐之后的数据 
+>>>>>>> test_run
         if self.is_test :
             sum_data_file_name = "rgb_depth_ground.txt"
         else:
@@ -222,7 +269,12 @@ class TUM_RGBD(Dataset):
 
             # 访问数据文件夹，构造对应的数据
             images, depths, poses, color_intrinsics, depth_intrinsics = self._load_scan(scan)
+<<<<<<< HEAD
             color_intrinsics = color_intrinsics*self.resize 
+=======
+            # 注意这里的参数直接进行变换
+            #color_intrinsics = color_intrinsics*self.resize 
+>>>>>>> test_run
             depth_intrinsics = depth_intrinsics*self.resize
             # 构建索引表
             self.build_data_map(images, depths, poses)
@@ -243,7 +295,12 @@ class TUM_RGBD(Dataset):
                 self.dataset_index.append(training_example)
                 data_id += 1
 
+<<<<<<< HEAD
     def build_data_map(self, images_names, depths_names, poses):
+=======
+    #def test_set_iterator(self):
+    def build_data_map(self,images_names,depths_names,poses):
+>>>>>>> test_run
         # 读取图像
         self.images = []
         self.images_map = {}
@@ -274,6 +331,61 @@ class TUM_RGBD(Dataset):
             # 读取深度信息
             depth = cv2.imread(depth_name, cv2.IMREAD_ANYDEPTH)
             depth = cv2.resize(depth, (int(self.width), int(self.height)))
+<<<<<<< HEAD
+=======
+
+            depth = (depth.astype(np.float32))/factor
+
+            self.depths.append(depth)
+            self.depths_map[depth_name]=i
+            i=i+1
+        print("read depth file OK")
+
+    def test_set_iterator(self):
+        """
+        测试数据迭代器
+        """
+        
+        # 遍历预加载的数据集
+        for temp_data_blob in self.dataset_index:
+            num_frames = temp_data_blob['n_frames']
+            num_samples = self.n_frames - 1
+            frameid = temp_data_blob['id']
+            keyframe_index = num_frames//2
+            # 图片索引
+            inds = np.arange(num_frames)
+            inds = inds[~np.equal(inds, keyframe_index)]
+            inds = np.random.choice(inds, num_samples, replace=False)
+            inds = [keyframe_index] + inds.tolist()
+            # 添加图片数据
+            images = []
+            for i in inds:
+                image = self.images[self.images_map[temp_data_blob['images'][i]]]
+                images.append(image)
+
+            # 转换图像
+            images = np.stack(images, axis=0).astype(np.uint8)
+            # 获取深度信息
+            depth_file_name = temp_data_blob['depth']
+            # 读取深度信息
+            depth = self.depths[self.depths_map[depth_file_name]]
+            # 获取位姿信息
+            pose_vec = temp_data_blob['poses'][keyframe_index]
+            pose = pose_vec2mat(pose_vec)
+            K = temp_data_blob['intrinsics']
+            # 相机内参，转换为向量矩阵
+            kvec = K.copy()
+            # 转换深度信息
+            # depth = depth[...,None]
+            data_blob = {
+                    'images': images,
+                    'depth': depth,
+                    'pose': pose,
+                    'intrinsics': intrinsics,
+            }
+            yield data_blob
+
+>>>>>>> test_run
 
             depth = (depth.astype(np.float32))/factor
 

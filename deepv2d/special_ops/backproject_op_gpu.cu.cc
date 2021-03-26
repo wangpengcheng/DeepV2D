@@ -81,8 +81,13 @@ __global__ void BackProjectForward(const int nthreads, const Dtype* input,
 
 
 
-bool BackProjectForwardLauncher(const float* input, const float* coords,
-  const int dim[6], float *top, const Eigen::GpuDevice& d)
+bool BackProjectForwardLauncher(
+  const float* input, 
+  const float* coords,
+  const int dim[6], 
+  float *top, 
+  const Eigen::GpuDevice& d
+  )
 {
 
   cudaError_t err;

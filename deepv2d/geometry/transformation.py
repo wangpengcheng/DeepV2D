@@ -64,6 +64,7 @@ def my_transpose(val1, val2):
 
 # SE3初始化
 class SE3:
+<<<<<<< HEAD
     def __init__(
                 self, 
                 upsilon=None, 
@@ -73,13 +74,26 @@ class SE3:
                 eq=None, 
                 internal=DEFAULT_INTERNAL
                 ):
+=======
+    """
+    三维变换基础转换类，特殊欧式群，将
+    https://blog.csdn.net/qq_28105413/article/details/86585485
+    """
+    def __init__(self, upsilon=None, matrix=None, so3=None, translation=None, eq=None, internal=DEFAULT_INTERNAL):
+        
+>>>>>>> test_run
         self.eq = eq
         self.internal = internal
         self.se3_matrix_expm = Se3MatrixExpm()
 
         if internal == 'matrix':
             if upsilon is not None:
+<<<<<<< HEAD
                 self.G = self.se3_matrix_expm(upsilon)
+=======
+                # 获取李代数数据
+                self.G = se3_matrix_expm(upsilon)
+>>>>>>> test_run
             elif matrix is not None:
                 self.G = matrix
 
@@ -95,10 +109,19 @@ class SE3:
                 self.translation = translation
 
     def __call__(self, pt, jacobian=False):
-        """ Transform set of points """
+        """ 
+        Transform set of points 
+        将矩阵转换为se3
+        """
 
         if self.internal == 'matrix':
+<<<<<<< HEAD
             pt = torch.cat([pt, torch.ones_like(pt[...,:1])], dim=-1) # convert to homogenous
+=======
+            # 构建SE矩阵
+            pt = tf.concat([pt, tf.ones_like(pt[...,:1])], axis=-1) # convert to homogenous
+            # 执行矩阵乘法
+>>>>>>> test_run
             pt = einsum(self.eq, self.G[..., :3, :], pt)
         
         elif self.internal == 'quaternion':
@@ -207,9 +230,11 @@ class SE3:
             return mat
     # 将深度图像，转换为(X，Y,Z)点云图
     def transform(self, depth, intrinsics, valid_mask=False, return3d=False):
+        # 根据深度图和相机内参映射到三维点云图
         pt = pops.backproject(depth, intrinsics) # 根据深度和相机内参获取三维点云
         pt_new = self.__call__(pt) # 获取新的三维点云图像
-        coords = pops.project(pt_new, intrinsics)
+        
+        coords = pops.project(pt_new, intrinsics) # 将矫正坐标重新投影到深度
         if return3d: 
             return coords, pt_new
         if valid_mask:
@@ -217,6 +242,7 @@ class SE3:
             vmask = torch.FloatTensor(vmask, torch.float32)[..., np.newaxis]
             return coords, vmask
         return coords
+        
     # 特征相机网络
     def induced_flow(self, depth, intrinsics, valid_mask=False):
         coords0 = pops.coords_grid(my_shape(depth), homogeneous=False)
@@ -287,6 +313,7 @@ class EgoSE3Transformation(SE3):
 
 class VideoSE3Transformation(SE3):
     """ Stores collection of SE3 objects """
+<<<<<<< HEAD
     def __init__(
                 self, 
                 upsilon=None, 
@@ -295,7 +322,12 @@ class VideoSE3Transformation(SE3):
                 translation=None, 
                 internal=DEFAULT_INTERNAL
                 ):
+=======
+    def __init__(self, upsilon=None, matrix=None, so3=None, translation=None, internal=DEFAULT_INTERNAL):
+        # 调用父函数
+>>>>>>> test_run
         super(VideoSE3Transformation, self).__init__(upsilon, matrix, so3, translation, internal=internal)
+        # 注意这里设置的eq相当于设置了矩阵乘法
         self.eq = "aijk,ai...k->ai...j"
 
     def __call__(self, pt, inds=None, jacobian=False):
@@ -310,7 +342,12 @@ class VideoSE3Transformation(SE3):
 
     def gather(self, inds):
         if self.internal == 'matrix':
+<<<<<<< HEAD
             G = my_gather(self.G, inds, dim=1)
+=======
+            # 根据坐标筛选矩阵
+            G = tf.gather(self.G, inds, axis=1)
+>>>>>>> test_run
             return VideoSE3Transformation(matrix=G, internal=self.internal)
         elif self.internal == 'quaternion':
             t = my_gather(self.translation, inds, dim=1)

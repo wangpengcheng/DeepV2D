@@ -1,0 +1,310 @@
+
+
+aspp rtx3090
+[stage=2, 24200] loss: 0.028412425
+[stage=2, 24300] loss: 0.027544513
+[stage=2, 24400] loss: 0.027649210
+[stage=2, 24500] loss: 0.027370763
+[stage=2, 24600] loss: 0.029408112
+[stage=2, 24700] loss: 0.026398387
+[stage=2, 24800] loss: 0.027994717
+[stage=2, 24900] loss: 0.027590701
+
+
+start iterator 0
+time cost 1.6079070568084717 ms
+start iterator 0
+time cost 0.03994154930114746 ms
+start iterator 0
+time cost 0.04791426658630371 ms
+start iterator 0
+time cost 0.029211997985839844 ms
+start iterator 0
+time cost 0.050914764404296875 ms
+start iterator 0
+time cost 0.03682732582092285 ms
+start iterator 0
+time cost 0.03509116172790527 ms
+start iterator 0
+time cost 0.03773665428161621 ms
+start iterator 0
+time cost 0.03709149360656738 ms
+start iterator 0
+time cost 0.03576469421386719 ms
+start iterator 0
+time cost 0.043448448181152344 ms
+start iterator 0
+time cost 0.0416264533996582 ms
+start iterator 0
+time cost 0.04515361785888672 ms
+start iterator 0
+time cost 0.03757762908935547 ms
+start iterator 0
+time cost 0.04565763473510742 ms
+sc-inv, a10, a1, a2, a3, rmse, log_rmse, rel, sq_rel1, sq_rel2, log10, 
+    0.0922,     0.9804,     0.9837,     0.9876,     0.9896,     0.1215,     0.0926,     0.0227,     0.0161,     0.0249,     0.0076, 
+
+
+time cost 0.04583239555358887 ms
+wirte image:data/tum/cabinet/inference_result/162.png
+time cost 0.04977703094482422 ms
+wirte image:data/tum/cabinet/inference_result/163.png
+time cost 0.04130959510803223 ms
+wirte image:data/tum/cabinet/inference_result/164.png
+time cost 0.04624223709106445 ms
+wirte image:data/tum/cabinet/inference_result/165.png
+time cost 0.026816129684448242 ms
+wirte image:data/tum/cabinet/inference_result/166.png
+time cost 0.04042339324951172 ms
+wirte image:data/tum/cabinet/inference_result/167.png
+time cost 0.03851604461669922 ms
+wirte image:data/tum/cabinet/inference_result/168.png
+time cost 0.04537558555603027 ms
+wirte image:data/tum/cabinet/inference_result/169.png
+time cost 0.0475468635559082 ms
+wirte image:data/tum/cabinet/inference_result/170.png
+time cost 0.03900623321533203 ms
+wirte image:data/tum/cabinet/inference_result/171.png
+time cost 0.03939509391784668 ms
+wirte image:data/tum/cabinet/inference_result/172.png
+time cost 0.04419445991516113 ms
+wirte image:data/tum/cabinet/inference_result/173.png
+time cost 0.04305768013000488 ms
+wirte image:data/tum/cabinet/inference_result/174.png
+time cost 0.04751467704772949 ms
+wirte image:data/tum/cabinet/inference_result/175.png
+time cost 0.0416867733001709 ms
+wirte image:data/tum/cabinet/inference_result/176.png
+time cost 0.04852175712585449 ms
+wirte image:data/tum/cabinet/inference_result/177.png
+time cost 0.04208230972290039 ms
+wirte image:data/tum/cabinet/inference_result/178.png
+time cost 0.04289841651916504 ms
+wirte image:data/tum/cabinet/inference_result/179.png
+time cost 0.05397295951843262 ms
+wirte image:data/tum/cabinet/inference_result/180.png
+time cost 0.0255734920501709 ms
+wirte image:data/tum/cabinet/inference_result/181.png
+time cost 0.04115915298461914 ms
+wirte image:data/tum/cabinet/inference_result/182.png
+time cost 0.04249882698059082 ms
+wirte image:data/tum/cabinet/inference_result/183.png
+time cost 0.03698587417602539 ms
+wirte image:data/tum/cabinet/inference_result/184.png
+time cost 0.038994550704956055 ms
+wirte image:data/tum/cabinet/inference_result/185.png
+time cost 0.03434348106384277 ms
+wirte image:data/tum/cabinet/inference_result/186.png
+time cost 0.042762041091918945 ms
+wirte image:data/tum/cabinet/inference_result/187.png
+time cost 0.03956127166748047 ms
+wirte image:data/tum/cabinet/inference_result/188.png
+time cost 0.0400080680847168 ms
+wirte image:data/tum/cabinet/inference_result/189.png
+time cost 0.04106450080871582 ms
+wirte image:data/tum/cabinet/inference_result/190.png
+time cost 0.06295299530029297 ms
+wirte image:data/tum/cabinet/inference_result/191.png
+time cost 0.04243278503417969 ms
+wirte image:data/tum/cabinet/inference_result/192.png
+time cost 0.04510498046875 ms
+wirte image:data/tum/cabinet/inference_result/193.png
+time cost 0.048506736755371094 ms
+wirte image:data/tum/cabinet/inference_result/194.png
+time cost 0.0377652645111084 ms
+wirte image:data/tum/cabinet/inference_result/195.png
+time cost 0.038294076919555664 ms
+wirte image:data/tum/cabinet/inference_result/196.png
+time cost 0.04305076599121094 ms
+wirte image:data/tum/cabinet/inference_result/197.png
+time cost 0.03868722915649414 ms
+wirte image:data/tum/cabinet/inference_result/198.png
+time cost 0.0424351692199707 ms
+wirte image:data/tum/cabinet/inference_result/199.png
+time cost 0.0406341552734375 ms
+wirte image:data/tum/cabinet/inference_result/200.png
+time cost 0.02823185920715332 ms
+wirte image:data/tum/cabinet/inference_result/201.png
+time cost 0.0547032356262207 ms
+wirte image:data/tum/cabinet/inference_result/202.png
+time cost 0.05701327323913574 ms
+wirte image:data/tum/cabinet/inference_result/203.png
+time cost 0.04619455337524414 ms
+wirte image:data/tum/cabinet/inference_result/204.png
+time cost 0.036971092224121094 ms
+wirte image:data/tum/cabinet/inference_result/205.png
+time cost 0.03574538230895996 ms
+wirte image:data/tum/cabinet/inference_result/206.png
+time cost 0.028968095779418945 ms
+wirte image:data/tum/cabinet/inference_result/207.png
+time cost 0.052506208419799805 ms
+wirte image:data/tum/cabinet/inference_result/208.png
+time cost 0.035584449768066406 ms
+wirte image:data/tum/cabinet/inference_result/209.png
+time cost 0.05037832260131836 ms
+wirte image:data/tum/cabinet/inference_result/210.png
+time cost 0.06435465812683105 ms
+wirte image:data/tum/cabinet/inference_result/211.png
+time cost 0.039179325103759766 ms
+wirte image:data/tum/cabinet/inference_result/212.png
+time cost 0.03915810585021973 ms
+wirte image:data/tum/cabinet/inference_result/213.png
+time cost 0.05050039291381836 ms
+wirte image:data/tum/cabinet/inference_result/214.png
+time cost 0.0431821346282959 ms
+wirte image:data/tum/cabinet/inference_result/215.png
+time cost 0.047950029373168945 ms
+wirte image:data/tum/cabinet/inference_result/216.png
+time cost 0.04136991500854492 ms
+wirte image:data/tum/cabinet/inference_result/217.png
+time cost 0.044512271881103516 ms
+wirte image:data/tum/cabinet/inference_result/218.png
+time cost 0.03944540023803711 ms
+wirte image:data/tum/cabinet/inference_result/219.png
+time cost 0.032225847244262695 ms
+wirte image:data/tum/cabinet/inference_result/220.png
+220 images,totle time: 9.668834686279297 s, avg time:0.043949248573996805 s
+
+fast
+[stage=2, 24200] loss: 0.027959696
+[stage=2, 24300] loss: 0.027283944
+[stage=2, 24400] loss: 0.027253355
+[stage=2, 24500] loss: 0.027053798
+[stage=2, 24600] loss: 0.028602235
+[stage=2, 24700] loss: 0.026041978
+[stage=2, 24800] loss: 0.027604985
+[stage=2, 24900] loss: 0.027145513
+
+2021-02-16 23:52:38.660745: I tensorflow/stream_executor/platform/default/dso_loader.cc:49] Successfully opened dynamic library libcublas.so.11
+start iterator 0
+time cost 1.905545711517334 ms
+start iterator 0
+time cost 0.043311119079589844 ms
+start iterator 0
+time cost 0.046964168548583984 ms
+start iterator 0
+time cost 0.021047592163085938 ms
+start iterator 0
+time cost 0.05125141143798828 ms
+start iterator 0
+time cost 0.0527653694152832 ms
+start iterator 0
+time cost 0.04457879066467285 ms
+start iterator 0
+time cost 0.038306236267089844 ms
+start iterator 0
+time cost 0.049723148345947266 ms
+start iterator 0
+time cost 0.025182485580444336 ms
+start iterator 0
+time cost 0.04619717597961426 ms
+start iterator 0
+time cost 0.05732297897338867 ms
+start iterator 0
+time cost 0.04205322265625 ms
+start iterator 0
+time cost 0.04067850112915039 ms
+start iterator 0
+time cost 0.04197335243225098 ms
+sc-inv, a10, a1, a2, a3, rmse, log_rmse, rel, sq_rel1, sq_rel2, log10, 
+    0.0913,     0.9807,     0.9842,     0.9880,     0.9900,     0.1181,     0.0917,     0.0224,     0.0160,     0.0255,     0.0074, 
+
+
+time cost 0.04866671562194824 ms
+wirte image:data/tum/cabinet/inference_result/183.png
+time cost 0.060361385345458984 ms
+wirte image:data/tum/cabinet/inference_result/184.png
+time cost 0.055027008056640625 ms
+wirte image:data/tum/cabinet/inference_result/185.png
+time cost 0.040871381759643555 ms
+wirte image:data/tum/cabinet/inference_result/186.png
+time cost 0.04560399055480957 ms
+wirte image:data/tum/cabinet/inference_result/187.png
+time cost 0.04943346977233887 ms
+wirte image:data/tum/cabinet/inference_result/188.png
+time cost 0.0414736270904541 ms
+wirte image:data/tum/cabinet/inference_result/189.png
+time cost 0.05071282386779785 ms
+wirte image:data/tum/cabinet/inference_result/190.png
+time cost 0.037110328674316406 ms
+wirte image:data/tum/cabinet/inference_result/191.png
+time cost 0.028588294982910156 ms
+wirte image:data/tum/cabinet/inference_result/192.png
+time cost 0.047016143798828125 ms
+wirte image:data/tum/cabinet/inference_result/193.png
+time cost 0.05269598960876465 ms
+wirte image:data/tum/cabinet/inference_result/194.png
+time cost 0.04154658317565918 ms
+wirte image:data/tum/cabinet/inference_result/195.png
+time cost 0.03820443153381348 ms
+wirte image:data/tum/cabinet/inference_result/196.png
+time cost 0.04792428016662598 ms
+wirte image:data/tum/cabinet/inference_result/197.png
+time cost 0.037001848220825195 ms
+wirte image:data/tum/cabinet/inference_result/198.png
+time cost 0.03930163383483887 ms
+wirte image:data/tum/cabinet/inference_result/199.png
+time cost 0.04410266876220703 ms
+wirte image:data/tum/cabinet/inference_result/200.png
+time cost 0.046259403228759766 ms
+wirte image:data/tum/cabinet/inference_result/201.png
+time cost 0.040679216384887695 ms
+wirte image:data/tum/cabinet/inference_result/202.png
+time cost 0.04701590538024902 ms
+wirte image:data/tum/cabinet/inference_result/203.png
+time cost 0.06221485137939453 ms
+wirte image:data/tum/cabinet/inference_result/204.png
+time cost 0.04386639595031738 ms
+wirte image:data/tum/cabinet/inference_result/205.png
+time cost 0.052761077880859375 ms
+wirte image:data/tum/cabinet/inference_result/206.png
+time cost 0.034383535385131836 ms
+wirte image:data/tum/cabinet/inference_result/207.png
+time cost 0.042620182037353516 ms
+wirte image:data/tum/cabinet/inference_result/208.png
+time cost 0.0311739444732666 ms
+wirte image:data/tum/cabinet/inference_result/209.png
+time cost 0.040105581283569336 ms
+wirte image:data/tum/cabinet/inference_result/210.png
+time cost 0.04804873466491699 ms
+wirte image:data/tum/cabinet/inference_result/211.png
+time cost 0.050137996673583984 ms
+wirte image:data/tum/cabinet/inference_result/212.png
+time cost 0.04698443412780762 ms
+wirte image:data/tum/cabinet/inference_result/213.png
+time cost 0.04388546943664551 ms
+wirte image:data/tum/cabinet/inference_result/214.png
+time cost 0.043062448501586914 ms
+wirte image:data/tum/cabinet/inference_result/215.png
+time cost 0.03629016876220703 ms
+wirte image:data/tum/cabinet/inference_result/216.png
+time cost 0.04711723327636719 ms
+wirte image:data/tum/cabinet/inference_result/217.png
+time cost 0.0495147705078125 ms
+wirte image:data/tum/cabinet/inference_result/218.png
+time cost 0.06709790229797363 ms
+wirte image:data/tum/cabinet/inference_result/219.png
+time cost 0.05093741416931152 ms
+wirte image:data/tum/cabinet/inference_result/220.png
+220 images,totle time: 10.868629932403564 s, avg time: 0.04940286332910711 s
+
+resenet 240*480*2*2
+
+wirte image:data/tum/cabinet/inference_result/212.png
+time cost 0.10447287559509277 s
+wirte image:data/tum/cabinet/inference_result/213.png
+time cost 0.11020159721374512 s
+wirte image:data/tum/cabinet/inference_result/214.png
+time cost 0.08046197891235352 s
+wirte image:data/tum/cabinet/inference_result/215.png
+time cost 0.134749174118042 s
+wirte image:data/tum/cabinet/inference_result/216.png
+time cost 0.10391831398010254 s
+wirte image:data/tum/cabinet/inference_result/217.png
+time cost 0.12374496459960938 s
+wirte image:data/tum/cabinet/inference_result/218.png
+time cost 0.08444833755493164 s
+wirte image:data/tum/cabinet/inference_result/219.png
+time cost 0.11534619331359863 s
+wirte image:data/tum/cabinet/inference_result/220.png
+220 images,totle time: 25.286697149276733 s, avg time:0.11493953249671242 s

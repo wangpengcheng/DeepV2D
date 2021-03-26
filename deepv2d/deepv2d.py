@@ -5,7 +5,7 @@ import cv2
 import vis
 from scipy import interpolate
 import matplotlib.pyplot as plt
-
+from tensorflow.python.client import timeline
 from modules.depth import DepthNetwork
 from modules.motion import MotionNetwork
 
@@ -46,6 +46,9 @@ def pose_distance(G):
 
 
 class DeepV2D:
+    """
+    推理测试主要类
+    """
     def __init__(self, 
                  cfg,
                  ckpt, 
@@ -70,13 +73,13 @@ class DeepV2D:
             if cfg.STRUCTURE.MODE == 'concat':
                 self.image_dims = [cfg.INPUT.FRAMES, cfg.INPUT.HEIGHT, cfg.INPUT.WIDTH]
             else:
-                self.image_dims = [None, cfg.INPUT.HEIGHT, cfg.INPUT.WIDTH] # 构建输入的训练图片维度
+                self.image_dims = [cfg.INPUT.FRAMES, int(cfg.INPUT.HEIGHT*cfg.INPUT.RESIZE), int(cfg.INPUT.WIDTH*cfg.INPUT.RESIZE)] # 构建输入的训练图片维度
 
         self.outputs = {}
         # 创建预定于变量
         self._create_placeholders()
         # 创建位姿估计网络
-        self._build_motion_graph()
+        #self._build_motion_graph()
         # 创建深度网络
         self._build_depth_graph()
         # 构建深度映射图
@@ -91,15 +94,16 @@ class DeepV2D:
         self.poses = []
 
         if self.use_fcrn:
-            self._build_fcrn_graph() # 
+            self._build_fcrn_graph() # 构建快速模型网络
         # 加载模型
         self.saver = tf.train.Saver(tf.model_variables()) #构建存储模型
 
     # 创建session
     def set_session(self, sess):
         self.sess = sess
+        # 初始化所有变脸
         sess.run(tf.global_variables_initializer())
-        # 存储
+        # 进行存储
         self.saver.restore(self.sess, self.ckpt)
 
         if self.use_fcrn:
@@ -188,6 +192,9 @@ class DeepV2D:
             )
         # 更新深度图
         self.outputs['depths'] = depths
+        self.outputs['poses'] = tf.squeeze(Ts.matrix(), 0)
+        self.outputs['intrinsics'] = intrinsics[0]
+
     # 创建点云图
     def _build_point_cloud_graph(self):
         """Use poses and depth maps to create point cloud"""
@@ -239,7 +246,10 @@ class DeepV2D:
 
 
     def _build_reprojection_graph(self):
-        """ Used to project depth from keyframes onto new frame 用于将深度从关键帧投影到新帧上"""
+        """
+        Used to project depth from keyframes onto new frame
+        用于将深度从关键帧投影到新帧上
+        """
 
         EPS = 1e-8
         depths = self.depths_placeholder[tf.newaxis]
@@ -247,11 +257,15 @@ class DeepV2D:
         intrinsics = self.intrinsics_placeholder[tf.newaxis]
 
         batch, num, ht, wd = tf.unstack(tf.shape(depths), num=4)
+        # 将相机位姿转换为SE3
         Ts = VideoSE3Transformation(matrix=poses)
+        # 将内参转换为矩阵
         intrinsics = intrinsics_vec_to_matrix(intrinsics) # 将相机参数转换为矩阵
 
         ii, jj = tf.meshgrid(tf.range(0, num), tf.range(num, num+1)) # 构建多帧的数量，ii为num,jj为1
+        
         ii = tf.reshape(ii, [-1]) # 将其转换为1维度向量
+        
         jj = tf.reshape(jj, [-1]) # 
 
         Tij = Ts.gather(jj) * Ts.gather(ii).inv() # 获取对应的照片位姿i*j;注意j一般为1，进行取反
@@ -259,6 +273,7 @@ class DeepV2D:
         X1 = Tij(X0) # 获取对应点的位姿，注意这里的点应该是n,w,h,x,y,d的6维度数据
 
         coords = projective_ops.project(X1, intrinsics) # 获取每个点对应的x,y
+        
         depths = X1[..., 2] #获取深度图
 
         indicies = tf.cast(coords[..., ::-1] + .5, tf.int32) #
@@ -269,6 +284,7 @@ class DeepV2D:
         count = tf.scatter_nd(indicies, tf.ones_like(depths), [ht, wd]) # 将其分散到新的张量中,来统计是否有深度数据
 
         depth = depth / (count + EPS) #在这里对深度进行均一化
+        
         self.outputs['depth_reprojection'] = depth # 获取深度映射信息
 
     def _build_visibility_graph(self):
@@ -361,7 +377,7 @@ class DeepV2D:
 
         else:
             if self.mode == 'keyframe':
-                images = np.stack([self.images[0]] * self.images.shape[0], axis=0) # 将第一张图片复制8次，构建临时空变量
+                images = np.stack([self.images[0]] * self.images.shape[0], axis=0) # 升级维度复制
                 poses = np.stack([np.eye(4)] * self.images.shape[0], axis=0) #复制8次单位矩阵
                 # 在这里进行初始赋值
                 feed_dict = {
@@ -404,14 +420,22 @@ class DeepV2D:
             self.init_placeholder: (itr==0),
             self.intrinsics_placeholder: self.intrinsics}
             
-        # execute pose subgraph
+        # execute pose subgraph，主要获取，姿势信息和相机参数
         outputs = [self.outputs['poses'], self.outputs['intrinsics'], self.outputs['weights']]
-        self.poses, self.intrinsics, self.weights = self.sess.run(outputs, feed_dict=feed_dict) # 在这里进行推理和训练
+        # 在这里进行推理和训练
+        #self.poses, self.intrinsics, self.weights = self.sess.run(outputs, feed_dict=feed_dict) 
+        self.poses,  intrinsics,  weights = self.sess.run(outputs, feed_dict=feed_dict) 
 
         if not self.cfg.MOTION.IS_CALIBRATED:
             print("intrinsics (fx, fy, cx, cy): ", self.intrinsics)
 
     def update_depths(self, itr=0):
+        """[summary]
+
+        Args:
+            itr (int, optional): [description]. Defaults to 0.
+        """
+        # 获取图像长度
         n = self.images.shape[0]
         inds_list = []
 
@@ -424,6 +448,7 @@ class DeepV2D:
             self.depths = self.sess.run(self.outputs['depths'], feed_dict=feed_dict)
 
         else:
+            # 进行迭代
             for i in range(n):
                 inds = np.arange(n).tolist()
                 inds.remove(i)
@@ -464,11 +489,11 @@ class DeepV2D:
         keyframe_depth = self.depths[0]
 
         image_depth = vis.create_image_depth_figure(keyframe_image, keyframe_depth)
-        cv2.imwrite('depth.png', image_depth[:, image_depth.shape[1]//2:])
-        cv2.imshow('image_depth', image_depth/255.0)
+        cv2.imwrite('depth.png', image_depth)
+        #cv2.imshow('image_depth', image_depth/255.0)
         
-        print("Press any key to cotinue")
-        cv2.waitKey()
+        # print("Press any key to cotinue")
+        #cv2.waitKey()
 
         # use depth map to create point cloud
         point_cloud, point_colors = self.sess.run(self.outputs['point_cloud'], feed_dict=feed_dict)
@@ -476,10 +501,57 @@ class DeepV2D:
         print("Press q to exit")
         vis.visualize_prediction(point_cloud, point_colors, self.poses)
 
-    # call基本函数
-    def __call__(self, images, intrinsics=None, iters=5, viz=False):
-        n_frames = len(images) # 8张图像
-        self.images = np.stack(images, axis=0) # 将所有图片进行维度叠加
+    def inference(self, images, poses, intrinsics=None, iters=2, viz=False, i_step=-1):
+        # 图片
+        self.images = images
+        # 位姿
+        self.poses = poses
+        # 内参
+        self.intrinsics = intrinsics
+        # 进行数据绑定
+        feed_dict = {
+                self.images_placeholder: self.images,
+                self.poses_placeholder: self.poses,
+                self.intrinsics_placeholder: self.intrinsics
+            }
+        # 设置推理时间统计
+        if i_step >= 0:
+            options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+            run_metadata = tf.RunMetadata()
+            # 开始执行推理,并采集参数
+            self.depths = self.sess.run(
+                self.outputs['depths'], 
+                feed_dict=feed_dict,
+                options=options,
+                run_metadata=run_metadata
+                )
+             # 将使用历史，保存为json文件
+            fetched_timeline = timeline.Timeline(run_metadata.step_stats)
+            chrome_trace = fetched_timeline.generate_chrome_trace_format()
+            # 写入文件夹
+            with open('./log/time_lines/timeline_02_step_%d.json' %i_step, 'w') as f:
+                    f.write(chrome_trace)
+        else:
+            self.depths = self.sess.run(
+                self.outputs['depths'], 
+                feed_dict=feed_dict
+                )
+        
+        return self.depths
+
+    # call基本函数,用来执行推理
+    def __call__(
+        self, 
+        images, 
+        intrinsics=None, 
+        iters=2, 
+        viz=False
+        ):
+
+        # 8张图像
+        n_frames = len(images) 
+        # 将所有图片进行维度叠加
+        self.images = np.stack(images, axis=0) 
 
         if intrinsics is None:
             # initialize intrinsics
@@ -502,10 +574,10 @@ class DeepV2D:
         for i in range(iters):
             print("start iterator {}".format(i))
             time_start=time.time()
-            self.update_poses(i)    # 计算位姿
-            self.update_depths()
+            #self.update_poses(i)    # 计算位姿
+            self.update_depths()    # 计算深度
             time_end=time.time()
-            print('time cost',time_end-time_start,'ms')
+            print('time cost',time_end-time_start,'s')
         if viz:
             self.vizualize_output()
 

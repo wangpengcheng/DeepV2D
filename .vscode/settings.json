@@ -68,7 +68,7 @@
         "valarray": "cpp",
         "string": "cpp",
         "random": "cpp"
-    }
-    "python.terminal.activateEnvironment":true
-
+    },
+    "python.terminal.activateEnvironment":true,
+    "git.ignoreLimitWarning": true
 }
