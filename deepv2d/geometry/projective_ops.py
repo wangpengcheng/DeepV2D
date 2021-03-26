@@ -36,7 +36,9 @@ def extract_and_reshape_intrinsics(intrinsics, shape=None):
     cy = intrinsics[:, 1, 2]
 
     if shape is not None:
+        # batch
         batch = tf.shape(fx)[:1]
+        # 其余部分
         fillr = tf.ones_like(shape[1:])
         k_shape = tf.concat([batch, fillr], axis=0)
 
