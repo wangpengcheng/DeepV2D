@@ -10,4 +10,5 @@ models
 tmp
 *.tfrecords
 *.pkl
+*.pth
 data/*
