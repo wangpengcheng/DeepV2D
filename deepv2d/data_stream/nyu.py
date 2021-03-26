@@ -129,29 +129,34 @@ def pose_vec2mat(pvec, use_filler=True):
         P = np.concatenate([P, filler], axis=1)
     return P[0]
 
-def build_data_map(data_blob_arr, width, height , thread_num =0):
-    images_map = {}
-    depths_map = {}
-    
+def build_data_map(data_blob_arr, img_buffer, depth_buffer ,width, height , thread_num =0, buffer_len = 100):
+    start_index = buffer_len*thread_num
+    img_map = {}
+    depth_map = {}
+    i = 0;
     # 读取图像
     for data in data_blob_arr:
         images_names = data['images']
         depth_name = data['depth']
+        img_len = len(images_names)
+        j = 0
         for image_name in images_names:
             #print("read image file:{}".format(image_name))
             image = cv2.imread(image_name)
             image = cv2.resize(image, (int(width), int(height)))
-            images_map[image_name]= image
-
+            img_buffer[start_index+i*img_len+j] = image
+            img_map[image_name] = start_index+i*img_len+j;
+            j = j+1
         # 读取深度信息
         depth = cv2.imread(depth_name, cv2.IMREAD_ANYDEPTH)
         depth = cv2.resize(depth, (int(width), int(height)))
         depth = (depth.astype(np.float32))/factor
-        depths_map[depth_name] = depth
+        depth_buffer[start_index+i] = depth
+        depth_map[depth_name] = start_index+i
+        i = i+1
 
     print("thread_num:{} read depth and images file OK".format(thread_num))
-
-    return images_map, depths_map
+    return img_map, depth_map
 
 # MyThread.py线程类
 class MyThread(threading.Thread):
@@ -176,7 +181,7 @@ class NYU:
     NYU数据集加载类，主要用来加载数据集中的数据
     主要用来进行数据的加载与查找
     """
-    def __init__(self, resize, dataset_path, scenes_file='data/nyu/train_scenes.txt', test=False, skip1 = 10, n_frames=5, r=2, buffer_len = 100, load_thread_num = 4):
+    def __init__(self, resize, dataset_path, scenes_file='data/nyu/train_scenes.txt', test=False, skip1 = 20, n_frames=5, r=2, buffer_len = 100, load_thread_num = 4):
         """[summary]
         Args:
             resize ([type]): [description]
@@ -198,6 +203,10 @@ class NYU:
         self.buffer_len = buffer_len
         self.images_map = {}
         self.depths_map = {} 
+        # 获取缓冲区
+        self.image_buffer = [0]*(n_frames*buffer_len+5)
+        self.depth_buffer = [0]*(buffer_len+5)
+        # 设置缓冲区
         self.scenes_list_file = scenes_file
         self.build_dataset_index(r=r, skip = skip1)
         #self.check_files()
@@ -215,7 +224,7 @@ class NYU:
         return [self.n_frames, self.height, self.width]
     # 获取数据
     def __getitem__(self, index):
-        # if index+1 % self.buffer_len == 0:
+        # if index % self.buffer_len == 0:
         #     # 构建索引表
         #     self.flash_buffer(index)
         
@@ -251,7 +260,7 @@ class NYU:
         # 关键帧序列
         frameid = data_blob['id']
         # 转换为
-        frameid = np.int32(frameid)
+        id = np.int32(frameid)
         # 读取图像
         images = []
         poses = []
@@ -269,7 +278,7 @@ class NYU:
         # 相机内参，转换为向量矩阵
         kvec = K.copy()
         depth = depth[...,None]
-        return images, poses, depth, filled, filled, kvec, frameid
+        return images, poses, depth, filled, filled, kvec, id 
 
 
     def __iter__(self):
@@ -361,24 +370,23 @@ class NYU:
         """
         # 按照线程进行数据分割
         data_blob_arr = [self.dataset_index[i:i+self.load_thread_num] for i in range(index, index+self.buffer_len, self.load_thread_num)]
-        image_map = {}
-        depth_map = {}
+        self.image_map = {}
+        self.depth_map = {}
         # 创建线程队列
         threads = []
         # 执行循环并行加载数据
         for i in range(self.load_thread_num):
-            thread = MyThread(build_data_map, (data_blob_arr[i], self.width, self.height, i))
+            thread = MyThread(build_data_map, (data_blob_arr[i], self.image_buffer, self.depth_buffer, self.width, self.height, i))
             thread.start()
             threads.append(thread)
 
         # 等待线程执行结束
         for thread in threads:
             temp_image_map, temp_depth_map = thread.get_result()
-            image_map.update(temp_image_map)
-            depth_map.update(temp_depth_map)
-        
-        self.images_map = image_map
-        self.depths_map = depth_map
+            self.image_map.update(temp_image_map)
+            self.depth_map.update(temp_depth_map)
+        print(self.image_map)
+        print(self.depth_map)
 
 
     #def test_set_iterator(self):

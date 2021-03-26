@@ -51,75 +51,57 @@ def make_predictions(args):
         depth_predictions, pose_predictions = [], []
         depth_groundtruth, pose_groundtruth = [], []
         # 构建数据加载器
-        db = TUM_RGBD(cfg.INPUT.RESIZE, args.dataset_dir, test=True,n_frames=5, r=2)
+        db = TUM_RGBD(cfg.INPUT.RESIZE, args.dataset_dir, test=True, n_frames=5, r=2)
         #提取数据集
         for test_id, test_blob in enumerate(db.test_set_iterator()):
             # 获取图像和相机位姿
-            images, intrinsics = test_blob['images'], test_blob['intrinsics']
+            images, intrinsics, poses = test_blob['images'], test_blob['intrinsics'], test_blob['poses']
             # 进行推理
-            depth_pred, poses_pred = deepv2d(images, intrinsics, iters=1)
+            depth_pred  = deepv2d.inference(images, poses, intrinsics)
 
             # use keyframe depth for evaluation
             depth_predictions.append(depth_pred[0])
             
-            # BA-Net evaluates pose as the relative transformation between two frames
-            delta_pose = poses_pred[1] @ np.linalg.inv(poses_pred[0])
-            pose_predictions.append(delta_pose)
             # 添加真实数据
             depth_groundtruth.append(test_blob['depth'])
-            pose_groundtruth.append(test_blob['pose'])
 
     # 预测深度与位姿
-    predictions = (depth_predictions, pose_predictions)
+    predictions = depth_predictions
     # 真实值
-    groundtruth = (depth_groundtruth, pose_groundtruth)
+    groundtruth = depth_groundtruth
     # 返回预测值与真实值
     return groundtruth, predictions
 
 
 def evaluate(groundtruth, predictions):
-    pose_results = {}
+
     depth_results = {}
     # 真实值
-    depth_groundtruth, pose_groundtruth = groundtruth
+    depth_groundtruth  = groundtruth
     # 预测值
-    depth_predictions, pose_predictions = predictions
+    depth_predictions  = predictions
     # 
     num_test = len(depth_groundtruth)
     for i in range(num_test):
         # match scales using median
         scalor = eval_utils.compute_scaling_factor(depth_groundtruth[i], depth_predictions[i])
         depth_predictions[i] = scalor * depth_predictions[i]
-        # 计算深度信息
+        # 计算深度误差
         depth_metrics = eval_utils.compute_depth_errors(depth_groundtruth[i], depth_predictions[i])
-        # 计算位姿矩阵
-        #pose_metrics = eval_utils.compute_pose_errors(pose_groundtruth[i], pose_predictions[i])
-
+        # 将关键帧设置为空
         if i == 0:
-            # for pkey in pose_metrics:
-            #     pose_results[pkey] = []
             for dkey in depth_metrics:
                 depth_results[dkey] = []
 
-        # for pkey in pose_metrics:
-        #     pose_results[pkey].append(pose_metrics[pkey])
-
         for dkey in depth_metrics:
             depth_results[dkey].append(depth_metrics[dkey])
-
-
-    ### aggregate metrics
-    # for pkey in pose_results:
-    #     pose_results[pkey] = np.mean(pose_results[pkey])
-
+    # 对所有的项目求均值
     for dkey in depth_results:
         depth_results[dkey] = np.mean(depth_results[dkey])
 
     print(("{:>1}, "*len(depth_results)).format(*depth_results.keys()))
     print(("{:10.4f}, "*len(depth_results)).format(*depth_results.values()))
 
-    #print(("{:>16}, "*len(pose_results)).format(*pose_results.keys()))
-    #print(("{:16.4f}, "*len(pose_results)).format(*pose_results.values()))
 
 
 if __name__ == '__main__':

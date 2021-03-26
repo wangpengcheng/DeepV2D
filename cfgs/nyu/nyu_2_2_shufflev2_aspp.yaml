@@ -3,7 +3,6 @@ INPUT:
   FRAMES: 5
   HEIGHT: 480
   WIDTH: 640
-  SAMPLES: 3
   SAMPLES: 4 # 取样报道
   SCALES: [1.0, 1.1, 1.2] # 缩放参数
   RESIZE: 0.5
@@ -33,6 +32,8 @@ STRUCTURE:
   HG_2D_COUNT: 1
   HG_2D_DEPTH_COUNT: 2
   USE_FAST_RESNET: True
+  TRAIN:
+    SMOOTH_W: 0.02
 STORE: # 存储相关参数
   RESRORE_PATH: "checkpoints/nyu/shufflenetv2_asppnet/_stage_2.ckpt" # 加载已有模型存储位置 一般为路径文件夹+数据集名称+模型名称
   CHECKPOINT_DIR: "checkpoints/nyu" # 训练模型存储位置，一般为路径文件夹+数据集名称+模型名称
