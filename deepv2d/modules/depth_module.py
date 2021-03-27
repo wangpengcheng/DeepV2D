@@ -154,9 +154,9 @@ class DepthModule(nn.Module):
             [type]: [description]
         """
         if self.cfg.STRUCTURE.DECODER_MODE == 'resnet':
-            self.decoder = ResnetDecoder(128, 1, self.pred_logits, (self.ht, self.wd), self.cfg.STRUCTURE.HG_COUNT, self.cfg.STRUCTURE.HG_DEPTH_COUNT)
+            self.decoder = ResnetDecoder(cfg.INPUT.FRAMES*32, 1, self.pred_logits, (self.ht, self.wd), self.cfg.STRUCTURE.HG_COUNT, self.cfg.STRUCTURE.HG_DEPTH_COUNT)
         elif self.cfg.STRUCTURE.DECODER_MODE == 'fast_resnet':
-            self.decoder = FastResnetDecoder(128, self.pred_logits, (self.ht, self.wd), self.cfg.STRUCTURE.HG_COUNT, self.cfg.STRUCTURE.HG_DEPTH_COUNT)
+            self.decoder = FastResnetDecoder(cfg.INPUT.FRAMES*32, self.pred_logits, (self.ht, self.wd), self.cfg.STRUCTURE.HG_COUNT, self.cfg.STRUCTURE.HG_DEPTH_COUNT)
         else:
             self.decoder = None
             print("cfg.FAST_MODE is error value:{}".format(self.cfg.FAST_MODE))

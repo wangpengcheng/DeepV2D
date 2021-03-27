@@ -64,10 +64,10 @@
             // ],
             "program": "training/train_tum01.py",
             "args": [
-                "--cfg=cfgs/tum_2_2_fast_shufflev2.yaml",
+                "--cfg=cfgs/tum/tum_2_2_shufflev2_fast.yaml",
                 "--name=tmu_model",
                 // "--restore=checkpoints/tum/tmu_model/_stage_2.ckpt",
-                "--dataset_dir=data/tum/rgbd_dataset_freiburg3_cabinet" //,
+                "--dataset_dir=data/tum2" //,
             ],
             // "program": "training/train_nyuv2.py",
             // "args": [

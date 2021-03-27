@@ -257,7 +257,7 @@ class FastResnetEncoder(nn.Module):
 
 
 class FastResnetDecoder(nn.Module):
-    def __init__(self, inputs_dims,pred_logits, out_size, stack_count=1 ,depth_count=2):
+    def __init__(self, inputs_dims, pred_logits, out_size, stack_count=1 ,depth_count=2):
         """
         基础解码单元
         Args:
@@ -272,7 +272,7 @@ class FastResnetDecoder(nn.Module):
         self.stack_count = stack_count
         self.depth_count = depth_count
         self.pred_logits = pred_logits
-        self.conv1 = Conv3d(64, 32, 1, stride = 1)
+        self.conv1 = Conv3d(inputs_dims, 32, 1, stride = 1)
         # 注意这里可以减少一个1*1 卷积
         self.res_conv1 = FastResConv3d(32, 32)
         
@@ -288,19 +288,19 @@ class FastResnetDecoder(nn.Module):
         """
         dims = input.shape
         # 重新进行数据 4*64*32*60*80
-        volume = torch.reshape(input, [dims[0]*dims[1], 64, dims[3], dims[4], dims[5]])
+        #volume = torch.reshape(input, [dims[0]*dims[1], 64, dims[3], dims[4], dims[5]])
         # 进行卷积 4*32*32*30*40   4*32*16*30*40 
-        out = self.conv1(volume)
+        out = self.conv1(input)
         out = self.res_conv1(out) #4*32*32*30*40
         # 重新整理输出维度为32 维度, 1*4*32*32*30*40 1 4 64 32 30 40
-        out = torch.reshape(out,[dims[0],  dims[1], 32, dims[3], dims[4],dims[5]])
+        #out = torch.reshape(out,[dims[0],  dims[1], 32, dims[3], dims[4],dims[5]])
         # 求解均值 
-        out = torch.mean(out, dim = 1)
+        #out = torch.mean(out, dim = 1)
         # 沙漏网络
         for i in range(self.stack_count):
             out = self.stack_conv(out)
             out = self.stereo_head(out)
-            self.pred_logits.append(out)
+            #self.pred_logits.append(out)
         return out
 
 

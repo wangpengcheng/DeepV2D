@@ -51,7 +51,17 @@ def backproject(depth, intrinsics, jacobian=False):
     X = Z * (x - cx) / fx # 获取x坐标
     # 计算Y值
     Y = Z * (y - cy) / fy
+    points = torch.stack([X, Y, Z], dim=-1)
+    return points
 
+
+def project(points, intrinsics, jacobian=False):
+    """ project point cloud onto image 将点云投影到图像上""" 
+    # 获取点云图
+    X, Y, Z = torch.unbind(points,dim=-1)
+    # 设置最小深度
+    Z[ Z< MIN_DEPTH ]=MIN_DEPTH
+    #Z = torch.max(Z, MIN_DEPTH) # 获取最大深度，主要这里需要设置一下最小深度
     
 
     x_shape = X.shape # 获取x数据的长度

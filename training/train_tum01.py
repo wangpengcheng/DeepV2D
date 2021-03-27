@@ -14,6 +14,7 @@ from core import config
 from my_trainer import DeepV2DTrainer
 
 from data_stream.tum import TUM_RGBD
+from utils.my_utils import *
 
 def main(args):
 
@@ -51,11 +52,9 @@ def main(args):
 
 if __name__ == '__main__':
    
-    #设置value的显示长度为100，默认为50
+    # 设置value的显示长度为100，默认为50
     seed = 1234
-    torch.manual_seed(seed)
-    np.random.seed(seed)
-    random.seed(seed)
+    set_random_seed(seed)
     
     parser = argparse.ArgumentParser()
     parser.add_argument('--name', help='name of your experiment')

@@ -6,7 +6,7 @@ import numpy as np
 import os
 import cv2
 import torch.optim as optim
-
+import time
 from geometry.transformation import *
 
 from modules.depth_module import DepthModule
@@ -140,12 +140,13 @@ class DeepV2DTrainer(object):
         # 设置为训练模式
         deepModel.train()
         # 加载模型
-        if restore_ckpt is not None:
+        if cfg.STORE.IS_USE_RESRORE:
             # 加载模型
-            checkpoint = torch.load(restore_ckpt)
+            checkpoint = torch.load(cfg.STORE.RESRORE_PATH)
             deepModel.load_state_dict(checkpoint['net'])
             optimizer.load_state_dict(checkpoint['optimizer'])
             start_step = checkpoint['epoch']
+            lr_schedule.load_state_dict(checkpoint['model_lr_scheduler'])
             end_step = end_step + max_steps
         #print(deepModel)
         # 日志
@@ -163,8 +164,9 @@ class DeepV2DTrainer(object):
             # 开始加载数据
             for i, data in enumerate(trainloader, 0):
                 
-                images_batch, poses_batch, gt_batch, filled_batch, pred_batch, intrinsics_batch, frame_id= data
+                images_batch, poses_batch, gt_batch, filled_batch, pred_batch, intrinsics_batch, frame_id = data
                 #images_batch, gt_batch, intrinsics_batch =  prefetcher.next()
+                data1= gt_batch[gt_batch > 0]
                 # 进行数据预处理,主要是维度交换
                 images = images_batch.permute(0, 1, 4, 2, 3)
                 
@@ -177,7 +179,7 @@ class DeepV2DTrainer(object):
               
                 Ts = poses_batch.cuda()
                 images = images.cuda()
-                intrinsics_batch = intrinsics_batch.cuda()
+                intrinsics_batch = intrinsics_batch.cuda().float()
                 gt_batch = gt_batch.cuda()
 
                 outputs = deepModel(
@@ -200,7 +202,7 @@ class DeepV2DTrainer(object):
             model_lr_scheduler.step()
             # 输出loss值
             if training_step % LOG_FREQ == 0:
-                loss_str = "[step=%5d] loss: %.9f".format(training_step, running_loss / LOG_FREQ)
+                loss_str = "[step= {:>5d}] loss: {:.9f}".format(training_step, running_loss / LOG_FREQ)
                 print(loss_str)
                 # 需要记录loss值
                 if loss_file is not None:
@@ -211,23 +213,25 @@ class DeepV2DTrainer(object):
             if training_step % CHECKPOINT_FREQ == 0:
                 # 模型名称
                 end = "step_{}.pth".format(training_step)
-                save_file = os.path.join(cfg.CHECKPOINT_DIR, cfg.TRAIN.MODULE_NAME) + end
+                save_file = os.path.join(cfg.CHECKPOINT_DIR, end)
                 
                 checkpoint = {
                     "net": deepModel.state_dict(),
                     "optimizer": optimizer.state_dict(),
-                    "epoch": training_step
+                    "epoch": training_step,
+                    "model_lr_scheduler": model_lr_scheduler
                 }
                 # 模型名字
                 torch.save(checkpoint, save_file)
         # 最后进行一次模型保存
-        end = ".pth"
-        save_file = os.path.join(cfg.CHECKPOINT_DIR, cfg.TRAIN.MODULE_NAME)+ end
+        end = "/final.pth"
+        save_file = os.path.join(cfg.CHECKPOINT_DIR, end)
         
         checkpoint= {
             "net": deepModel.state_dict(),
             "optimizer": optimizer.state_dict(),
-            "epoch": training_step
+            "epoch": training_step,
+            "model_lr_scheduler": model_lr_scheduler
             }
             # 模型名字
         torch.save(checkpoint, save_file)

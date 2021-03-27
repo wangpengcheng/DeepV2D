@@ -138,7 +138,7 @@ __C.MOTION.TRAIN.DELTA = [0.025, 0.025, 0.025, 0.025, 0.025, 0.025]
 __C.STORE = edict()
 # 设置存储相关参数
 # 设置加载模型路径
-__C.STORE.RESRORE_PATH = 'models/nyu.ckpt'
+__C.STORE.RESRORE_PATH = 'models/nyu.pth'
 # 设置存储模型文件夹 
 __C.STORE.CHECKPOINT_DIR = '/checkpoints/tum/tmu_model/'
 # 设置临时文件夹位置

@@ -56,7 +56,7 @@ class MyLoss(nn.Module):
         pred = self.transform(outputs)
         # 所有深度大于0的值
         zero = torch.zeros_like(depth_gt)
-        valid = torch.where(depth_gt > 0.0, zero, depth_gt).float()
+        valid = torch.where(depth_gt > 0.0, depth_gt, zero).float()
         # 计算所有元素的均值
         s = 1.0 / (torch.mean(valid) + 1e-8)
 
