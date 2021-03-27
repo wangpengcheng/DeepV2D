@@ -1,4 +1,5 @@
 import torch
+import sys
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
@@ -10,7 +11,7 @@ import time
 from geometry.transformation import *
 
 from modules.depth_module import DepthModule
-
+from utils.my_utils import *
 
 # from torchsummary import summary
 # from geometry.transformation import *
@@ -165,17 +166,14 @@ class DeepV2DTrainer(object):
             for i, data in enumerate(trainloader, 0):
                 
                 images_batch, poses_batch, gt_batch, filled_batch, pred_batch, intrinsics_batch, frame_id = data
+
                 #images_batch, gt_batch, intrinsics_batch =  prefetcher.next()
-                data1= gt_batch[gt_batch > 0]
                 # 进行数据预处理,主要是维度交换
                 images = images_batch.permute(0, 1, 4, 2, 3)
+                # 进行数据预处理
+                images, gt_batch, filled_batch, intrinsics_batch = prepare_inputs(cfg, images, gt_batch, filled_batch,intrinsics_batch)
                 
-                #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-                #deepModel = deepModel.to(device)
-                # set optimizer buffer to 0
                 optimizer.zero_grad()
-                #summary(deepModel, [(Ts.shape[0:]), (images.shape[0:]), (intrinsics_batch.shape[0:])])
-                # 前向计算
               
                 Ts = poses_batch.cuda()
                 images = images.cuda()

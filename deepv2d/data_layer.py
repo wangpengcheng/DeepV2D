@@ -264,9 +264,10 @@ def augument(images):
     images = 255.0*((images/255.0)**random_gamma)
 
     # randomly shift brightness
+    # 随机亮度变换
     random_brightness = tf.random_uniform([], 0.8, 1.2)
     images *= random_brightness
-
+    # 随机色彩变换
     # randomly shift color
     random_colors = tf.random_uniform([3], 0.8, 1.2)
     images *= tf.reshape(random_colors, [1, 1, 1, 3])
