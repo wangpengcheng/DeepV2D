@@ -12,14 +12,16 @@ from core import config
 from deepv2d import vis
 import eval_utils 
 
+from torch2trt import torch2trt
 
 # 加载数据集进行推理
 
 def inference_test(deepModel, cfg):
-    deepModel = deepModel.load_state_dict(torch.load('pytorch/tum/tmu_model/depth.pth'))
+   
+    #deepModel = deepModel.load_state_dict(torch.load('pytorch/tum/tmu_model/depth.pth'))
     deepModel.cuda()
 
-    db = TUM_RGBD(cfg.INPUT.RESIZE, "data/tum", r=4)
+    db = TUM_RGBD(cfg.INPUT.RESIZE, "data/tum2", r=2)
 
     trainloader = torch.utils.data.DataLoader(db, batch_size=1, shuffle=False, num_workers=8)
     time_sum =0.0
@@ -30,12 +32,16 @@ def inference_test(deepModel, cfg):
                     # 进行数据预处理,主要是维度交换
         images = images_batch.permute(0, 1, 4, 2, 3)
         Ts = poses_batch.cuda()
-        images = images.cuda()
-        intrinsics_batch = intrinsics_batch.cuda()
+        images = images.float().cuda()
+        intrinsics_batch = intrinsics_batch.float().cuda()
         gt_batch = gt_batch.cuda()
+        # print(images.shape)
+        # print(Ts.shape)
+        # print(intrinsics_batch.shape)
         # 计算时间
         time_start=time.time()
-        outputs = deepModel(Ts, images, intrinsics_batch)
+        with torch.no_grad():
+            outputs = deepModel(Ts, images, intrinsics_batch)
         time_end=time.time()
         key_frame_depth = outputs[0]
         # 关键rgb帧
@@ -59,13 +65,67 @@ def inference_test(deepModel, cfg):
         print('time cost',time_end-time_start,'s')
     print("{} images,totle time: {} s, avg time: {} s".format(iter_number-1, time_sum, time_sum/(iter_number-1)))
 
+def converToTensorrt(deepModel, cfg):
+    model = deepModel.eval().cuda()
+    db = TUM_RGBD(cfg.INPUT.RESIZE, "data/tum2", r=2)
 
+    trainloader = torch.utils.data.DataLoader(db, batch_size=1, shuffle=False, num_workers=8)
+    for i, data in enumerate(trainloader, 0):
+        if i> 0:
+            break
+        images_batch, poses_batch, gt_batch, filled_batch, pred_batch, intrinsics_batch, frame_id= data
+        images = images_batch.permute(0, 1, 4, 2, 3)
+        poses = poses_batch.cuda()
+        images = images.float().cuda()
+        intrinsics = intrinsics_batch.float().cuda()
+        with torch.no_grad():
+            print("hello")
+            outputs = deepModel(poses, images, intrinsics)
+            #print(outputs)
+            model_trt = torch2trt(model, [poses, images, intrinsics ])
+        #torch.save(model_trt.state_dict(), 'deep_trt.pth')
+    # images = torch.ones(1, 5, 3, 240, 320).float().cuda()
+    # poses = torch.ones(1, 5, 4, 4).float().cuda()
+    # intrinsics = torch.ones(1, 4).float().cuda()
+
+def converToONNX(deepModel, cfg):
+    model = deepModel.eval().cuda()
+    db = TUM_RGBD(cfg.INPUT.RESIZE, "data/tum2", r=2)
+
+    trainloader = torch.utils.data.DataLoader(db, batch_size=1, shuffle=False, num_workers=8)
+    for i, data in enumerate(trainloader, 0):
+        if i> 0:
+            break
+        images_batch, poses_batch, gt_batch, filled_batch, pred_batch, intrinsics_batch, frame_id= data
+        images = images_batch.permute(0, 1, 4, 2, 3)
+        poses = poses_batch.cuda()
+        images = images.float().cuda()
+        intrinsics = intrinsics_batch.float().cuda()
+        with torch.no_grad():
+            print("hello")
+            outputs = deepModel(poses, images, intrinsics)
+            #print(outputs)
+            torch.onnx.export(
+                    deepModel,
+                    (poses,
+                    images, 
+                    intrinsics),
+                    "deep_onnx.onnx",
+                    opset_version=12,
+                    do_constant_folding=True,
+                    input_names=["poses","images","intrinsics"],
+                    output_names=["output"]
+                    )
+            #model_trt = torch2trt(model, [poses, images, intrinsics ])
 
 if __name__ == '__main__':
     cfg = config.cfg_from_file("cfgs/tum_2_2_fast_shufflev2.yaml")
     deepModel = DepthModule(cfg)
-    inference_test(deepModel,cfg)
-
+    checkpoint = torch.load("pytorch/tum/tmu_model/step_600.pth")
+    deepModel.load_state_dict(checkpoint['net'])
+    #inference_test(deepModel,cfg)
+    converToTensorrt(deepModel,cfg)
+    #converToONNX(deepModel,cfg)
 # print(model)
 # model.load_state_dict(torch.load('pytorch/tum/tmu_model/depth.pth'))
 

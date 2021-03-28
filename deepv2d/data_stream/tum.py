@@ -48,20 +48,23 @@ def build_fast_data_map(
             ):
         # 开始坐标
         start_index = buffer_len*thread_num
-
+        print("start")
+        print(start_index)
         i = 0
         # 读取图像
         for data in data_blob_arr:
             images_names = data['images']
             depth_name = data['depth']
             img_len = len(images_names)
+            #print(img_len)
             j = 0
             for image_name in images_names:
-                #print("read image file:{}".format(image_name))
                 image = cv2.imread(image_name)
                 image = cv2.resize(image, (int(width), int(height)))
                 # 计算索引
                 img_index = (start_index+i)*img_len + j
+                #print("read image file:{} index:{}".format(image_name,img_index))
+                #print(img_index)
                 # 更新索引
                 img_buffer[img_index] = image
                 img_map[image_name] = img_index
@@ -185,7 +188,7 @@ class TUM_RGBD:
         self.width = int(640*self.resize)
         self.is_test = test
         # 多线程加载数据数目
-        self.load_thread_num = 16
+        self.load_thread_num = 1
         # 读取图像
         self.images = []
         self.images_map = {}
@@ -320,10 +323,11 @@ class TUM_RGBD:
 
     
     def build_fast_map(self):
+        frame_len = len(self.dataset_index[0]['images'])
         # 进行内存空间分配
-        self.images = [0]*(int(len(self.dataset_index)*self.n_frames)+1)
-        self.depths = [0]*(int(len(self.dataset_index))+1)
-
+        self.images = [0]*(int(len(self.dataset_index)*frame_len)+1)
+        self.depths = [0]*(int(len(self.dataset_index))+10)
+        
         # 进行数据分割
         data_blob_arr = list_split(self.dataset_index, len(self.dataset_index)//(self.load_thread_num))
         # 创建线程队列
@@ -331,7 +335,7 @@ class TUM_RGBD:
         buffer_len = len(data_blob_arr[0])
         # 执行循环并行加载数据
         for i in range(len(data_blob_arr)):
-            thread = MyThread(build_fast_data_map, (data_blob_arr[i], self.images, self.depths, self.images_map,self.depths_map,  self.width, self.height, i, buffer_len))
+            thread = MyThread(build_fast_data_map, (data_blob_arr[i], self.images, self.depths, self.images_map, self.depths_map,  self.width, self.height, i, buffer_len))
             thread.start()
             threads.append(thread)
 
@@ -339,7 +343,7 @@ class TUM_RGBD:
         for thread in threads:
             # 获取最终map
             thread.get_result()
-
+        #print(len(self.dataset_index))
         print(len(self.images))
         print(len(self.depths))
         print(len(self.images_map))

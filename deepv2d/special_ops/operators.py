@@ -39,15 +39,40 @@ def get_cood(depths, intrinsics, Tij):
     Tij = Tij.repeat(1, 1, c, ht, wd, 1, 1)
     Tij = Tij.view(batch*num*c*ht*wd, 4, 4)
     PT = PT.view(batch*num*c*ht*wd, 4, 1)
+    # 进行乘法运算
     re = torch.bmm(Tij, PT)
     re = re.view(batch, num, c, ht, wd, 4)
 
-
+    # 对最后一个维度进行分解
     X, Y, Z, one = torch.unbind(re, dim=-1)
     pt1 = torch.stack([X, Y, Z], dim = -1)
     coords = project(pt1, intrinsics)
 
     return coords 
+def TS_inverse(pose):
+    """
+    位姿矩阵的逆矩阵
+    Args:
+        pose ([type]): [description]
+    """
+    b, n, w, h = pose.shape[:]
+    #print(type(b))
+    # 提取列数据
+    col1, col2, col3, col4 = torch.unbind(pose, dim=-1)
+    # 对每列数据进行分解
+    a, b, c, zero = torch.chunk(col1, 4, dim=-1)
+    d, e, f, _ = torch.chunk(col2, 4, dim=-1)
+    g, h, i, _ = torch.chunk(col3, 4, dim=-1)
+    x, y, z, one = torch.chunk(col4, 4, dim=-1)
+    res = torch.cat([
+        a, b, c, z*c-x*a-y*b,
+        d, e, f, z*f-x*d-y*e,
+        g, h, i, z*i-x*g-y*h,
+        zero, zero, zero, one
+        ], dim = -1)
+    #print(res.shape)
+    res = res.view(pose.shape)
+    return  res
 
 def backproject_avg(
             Ts, 
@@ -83,51 +108,24 @@ def backproject_avg(
     depths = depths.repeat([batch, num, 1, ht, wd])
     # 根据梯度选取张数
     ii, jj = torch.meshgrid(torch.arange(1), torch.arange(0, num))
-    ii = ii.view([-1]).tolist()
-    jj = jj.view([-1]).tolist()
-    Tii = Ts[:,ii,]
-    Tjj = Ts[:,jj,]
+    ii = ii.view([-1]).cuda()
+    jj = jj.view([-1]).cuda()
+    Tii = my_gather(Ts, ii, 1)
+    Tjj = my_gather(Ts, jj, 1)
+    # ii = ii.view([-1]).tolist()
+    # jj = jj.view([-1]).tolist()
+    # Tii = Ts[:,ii,]
+    # Tjj = Ts[:,jj,]
+    #print(Tii.shape)
     # 计算对应矩阵 
-    Tij = Tjj * torch.inverse(Tii)
-    # 将所有深度点，映射到三维空间中
+    Tij = Tjj * TS_inverse(Tii)
+    #print(Tij.shape)
+    # 将所有深度点，映射到二维空间中
     coords = get_cood(depths, intrinsics, Tij)
     
     volume = my_bilinear_sampler(fmaps, coords)
     
     # 8*128*32*30*40
-    volume = torch.reshape(volume, [batch, c*num, dd, ht, wd])
-    return volume
-
-
-def backproject_cat(Ts, depths, intrinsics, fmaps):
-    # 获取通道数目
-    dim = fmaps.shape[2]
-    # 获取深度数量
-    dd = depths.shape[0]
-    batch, num, ht, wd, _ = torch.unbind(tf.shape(fmaps), num=5)
-
-    # make depth volume
-    depths = torch.reshape(depths, [1, 1, dd, 1, 1])
-    depths = tf.tile(depths, [batch, num, 1, ht, wd])
-    # 进行平滑操作
-    ii, jj = tf.meshgrid(tf.range(1), tf.range(0, num))
-    ii = torch.reshape(ii, [-1])
-    jj = torch.reshape(jj, [-1])
-
-    # compute backprojected coordinates
-    Tij = Ts.gather(jj) * Ts.gather(ii).inv()
-    coords = Tij.transform(depths, intrinsics)
-
-    if use_cuda_backproject:
-        coords = torch.transpose(coords, [0, 3, 4, 2, 1, 5])
-        fmaps = torch.transpose(fmaps, [0, 2, 3, 1, 4])
-        volume = back_project(fmaps, coords)
-
-    else:
-        coords = torch.transpose(coords, [0, 1, 3, 4, 2, 5])
-        volume = bilinear_sampler(fmaps, coords, batch_dims=2)
-        volume = torch.transpose(volume, [0, 2, 3, 4, 1, 5])
-
-    volume = torch.reshape(volume, [batch, ht, wd, dd, dim*num])
+    volume = volume.view([batch, c*num, dd, ht, wd])
     return volume
 

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import sys
 sys.path.append('deepv2d')
 import torch
@@ -19,11 +20,11 @@ from utils.my_utils import *
 def main(args):
 
     cfg = config.cfg_from_file(args.cfg)
-     # 输出日志文件夹
+    #输出日志文件夹
     log_dir = os.path.join(cfg.STORE.LOG_DIR, cfg.STORE.MODLE_NAME)
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
-    # 输出文件夹
+    #输出文件夹
     checkpoint_dir = os.path.join(cfg.STORE.CHECKPOINT_DIR, cfg.STORE.MODLE_NAME)
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)

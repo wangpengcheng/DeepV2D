@@ -110,7 +110,7 @@ class DeepV2DTrainer(object):
         # 设置日志频率
         LOG_FREQ = 100
         # 设置checkpoint中间输出频率
-        CHECKPOINT_FREQ = 2000
+        CHECKPOINT_FREQ = 100
         # 设置最大步长
         self.training_steps = max_steps
         # 开始加载数据模型
