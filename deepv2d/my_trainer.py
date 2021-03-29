@@ -108,9 +108,9 @@ class DeepV2DTrainer(object):
         # 设置存储频率
         SUMMARY_FREQ = 10
         # 设置日志频率
-        LOG_FREQ = 100
+        LOG_FREQ = 10
         # 设置checkpoint中间输出频率
-        CHECKPOINT_FREQ = 2000
+        CHECKPOINT_FREQ = 20
         # 设置最大步长
         self.training_steps = max_steps
         # 开始加载数据模型
@@ -218,7 +218,7 @@ class DeepV2DTrainer(object):
                     "net": deepModel.state_dict(),
                     "optimizer": optimizer.state_dict(),
                     "epoch": training_step,
-                    "model_lr_scheduler": model_lr_scheduler
+                    "model_lr_scheduler": model_lr_scheduler.state_dict()
                 }
                 # 模型名字
                 torch.save(checkpoint, save_file)
