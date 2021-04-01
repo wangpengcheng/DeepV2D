@@ -148,7 +148,7 @@ class DeepV2DTrainer(object):
             deepModel.load_state_dict(checkpoint['net'])
             optimizer.load_state_dict(checkpoint['optimizer'])
             start_step = checkpoint['epoch']
-            lr_schedule.load_state_dict(checkpoint['model_lr_scheduler'])
+            model_lr_scheduler.load_state_dict(checkpoint['model_lr_scheduler'])
             end_step = end_step + max_steps
         #print(deepModel)
         # 日志

@@ -102,11 +102,12 @@ class DepthModule(nn.Module):
         images = torch.reshape(images, [batch*frames, 3, ht, wd]) # 调整输入维度为图片数量*高*宽*3
         # 获取编码图片
         fmaps = self.encoder(images)
-        #再重新调整顺序，还原维度信息
-        if self.cfg.STRUCTURE.ENCODER_MODE == 'resnet':
-            fmaps = torch.reshape(fmaps, [batch, frames, 32, ht//4, wd//4]) # 1 4 32 60 80 
-        else:
-            fmaps = torch.reshape(fmaps, [batch, frames, 32, ht//8, wd//8]) # 1 4 32 30 40 
+        fmaps = torch.reshape(fmaps, [batch, frames, 32, ht//8, wd//8]) # 1 4 32 30 40 
+        # #再重新调整顺序，还原维度信息
+        # if self.cfg.STRUCTURE.ENCODER_MODE == 'resnet':
+        #     fmaps = torch.reshape(fmaps, [batch, frames, 32, ht//4, wd//4]) # 1 4 32 60 80 
+        # else:
+        #     fmaps = torch.reshape(fmaps, [batch, frames, 32, ht//8, wd//8]) # 1 4 32 30 40 
         # #反投影，获取对应坐标对上的反向投影插值 1 4 30 40 32 64
         volume = operators.backproject_avg(Ts, depths, intrinsics, fmaps, self.back_project)
 
@@ -169,16 +170,21 @@ class DepthModule(nn.Module):
         ht = images.shape[-2]
         wd = images.shape[-1]
         self.input_dims = [ht, wd] # 获取输入信息
-        #print("ht:{}, wd: {}".format(ht,wd))
-        if self.cfg.STRUCTURE.MODE == 'avg':
-            spred = self.stereo_network_avg(
+        spred = self.stereo_network_avg(
                 poses,
                 images,
                 intrinsics
                 )
-        # perform view concatenation 执行视图连接，连接位姿图像和参数
-        elif self.cfg.STRUCTURE.MODE == 'concat':
-            spred = self.stereo_network_cat(poses, images, intrinsics)
+        #print("ht:{}, wd: {}".format(ht,wd))
+        # if self.cfg.STRUCTURE.MODE == 'avg':
+        #     spred = self.stereo_network_avg(
+        #         poses,
+        #         images,
+        #         intrinsics
+        #         )
+        # # perform view concatenation 执行视图连接，连接位姿图像和参数
+        # elif self.cfg.STRUCTURE.MODE == 'concat':
+        #     spred = self.stereo_network_cat(poses, images, intrinsics)
         # 返回最终的深度估计值
         return spred
 
