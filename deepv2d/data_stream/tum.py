@@ -430,9 +430,14 @@ class TUM_RGBD:
             # 读取深度信息
             depth = self.depths[self.depths_map[depth_file_name]]
             # 获取位姿信息
-            pose_vec = temp_data_blob['poses'][keyframe_index]
-            pose = pose_vec2mat(pose_vec)
+            poses = []
+            for i in inds:
+                pose_vec = temp_data_blob['poses'][i]
+                pose_mat = pose_vec2mat(pose_vec)
+                #poses.append(np.linalg.inv(pose_mat))
+                poses.append(pose_mat)
             K = temp_data_blob['intrinsics']
+            poses = np.stack(poses, axis=0).astype(np.float32)
             # 相机内参，转换为向量矩阵
             kvec = K.copy()
             # 转换深度信息
@@ -440,7 +445,7 @@ class TUM_RGBD:
             data_blob = {
                     'images': images,
                     'depth': depth,
-                    'pose': pose,
+                    'poses': poses,
                     'intrinsics': intrinsics,
             }
             yield data_blob

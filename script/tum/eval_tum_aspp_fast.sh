@@ -1,0 +1,1 @@
+python ./evaluation/eval_tum.py --cfg=cfgs/tum/tum_2_2_aspp_fast.yaml --model=checkpoints/tum/asppnet_fast/_stage_2.ckpt-6000 --dataset_dir=data/tum --n_iters=1

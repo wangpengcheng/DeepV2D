@@ -15,9 +15,9 @@ import vis
 
 from core import config
 from data_stream.tum import TUM_RGBD
-from deepv2d import DeepV2D
+from deepv2d_clear import DeepV2D
 from utils.my_utils import set_gpus
-
+from data_layer import DataLayer, DBDataLayer
 import eval_utils
 
 
@@ -37,7 +37,8 @@ def write_to_folder(images, intrinsics, test_id):
 def make_predictions(args):
 
     cfg = config.cfg_from_file(args.cfg)
-    deepv2d = DeepV2D(cfg, args.model, use_fcrn=False, mode=args.mode)
+    # 模型初始化
+    deepv2d = DeepV2D(cfg, args.model,  mode=args.mode)
     # 进行初始化
     # init_op = tf.group(tf.global_variables_initializer(),
     #         tf.local_variables_initializer())
@@ -52,10 +53,12 @@ def make_predictions(args):
         depth_groundtruth, pose_groundtruth = [], []
         # 构建数据加载器
         db = TUM_RGBD(cfg.INPUT.RESIZE, args.dataset_dir, test=True, n_frames=5, r=2)
+        #dl = DataLayer(db, batch_size=1)
         #提取数据集
         for test_id, test_blob in enumerate(db.test_set_iterator()):
-            # 获取图像和相机位姿
-            images, intrinsics, poses = test_blob['images'], test_blob['intrinsics'], test_blob['poses']
+            # 获取图像和相机位姿以及真实值
+            images, intrinsics, gt, poses = test_blob['images'], test_blob['intrinsics'], test_blob['depth'], test_blob['poses']
+            
             # 进行推理
             depth_pred  = deepv2d.inference(images, poses, intrinsics)
 
