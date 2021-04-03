@@ -13,7 +13,7 @@ TRAIN:
   LR: 0.0007
   CLIP_GRADS: True
   DEPTH_WEIGHT: 1.0
-  USE_GPU: '0'
+  USE_GPU: '1'
   GPU_MEMORY: 0.4
   IS_TRAIN: True # 是否正在训练中，用来决定是否有参数更新
 MOTION:
