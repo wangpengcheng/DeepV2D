@@ -8,7 +8,7 @@ INPUT:
   SCALES: [1.0, 1.1, 1.2] # 缩放参数
   RESIZE: 0.5
 TRAIN:
-  ITERS: [300, 200000]
+  ITERS: [300, 50000]
   BATCH: [1, 4]
   LR: 0.001
   CLIP_GRADS: True
@@ -41,7 +41,7 @@ STORE: # 存储相关参数
   IS_SAVE_LOSS_LOG: True # 是否存储loss 相关日志文件，开启则在日志文件中添加当前训练日志
   MODLE_NAME: "asppnet_asppnet" # 模型名称 当前模型的名称--一般为网络结构名称
   LOG_LEVEL: "3" # 输出日志级别
-  IS_USE_RESRORE: False # 是否使用 RESRORE_PATH 来进行模型再训练，还是直接生成新模型
+  IS_USE_RESRORE: True # 是否使用 RESRORE_PATH 来进行模型再训练，还是直接生成新模型
 
 
 # new fast 0.037686747854406184 s

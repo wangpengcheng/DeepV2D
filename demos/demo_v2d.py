@@ -91,6 +91,12 @@ def load_sorted_test_sequence(data_path, inference_file_name, scale):
     
     return images, poses, depths, my_intrinsics
 
+def prcess_gt(depths_gt):
+    crop = [20//2, 459//2, 24//2, 615//2] # eigen crop
+    res = depths_gt[crop[0]:crop[1], crop[2]:crop[3]]
+    res = cv2.resize(res, (640//2, 480//2))
+    return res
+
 def main(args):
 
     if args.cfg is None:
@@ -143,6 +149,7 @@ def main(args):
             if is_pose:
                 # 进行参数加载
                 images ,poses, depths_gt, intrinsics = load_sorted_test_sequence(sequence_path, inference_file_name, cfg.INPUT.RESIZE)
+               
                 # 根据数据进行迭代，根据前面n帧的内容，推断最后帧的内容,注意这里推理的是中间关键帧的内容
                 iter_number = int(len(images)/frames_len)
                 time_sum =0.0
@@ -167,14 +174,15 @@ def main(args):
                     key_frame_image = temp_images[0]
                     # 关键深度帧
                     depth_gt = depths_gt[i*frames_len]
+                    depth_gt = prcess_gt(depth_gt)
                     # 计算深度缩放
                     scalor = eval_utils.compute_scaling_factor(depth_gt, key_frame_depth, min_depth=0.8, max_depth=10.0)
                     key_frame_depth =  scalor * key_frame_depth
                     # 对深度图像进行平滑处理
                     # key_frame_depth = cv2.medianBlur(key_frame_depth,5)
-                    image_depth = vis.create_image_depth_figure(key_frame_image, key_frame_depth)
+                    image_depth = vis.create_ex_image_depth_figure(key_frame_image, depth_gt ,key_frame_depth)
                     # 创建结果文件夹
-                    result_out_dir = "{}/{}".format(sequence_path, cfg.STORE.MODLE_NAME)
+                    result_out_dir = "{}/{}_3".format(sequence_path, cfg.STORE.MODLE_NAME)
                     # 检测路径文件夹
                     if not os.path.exists(result_out_dir):
                         os.makedirs(result_out_dir)
