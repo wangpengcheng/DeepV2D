@@ -1,1 +1,1 @@
-python ./evaluation/eval_tum.py --cfg=cfgs/tum/tum_2_2_aspp_aspp.yaml --model=checkpoints/tum/aspp_aspp/_stage_2.ckpt --dataset_dir=data/tum --n_iters=1
+python ./evaluation/eval_tum.py --cfg=cfgs/tum/tum_2_2_aspp_aspp.yaml --model=checkpoints/tum/asppnet_asppnet/_stage_2.ckpt-38000 --dataset_dir=data/tum --n_iters=1

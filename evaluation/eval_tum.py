@@ -76,20 +76,29 @@ def make_predictions(args):
 
 
 def evaluate(groundtruth, predictions):
-
+    crop = [20//2, 459//2, 24//2, 610//2] # eigen crop
     depth_results = {}
     # 真实值
     depth_groundtruth  = groundtruth
     # 预测值
     depth_predictions  = predictions
+
     # 
     num_test = len(depth_groundtruth)
     for i in range(num_test):
+        # 真实数据
+        depth_gt = groundtruth[i]
+        # 预测数据
+        depth_pr = predictions[i]
+        depth_pr = cv2.resize(depth_pr, (640//2, 480//2))
+        depth_pr = depth_pr[crop[0]:crop[1], crop[2]:crop[3]]
+        depth_gt = depth_gt[crop[0]:crop[1], crop[2]:crop[3]]
         # match scales using median
-        scalor = eval_utils.compute_scaling_factor(depth_groundtruth[i], depth_predictions[i])
-        depth_predictions[i] = scalor * depth_predictions[i]
+
+        scalor = eval_utils.compute_scaling_factor(depth_gt, depth_pr)
+        depth_pr = scalor * depth_pr
         # 计算深度误差
-        depth_metrics = eval_utils.compute_depth_errors(depth_groundtruth[i], depth_predictions[i])
+        depth_metrics = eval_utils.compute_depth_errors(depth_gt, depth_pr)
         # 将关键帧设置为空
         if i == 0:
             for dkey in depth_metrics:
