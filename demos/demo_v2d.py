@@ -177,18 +177,28 @@ def main(args):
                     depth_gt = prcess_gt(depth_gt)
                     # 计算深度缩放
                     scalor = eval_utils.compute_scaling_factor(depth_gt, key_frame_depth, min_depth=0.8, max_depth=10.0)
+                    pre_count = key_frame_depth.copy()
+
                     key_frame_depth =  scalor * key_frame_depth
                     # 对深度图像进行平滑处理
                     # key_frame_depth = cv2.medianBlur(key_frame_depth,5)
                     image_depth = vis.create_ex_image_depth_figure(key_frame_image, depth_gt ,key_frame_depth)
                     # 创建结果文件夹
                     result_out_dir = "{}/{}_3".format(sequence_path, cfg.STORE.MODLE_NAME)
+                    file_dir = "{}/{}_3/scale".format(sequence_path, cfg.STORE.MODLE_NAME)
                     # 检测路径文件夹
                     if not os.path.exists(result_out_dir):
                         os.makedirs(result_out_dir)
+                    if not os.path.exists(file_dir):
+                        os.makedirs(file_dir)
                     # 写入图片
                     cv2.imwrite("{}/{}.png".format(result_out_dir, i), image_depth)
                     #print("wirte image:{}/{}.png".format(result_out_dir,i))
+                    #将原始数据，预测数据，纠正后数据保存为np数组
+                    gt_count = depth_gt
+                    scale_pr = key_frame_depth
+                    res = eval_utils.get_scale_data(gt_count, pre_count, scale_pr,min_depth=0.8, max_depth=10.0)
+                    np.savetxt("{}/{}.txt".format(file_dir, i), res)
 
                 print("{} images,totle time: {} s, avg time: {} s".format(iter_number-1,time_sum,time_sum/(iter_number-1)))
             elif is_calibrated:
