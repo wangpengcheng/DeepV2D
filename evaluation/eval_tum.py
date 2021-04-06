@@ -12,7 +12,7 @@ import argparse
 import glob
 
 import vis
-
+from utils.count import *
 from core import config
 from data_stream.tum import TUM_RGBD
 from deepv2d_clear import DeepV2D
@@ -47,25 +47,28 @@ def make_predictions(args):
         #sess.run(init_op)
         # 设置session
         deepv2d.set_session(sess)
+        # 进行参数量的统计
+        graph =tf.get_default_graph()
+        stats_graph(graph)
         # 设置预测模型
         depth_predictions, pose_predictions = [], []
         depth_groundtruth, pose_groundtruth = [], []
         # 构建数据加载器
-        db = TUM_RGBD(cfg.INPUT.RESIZE, args.dataset_dir, test=True, n_frames=5, r=2)
+        #db = TUM_RGBD(cfg.INPUT.RESIZE, args.dataset_dir, test=True, n_frames=5, r=2)
         #dl = DataLayer(db, batch_size=1)
         #提取数据集
-        for test_id, test_blob in enumerate(db.test_set_iterator()):
-            # 获取图像和相机位姿以及真实值
-            images, intrinsics, gt, poses = test_blob['images'], test_blob['intrinsics'], test_blob['depth'], test_blob['poses']
+        # for test_id, test_blob in enumerate(db.test_set_iterator()):
+        #     # 获取图像和相机位姿以及真实值
+        #     images, intrinsics, gt, poses = test_blob['images'], test_blob['intrinsics'], test_blob['depth'], test_blob['poses']
             
-            # 进行推理
-            depth_pred  = deepv2d.inference(images, poses, intrinsics)
+        #     # 进行推理
+        #     depth_pred  = deepv2d.inference(images, poses, intrinsics)
 
-            # use keyframe depth for evaluation
-            depth_predictions.append(depth_pred[0])
+        #     # use keyframe depth for evaluation
+        #     depth_predictions.append(depth_pred[0])
             
-            # 添加真实数据
-            depth_groundtruth.append(test_blob['depth'])
+        #     # 添加真实数据
+        #     depth_groundtruth.append(test_blob['depth'])
 
     # 预测深度与位姿
     predictions = depth_predictions
@@ -96,7 +99,9 @@ def evaluate(groundtruth, predictions):
         # match scales using median
 
         scalor = eval_utils.compute_scaling_factor(depth_gt, depth_pr)
+        
         depth_pr = scalor * depth_pr
+
         # 计算深度误差
         depth_metrics = eval_utils.compute_depth_errors(depth_gt, depth_pr)
         # 将关键帧设置为空
@@ -129,4 +134,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
     # 进行预测推理，获取
     groundtruth, predictions = make_predictions(args)
-    evaluate(groundtruth, predictions)
+    #evaluate(groundtruth, predictions)
