@@ -48,28 +48,36 @@ def make_predictions(args):
         # 设置session
         deepv2d.set_session(sess)
         # 进行参数量的统计
-        graph =tf.get_default_graph()
-        stats_graph(graph)
+        # graph =tf.get_default_graph()
+        # stats_graph(graph)
         # 设置预测模型
         depth_predictions, pose_predictions = [], []
         depth_groundtruth, pose_groundtruth = [], []
         # 构建数据加载器
-        #db = TUM_RGBD(cfg.INPUT.RESIZE, args.dataset_dir, test=True, n_frames=5, r=2)
+        db = TUM_RGBD(cfg.INPUT.RESIZE, args.dataset_dir, test=True, n_frames=5, r=2)
         #dl = DataLayer(db, batch_size=1)
+        time_sum =0.0
+        i = 0
         #提取数据集
-        # for test_id, test_blob in enumerate(db.test_set_iterator()):
-        #     # 获取图像和相机位姿以及真实值
-        #     images, intrinsics, gt, poses = test_blob['images'], test_blob['intrinsics'], test_blob['depth'], test_blob['poses']
+        for test_id, test_blob in enumerate(db.test_set_iterator()):
+            # 获取图像和相机位姿以及真实值
+            images, intrinsics, gt, poses = test_blob['images'], test_blob['intrinsics'], test_blob['depth'], test_blob['poses']
+            # 计算时间
+            time_start = time.time()
             
-        #     # 进行推理
-        #     depth_pred  = deepv2d.inference(images, poses, intrinsics)
-
-        #     # use keyframe depth for evaluation
-        #     depth_predictions.append(depth_pred[0])
-            
-        #     # 添加真实数据
-        #     depth_groundtruth.append(test_blob['depth'])
-
+            # 进行推理
+            depth_pred = deepv2d.inference(images, poses, intrinsics)
+            # 结束时间
+            time_end = time.time()
+            print('time cost', time_end - time_start,' s')
+            if i != 0:
+                time_sum = time_sum + (time_end-time_start)
+            i = i + 1
+            # use keyframe depth for evaluation
+            depth_predictions.append(depth_pred[0])
+            # 添加真实数据
+            depth_groundtruth.append(test_blob['depth'])
+        print("{} images,totle time: {} s, avg time: {} s".format(i-1, time_sum, time_sum/(i-1)))
     # 预测深度与位姿
     predictions = depth_predictions
     # 真实值
