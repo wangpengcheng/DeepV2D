@@ -197,7 +197,7 @@ class DepthNetwork(object):
                                     activation_fn=None,
                                     reuse=reuse):
                     # 先进行一次卷积，尺寸减半
-                    net = slim.conv2d(inputs, 32, [3, 3], stride=2) 
+                    net = slim.conv2d(inputs, 32, [3, 3], stride=2) # chi
                     
                     net = fast_res_conv2d(net, 32, 1)
                     # 5*240*320*32
