@@ -15,13 +15,10 @@ import sys
 import threading, time
 from utils.tum_associate import *
 
-fx = 517.3
-fy = 516.5
-cx = 318.6
-cy = 255.3
+
 factor = 5000.0 # for the 16-bit PNG files 
 # OR: factor = 1 # for the 32-bit float images in the ROS bag files
-intrinsics = np.array([fx, fy, cx, cy],dtype=np.float32)
+#intrinsics = np.array([fx, fy, cx, cy],dtype=np.float32)
 
 def list_split(items, n):
     """
@@ -256,10 +253,10 @@ class TUM_RGBD:
 
 
     def __iter__(self):
-        random.shuffle(self.dataset_index)
+        #random.shuffle(self.dataset_index)
         while 1:
             self.perm = np.arange(len(self.dataset_index))
-            np.random.shuffle(self.perm)
+            #np.random.shuffle(self.perm)
             for i in self.perm:
                 yield self.__getitem__(i)
     # 加载数据文件夹

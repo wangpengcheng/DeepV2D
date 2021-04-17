@@ -21,48 +21,66 @@ from modules.my_loss import MyLoss
 
 
 class data_prefetcher():
-    def __init__(self, loader):
+    def __init__(self, cfg, loader):
+        # 加载配置参数
+        self.cfg = cfg
+        # 加载数据
+        self.origin_loader = loader
         # 初始化cuda
         self.loader = iter(loader)
+        # 计算加载器长度
+        self.len = len(loader)
+        # 当前索引
+        self.currt_index = 0
+        self.id = 0
         # 运算流
         self.stream = torch.cuda.Stream()
-        # With Amp, it isn't necessary to manually convert data to half.
-        # if args.fp16:
-        #     self.mean = self.mean.half()
-        #     self.std = self.std.half()
-        # 预加载图像
+        # 进行预加载
         self.preload()
+    def reset(self):
+        """
+        重新设置数据集
+        """
+        self.loader = iter(self.origin_loader)
+        self.currt_index = 0
+        self.preload()
+
 
     def preload(self):
         try:
-            #self.next_input, self.next_target = next(self.loader)
-            self.images_batch, poses_batch, self.gt_batch, filled_batch, pred_batch, self.intrinsics_batch, frame_id = next(self.loader)
+            images_batch, poses_batch, gt_batch, filled_batch, pred_batch, intrinsics_batch, frame_id = next(self.loader)
+            images_batch = images_batch.permute(0, 1, 4, 2, 3)
+            images_batch, gt_batch, intrinsics_batch, a = prepare_inputs(cfg , images_batch, gt_batch, intrinsics_batch)
+            self.images_batch = images_batch
+            self.gt_batch = gt_batch
+            self.intrinsics_batch = intrinsics_batch
+            self.poses_batch = poses_batch
+            self.frame_id = frame_id
         except StopIteration:
             self.images_batch = None
             self.gt_batch = None
             self.intrinsics_batch = None
-            return
+            self.poses_batch = None
+            self.frame_id =None
+            self.reset()
+            return 
+
         with torch.cuda.stream(self.stream):
             self.images_batch = self.images_batch.cuda(non_blocking=True)
             self.gt_batch = self.gt_batch.cuda(non_blocking=True)
-            self.intrinsics_batch = self.intrinsics_batch.cuda(non_blocking=True)
-            # With Amp, it isn't necessary to manually convert data to half.
-            # if args.fp16:
-            #     self.next_input = self.next_input.half()
-            # else:
-            self.images_batch = self.images_batch.permute(0, 1, 4, 2, 3)
+            self.intrinsics_batch = self.intrinsics_batch.cuda(non_blocking=True).float()
+            self.poses_batch = self.poses_batch.cuda(non_blocking=True)
+
+
     def next(self):
-        torch.cuda.current_stream().wait_stream(self.stream)  
-        # features = self.next_features_gpu
-        # targets = self.next_targets_gpu
-        features = self.next_features
-        targets = self.next_targets
-        if features is not None:
-            features = [xaf.record_stream(torch.cuda.current_stream()) for xaf in features]
-        if targets is not None:
-            targets = [targets[xaf].record_stream(torch.cuda.current_stream()) for xaf in targets.keys()]
+        torch.cuda.current_stream().wait_stream(self.stream)
+        images_batch = self.images_batch
+        gt_batch = self.gt_batch
+        poses_batch = self.poses_batch
+        intrinsics_batch = self.intrinsics_batch
+        frame_id = self.frame_id
         self.preload()
-        return features, targets
+        return images_batch, poses_batch, gt_batch, intrinsics_batch, frame_id
 
 MOTION_LR_FRACTION = 0.1
 
@@ -108,9 +126,9 @@ class DeepV2DTrainer(object):
         # 设置存储频率
         SUMMARY_FREQ = 10
         # 设置日志频率
-        LOG_FREQ = 10
+        LOG_FREQ = 20
         # 设置checkpoint中间输出频率
-        CHECKPOINT_FREQ = 20
+        CHECKPOINT_FREQ = 50
         # 设置最大步长
         self.training_steps = max_steps
         # 开始加载数据模型
@@ -138,7 +156,7 @@ class DeepV2DTrainer(object):
         end_step = max_steps
         # 设置训练数据集
         trainloader = torch.utils.data.DataLoader(data_source, batch_size=batch_size, shuffle=True,
-                            num_workers=8, pin_memory=True, drop_last=True)
+                            num_workers=20, pin_memory=True, drop_last=True)
         # 设置为训练模式
         deepModel.train()
         # 加载模型
@@ -159,44 +177,45 @@ class DeepV2DTrainer(object):
             loss_file = open(loss_log_file_name, "w") 
         else:
             loss_file = None
-        
+        prefetcher = data_prefetcher(cfg, trainloader)
         #prefetcher =  data_prefetcher(trainloader)
         for training_step in range(start_step, end_step):
-            
+            images_batch, poses_batch, gt_batch, intrinsics_batch, frame_id = prefetcher.next()
+            #print(len(trainloader))
+            i = 0
             # 开始加载数据
-            for i, data in enumerate(trainloader, 0):
-                
-                images_batch, poses_batch, gt_batch, filled_batch, pred_batch, intrinsics_batch, frame_id = data
-
-                #images_batch, gt_batch, intrinsics_batch =  prefetcher.next()
-                # 进行数据预处理,主要是维度交换
-                images = images_batch.permute(0, 1, 4, 2, 3)
+            while i < len(trainloader):
+            #for i, data in enumerate(trainloader, 0):
+            #while images_batch is not None:
                 # 进行数据预处理
                 #images, gt_batch, filled_batch, intrinsics_batch = prepare_inputs(cfg, images, gt_batch, filled_batch,intrinsics_batch)
-                
                 optimizer.zero_grad()
-              
-                Ts = poses_batch.cuda()
-                images = images.cuda()
-                intrinsics_batch = intrinsics_batch.cuda().float()
-                gt_batch = gt_batch.cuda()
+                # Ts = poses_batch.cuda()
+                # images = images_batch.cuda()
+                # intrinsics_batch = intrinsics_batch.cuda().float()
+                # gt_batch = gt_batch.cuda()
 
+                Ts = poses_batch
+                images = images_batch
+                intrinsics = intrinsics_batch
+                gt = gt_batch
                 outputs = deepModel(
                     Ts, 
                     images, 
-                    intrinsics_batch
+                    intrinsics
                     )
                 
 
                 # 计算loss值
-                loss = loss_function(gt_batch, outputs)
+                loss = loss_function(gt, outputs)
                 # loss backward
                 loss.backward()
                 # update parameters using optimizer
                 optimizer.step()
                 # 计算loss
                 running_loss = running_loss + float(loss.detach().item())
-
+                i = i + 1
+                images_batch, poses_batch, gt_batch, intrinsics_batch, frame_id = prefetcher.next()
             # 修改学习率
             model_lr_scheduler.step()
             # 输出loss值
@@ -223,7 +242,7 @@ class DeepV2DTrainer(object):
                 # 模型名字
                 torch.save(checkpoint, save_file)
         # 最后进行一次模型保存
-        end = "/final.pth"
+        end = "final.pth"
         save_file = os.path.join(cfg.CHECKPOINT_DIR, end)
         
         checkpoint= {
@@ -232,7 +251,7 @@ class DeepV2DTrainer(object):
             "epoch": training_step,
             "model_lr_scheduler": model_lr_scheduler
             }
-            # 模型名字
+        # 模型名字
         torch.save(checkpoint, save_file)
         if loss_file is not None:
             loss_file.close()

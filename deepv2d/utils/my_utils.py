@@ -43,7 +43,7 @@ def save_tensor(original_tensor, save_name):
 
 
 
-def scale(cfg, images, depth_gt, filled, intrinsics):
+def scale(cfg, images, depth_gt, intrinsics, filled):
     """ Random scale augumentation """
     """
     根据缩放尺寸从中心进行裁剪
@@ -71,11 +71,12 @@ def scale(cfg, images, depth_gt, filled, intrinsics):
         # 深度图像缩放
         depth_gt = resize_crop(depth_gt, s, Image.NEAREST)
         # 图像缩放
-        filled = resize_crop(filled, s, Image.NEAREST)
+        if filled is not None:
+            filled = resize_crop(filled, s, Image.NEAREST)
         # 相机内参
         intrinsics = (intrinsics * s) - torch.Tensor([0, 0, dx, dy])
 
-    return images, depth_gt, filled, intrinsics
+    return images, depth_gt, intrinsics, filled
 
 
 def augument1(images):
@@ -109,39 +110,45 @@ def augument(images):
     # randomly shift gamma
     # 随机shift变换
     images = transforms.ToPILImage()(images)
-    images.save("origin.png")
+    #images.save("origin.png")
     random_gamma = torch.Tensor(1).uniform_(0.8, 1.2)
     #images = Image.open("data/tum2/rgbd_dataset_freiburg3_cabinet/rgb/1341841278.906584.png")
-    
     images = TF.adjust_gamma(images, random_gamma)
     #save_tensor(images, "gamma.png")
-    images.save("gamma.png")
+    #images.save("gamma.png")
+    # 亮度随机值
+    ra  = np.random.uniform(0.8, 1.2, 3)
+    r_he = np.random.uniform(0.3, 0.5)
     # 亮度变换
-    images = transforms.ColorJitter(brightness=0.3)(images)
-    #images.save("brightness.png")
-    # 对比度
-    images = transforms.ColorJitter(contrast=0.3)(images)
-    #images.save("contrast.png")
-    # 饱和度
-    images = transforms.ColorJitter(saturation=0.3)(images)
-    #images.save("saturation.png")
-    # 色相变换/颜色变换
-    images = transforms.ColorJitter(hue=0.3)(images)
-    images.save("res.png")
+    images = transforms.ColorJitter(brightness=ra[0],
+                                    contrast=ra[1],
+                                    saturation=ra[2], 
+                                    hue=r_he
+                                    )(images)
+    # #images.save("brightness.png")
+    # # 对比度
+    # images = transforms.ColorJitter(contrast=0.3)(images)
+    # #images.save("contrast.png")
+    # # 饱和度
+    # images = transforms.ColorJitter(saturation=0.3)(images)
+    # #images.save("saturation.png")
+    # # 色相变换/颜色变换
+    # images = transforms.ColorJitter(hue=0.3)(images)
+    #images.save("res.png")
     # 转换为Tensor
     images = transforms.ToTensor()(images)*255
     return images
 
 
 
-def prepare_inputs(cfg, images, depth, filled, intrinsics):
+def prepare_inputs(cfg, images, depth, intrinsics, filled=None):
     
     b,n,c,w,h = images.shape[:]
     images = images.view(b*n, c, w, h)
-    save_tensor(images[0], "data_origin.png")
-    for i in range(len(images)):
-        temp = augument(images[i])
-        images[i] = temp
-    images, depth, filled, intrinsics = scale(cfg, images, depth, filled, intrinsics)
+    #save_tensor(images[0], "data_origin.png")
+    # for i in range(len(images)):
+    #     temp = augument(images[i])
+    #     images[i] = temp
+    images, depth, intrinsics, filled = scale(cfg, images, depth, intrinsics, filled = None)
     images = images.view(b, n, c, w, h)
-    return images, depth, filled, intrinsics
+    return images, depth,  intrinsics, filled
