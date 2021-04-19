@@ -25,11 +25,10 @@ class data_prefetcher():
         # 加载配置参数
         self.cfg = cfg
         # 加载数据
-        self.origin_loader = loader
-        # 初始化cuda
-        self.loader = iter(loader)
+        self.origin_loader = list(loader)
         # 计算加载器长度
-        self.len = len(loader)
+        self.len = len(self.origin_loader)
+        print(self.len)
         # 当前索引
         self.currt_index = 0
         self.id = 0
@@ -41,30 +40,30 @@ class data_prefetcher():
         """
         重新设置数据集
         """
-        self.loader = iter(self.origin_loader)
         self.currt_index = 0
         self.preload()
 
 
     def preload(self):
-        try:
-            images_batch, poses_batch, gt_batch, filled_batch, pred_batch, intrinsics_batch, frame_id = next(self.loader)
+        if self.currt_index < self.len:
+            images_batch, poses_batch, gt_batch, filled_batch, pred_batch, intrinsics_batch, frame_id = self.origin_loader[self.currt_index]
             images_batch = images_batch.permute(0, 1, 4, 2, 3)
             images_batch, gt_batch, intrinsics_batch, a = prepare_inputs(self.cfg , images_batch, gt_batch, intrinsics_batch)
+            #images_batch, gt_batch, intrinsics_batch, a = prepare_inputs(self.cfg , images_batch, gt_batch, intrinsics_batch)
             self.images_batch = images_batch
             self.gt_batch = gt_batch
             self.intrinsics_batch = intrinsics_batch
             self.poses_batch = poses_batch
             self.frame_id = frame_id
-        except StopIteration:
+            self.currt_index = self.currt_index + 1
+        else:
             self.images_batch = None
             self.gt_batch = None
             self.intrinsics_batch = None
             self.poses_batch = None
-            self.frame_id =None
+            self.frame_id = None
             self.reset()
             return 
-
         with torch.cuda.stream(self.stream):
             self.images_batch = self.images_batch.cuda(non_blocking=True).float()
             self.gt_batch = self.gt_batch.cuda(non_blocking=True)
@@ -151,14 +150,14 @@ class DeepV2DTrainer(object):
         # 设置损失函数
         optimizer = optim.RMSprop(deepModel.parameters(), lr=cfg.TRAIN.LR, momentum=0.9)
         # 设置学习策略
-        model_lr_scheduler = optim.lr_scheduler.StepLR(optimizer, max_steps, 0.1)
+        model_lr_scheduler = optim.lr_scheduler.StepLR(optimizer, int(0.8*max_steps), 0.5)
         # 计算loss值
         running_loss = 0.0
         start_step = 0
         end_step = max_steps
         # 设置训练数据集
         trainloader = torch.utils.data.DataLoader(data_source, batch_size=batch_size, shuffle=True,
-                            num_workers=20, pin_memory=True, drop_last=True)
+                            num_workers=8, pin_memory=True, drop_last=True)
         # 设置为训练模式
         deepModel.train()
         # 加载模型
@@ -168,7 +167,7 @@ class DeepV2DTrainer(object):
             deepModel.load_state_dict(checkpoint['net'])
             optimizer.load_state_dict(checkpoint['optimizer'])
             start_step = checkpoint['epoch']
-            model_lr_scheduler.load_state_dict(checkpoint['model_lr_scheduler'])
+            #model_lr_scheduler.load_state_dict(checkpoint['model_lr_scheduler'])
             end_step = end_step + max_steps
         #print(deepModel)
         # 日志
@@ -182,6 +181,7 @@ class DeepV2DTrainer(object):
         prefetcher = data_prefetcher(cfg, trainloader)
         #prefetcher =  data_prefetcher(trainloader)
         for training_step in range(start_step, end_step):
+            #prefetcher = data_prefetcher(cfg, trainloader)
             images_batch, poses_batch, gt_batch, intrinsics_batch, frame_id = prefetcher.next()
             #print(len(trainloader))
             i = 0

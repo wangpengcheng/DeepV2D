@@ -112,11 +112,6 @@ def backproject_avg(
     jj = jj.view([-1])
     Tii = my_gather(Ts, ii, 1)
     Tjj = my_gather(Ts, jj, 1)
-    # ii = ii.view([-1]).tolist()
-    # jj = jj.view([-1]).tolist()
-    # Tii = Ts[:,ii,]
-    # Tjj = Ts[:,jj,]
-    #print(Tii.shape)
     # 计算对应矩阵 
     Tij = Tjj * TS_inverse(Tii)
     #print(Tij.shape)

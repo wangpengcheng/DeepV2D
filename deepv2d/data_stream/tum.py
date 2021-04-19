@@ -14,7 +14,7 @@ import numpy
 import sys
 import threading, time
 from utils.tum_associate import *
-
+from torch.utils.data import DataLoader,Dataset
 
 factor = 5000.0 # for the 16-bit PNG files 
 # OR: factor = 1 # for the 32-bit float images in the ROS bag files
@@ -174,7 +174,7 @@ def pose_vec2mat(pvec, use_filler=True):
         P = np.concatenate([P, filler], axis=1)
     return P[0]
 
-class TUM_RGBD:
+class TUM_RGBD(Dataset):
     """主要用来进行数据的加载与查找
     """
     def __init__(self, resize, dataset_path, test=False, n_frames=5, r=2):
