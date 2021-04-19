@@ -152,20 +152,24 @@ class ScanNet:
 
         test_frames = np.loadtxt('data/scannet/scannet_test.txt', dtype=np.unicode_)
         test_data = []
-
+        # 准备测试数据和文件夹
         for i in range(0, len(test_frames), 4):
+            # 第一帧所在文件夹
             test_frame_1 = str(test_frames[i]).split('/')
+            # 第二帧所在文件夹
             test_frame_2 = str(test_frames[i+1]).split('/')
             scan = test_frame_1[3]
-
+            # 查找系列图像
             imageid_1 = int(re.findall(r'frame-(.+?).color.jpg', test_frame_1[-1])[0])
             imageid_2 = int(re.findall(r'frame-(.+?).color.jpg', test_frame_2[-1])[0])            
             test_data.append((scan, imageid_1, imageid_2))
 
         # random.shuffle(test_data)        
+        # 遍历数据并读取数据
         for (scanid, imageid_1, imageid_2) in test_data:
-
+            # 获取扫描文件夹
             scandir = os.path.join(self.dataset_path, scanid)
+            # 获取帧数
             num_frames = len(os.listdir(os.path.join(scandir, 'color')))
 
             images = []
@@ -174,28 +178,35 @@ class ScanNet:
             # then sample remaining 6 frames uniformly
             dt = imageid_2 - imageid_1
             s = 3
-
+            # 选取最近的6帧图像
             for i in [0, dt, -3*s, -2*s, -s, s, 2*s, 3*s]:
                 otherid = min(max(1, i+imageid_1), num_frames-1)
+                # 拼接图片名称
                 image_file = os.path.join(scandir, 'color', '%d.jpg'%otherid)
                 image = cv2.imread(image_file)
                 image = cv2.resize(image, (640, 480))
+                # 将其加入到队列中
                 images.append(image)
-
+            # 获取深度图片
             depth_file = os.path.join(scandir, 'depth', '%d.png'%imageid_1)
+            # 读取深度图片
             depth = cv2.imread(depth_file, cv2.IMREAD_ANYDEPTH)
+            # 读取深度图片为
             depth = (depth/1000.0).astype(np.float32)
-
+            # 加载位姿
             pose1 = np.loadtxt(os.path.join(scandir, 'pose', '%d.txt'%imageid_1), delimiter=' ')
             pose2 = np.loadtxt(os.path.join(scandir, 'pose', '%d.txt'%imageid_2), delimiter=' ')
+            # 位姿转换
             pose1 = np.linalg.inv(pose1)
             pose2 = np.linalg.inv(pose2)
+            # 位姿差距
             pose_gt = np.dot(pose2, np.linalg.inv(pose1))
-
+            # 获取相机参数
             depth_intrinsics = os.path.join(scandir, 'intrinsic/intrinsic_depth.txt')
+            # 加载相机参数
             K = np.loadtxt(depth_intrinsics, delimiter=' ')
             fx, fy, cx, cy = K[0,0], K[1,1], K[0,2], K[1,2]
-
+            # 对图片进行拼接
             images = np.stack(images, axis=0).astype(np.uint8)
             depth = depth.astype(np.float32)
             intrinsics = np.array([fx, fy, cx, cy], dtype=np.float32)

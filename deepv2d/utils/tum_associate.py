@@ -28,7 +28,7 @@ def read_file_list(filename):
     return dict(list)
 
 
-def associate(first_list, second_list,offset,max_difference):
+def associate(first_list, second_list, offset, max_difference):
     """
     Associate two dictionaries of (stamp,data). As the time stamps never match exactly, we aim 
     to find the closest match for every input tuple.
@@ -64,7 +64,8 @@ def associate(first_list, second_list,offset,max_difference):
 # 将三个向量进行合并
 def associate_3(first_list, second_list,three_list,offset,max_difference):
     three_keys = list(three_list)
-    matches1 = associate(first_list,second_list,offset,max_difference)
+    # 先对ab进行匹配
+    matches1 = associate(first_list, second_list, offset,max_difference)
     matches = []
     for a,b in matches1:
         for c in three_keys:
@@ -81,7 +82,7 @@ def tum_associate(first_file,second_file,three_file,order_file,offset=0.0,max_di
     first_list = read_file_list(first_file)
     second_list = read_file_list(second_file)
     three_list = read_file_list(three_file)
-    matches = associate_3(first_list, second_list, three_list,offset,max_difference)
+    matches = associate_3(first_list, second_list, three_list, offset, max_difference)
     fo = open(order_file, "w")
     for a,b,c in matches:
         fo.write("{} {} {} {} {} {} \r\n".format(a," ".join(first_list[a]),b-float(offset)," ".join(second_list[b]),c-float(offset)," ".join(three_list[c])))
@@ -95,7 +96,7 @@ def get_data_from_sum_file(order_file):
     depths = np.loadtxt(order_file, delimiter=' ', dtype=np.unicode_,usecols=(3,))
     # 位姿数据
     try:
-        poses = np.loadtxt(order_file, delimiter=' ', dtype=np.float64, usecols=(5,6,7,8,9,10,11,12))
+        poses = np.loadtxt(order_file, delimiter=' ', dtype=np.float64, usecols=(5,6,7,8,9,10,11))
     except:
         poses = np.zeros((len(images), 7))
     return images, depths, poses

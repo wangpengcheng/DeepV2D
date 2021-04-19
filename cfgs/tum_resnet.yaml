@@ -1,0 +1,31 @@
+INPUT:
+  FRAMES: 5
+  HEIGHT: 480
+  WIDTH: 640
+  SAMPLES: 3
+  RESIZE: 1.0
+TRAIN:
+  ITERS: [300, 20000]
+  BATCH: [1, 1]
+  LR: 0.001
+  CLIP_GRADS: True
+  DEPTH_WEIGHT: 1.0
+  USE_GPU: '0'
+  GPU_MEMORY: 0.8
+MOTION:
+  USE_MOTION: False
+  STACK_FRAMES: False
+  TRAIN:
+    DELTA: [0.02, 0.02, 0.02, 0.02, 0.02, 0.02]
+STRUCTURE:
+  MODE: avg
+  ENCODER_MODE: resnet # resnet fast_resnet mobilenet
+  DECODER_MODE: resnet # resnet fast_resnet mobilenet
+  MAX_DEPTH: 10.0
+  MIN_DEPTH: 0.2
+  HG_COUNT: 1
+  HG_DEPTH_COUNT: 4
+  HG_2D_COUNT: 1
+  HG_2D_DEPTH_COUNT: 4
+  USE_FAST_RESNET: True
+

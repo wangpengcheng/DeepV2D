@@ -8,32 +8,109 @@
         //     "name": "Python: 当前文件",
         //     "type": "python",
         //     "request": "launch",
+        //     "program": "./pytorch-parallel/benchmark.py",
+        //     "args": [
+        //         "-m=cuda"
+        //     ],
+        //     "console": "integratedTerminal"
+        // },
+        // {
+        //     "name": "Python: 当前文件",
+        //     "type": "python",
+        //     "request": "launch",
         //     "program": "${file}",
         //     "console": "integratedTerminal"
         // },
         {
-            "name": "Python: 当前文件",
-            "type": "python",
-            "request": "launch",
-            "program": "${file}",
-            "console": "integratedTerminal"
-        },
-        {
             "name": "Python: 当前文件", //python demos/demo_v2d.py --model=models/nyu.ckpt --sequence=data/demos/nyu_0
             "type": "python",
             "request": "launch",
-            // "cwd":"${workSpaceRoot}",
+            // "program": "training/train_nyu.py",
+            // "args": [
+            //     "--cfg=cfgs/nyu.yaml",
+            //     "--name=nyu_model",
+            //     "--restore=models/nyu.ckpt",
+            //     "--tfrecords=data/nyu_train/nyu_train.tfrecords"//,
+            //  ],
+
+            //"cwd":"${workSpaceRoot}",
             // "program": "demos/demo_v2d.py",
             // "args": [
             //     "--model=models/nyu.ckpt",
             //     "--sequence=data/demos/nyu_0"
+            // ],s
+            // "program": "demos/demo_v2d_origin.py",
+            // "args":[
+            //     "--cfg=cfgs/tum/tum_2_2_shufflev2_fast.yaml",
+            //     "--model=checkpoints/tum/shufflenetv2_fast/_stage_2.ckpt",
+            //     "--use_pose",
+            //     "--sequence=data/tum/rgbd_dataset_freiburg3_cabinet",
+            //     "--inference_file_name=data/tum/rgbd_dataset_freiburg3_cabinet/rgb_depth_ground.txt"
             // ],
-            "program": "training/train_tum.py",
+            // "program": "training/write_tfrecords.py",
+            // "args": [
+            //     "--dataset=nyu",
+            //     "--cfg=cfgs/nyu.yaml",
+            //     "--dataset_dir=data/nyu2",
+            //     "--records_file=data/nyu/nyu_train.tfrecords"
+            // ],
+            // "program": "demos/demo_v2d.py",
+            // "args":[
+            //     "--cfg=cfgs/tum_2_2_fast_shuffle.yaml",
+            //     "--model=checkpoints/tum/tmu_model/_stage_2.ckpt",
+            //     "--use_pose",
+            //     "--sequence=data/tum/cabinet",
+            //     "--inference_file_name=data/tum/cabinet/rgb_depth_ground_test.txt"
+            // ],
+            "program": "training/train_tum01.py",
             "args": [
-                "--cfg=cfgs/tum.yaml",
+                "--cfg=cfgs/tum/tum_2_2_shufflev2_fast.yaml",
                 "--name=tmu_model",
-                "--dataset_dir=data/tum"
+                // "--restore=checkpoints/tum/tmu_model/_stage_2.ckpt",
+                "--dataset_dir=data/tum2" //,
             ],
+            // "program": "training/train_nyuv2.py",
+            // "args": [
+            //     "--cfg=cfgs/nyu.yaml",
+            //     "--name=nyu_model",
+            //     "--dataset_dir=data/nyu2",
+            //     "--tfrecords=data/nyu/nyu_train.tfrecords",
+            //     "--restore=checkpoints/tum/tmu_model/_stage_2.ckpt"
+            //  ],
+            // "program": "training/train_tum.py",
+            // "args": [
+            //     "--cfg=cfgs/tum_2_2_fast_shufflev2.yaml",
+            //     "--name=tmu_model",
+            //     "--restore=checkpoints/tum/tmu_model/_stage_2.ckpt",
+            //     "--dataset_dir=data/tum"//,
+            //  ],
+            // "program": "./evaluation/eval_nyuv2.py",
+            // "args": [
+            //     "--cfg=cfgs/nyu/nyu_2_2_shufflev2_fast.yaml",
+            //     "--model=checkpoints/nyu/shufflenetv2_fast2/_stage_2.ckpt",
+            //     "--dataset_dir=data/nyu2",
+            //     "--n_iters=1"
+            // ],
+            // "program": "./evaluation/eval_tum.py",
+            // "args": [
+            //     "--cfg=cfgs/tum_2_2_fast_shuffle.yaml",
+            //     "--model=checkpoints/tum/tmu_model/_stage_2.ckpt",
+            //     "--dataset_dir=data/tum",
+            // "program": "training/train_tum.py",
+            // "args": [
+            //     "--cfg=cfgs/tum/tum_2_2_resnet_resnet.yaml",
+            //     "--name=tmu_model",
+            //     "--dataset_dir=data/tum",
+            //     "--restore=checkpoints/tum/tmu_model/_stage_2.ckpt",
+            //     "--dataset_dir=data/tum"//,
+            //  ],
+            // "program": "./evaluation/eval_nyuv2.py",
+            // "args": [
+            //     "--cfg=cfgs/nyu/nyu_2_2_shufflev2_fast.yaml",
+            //     "--model=checkpoints/nyu/shufflenetv2_fast2/_stage_2.ckpt",
+            //     "--dataset_dir=data/nyu2",
+            //     "--n_iters=1"
+            // ],
             "console": "integratedTerminal"
         }
     ]

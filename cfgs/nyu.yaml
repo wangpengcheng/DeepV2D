@@ -1,21 +1,41 @@
 INPUT:
-  FRAMES: 9
+  FRAMES: 5
   HEIGHT: 480
   WIDTH: 640
-  SAMPLES: 3
-  SCALES: [1.0, 1.1, 1.2]
+  SAMPLES: 4 # 取样报道
+  SCALES: [1.0, 1.1, 1.2] # 缩放参数
+  RESIZE: 0.5
 TRAIN:
-  ITERS: [20000, 120000]
+  ITERS: [20000, 20000] #[20000, 120000]
   BATCH: [1, 1]
   LR: 0.001
   CLIP_GRADS: True
   DEPTH_WEIGHT: 1.0
+  USE_GPU: '0'
+  GPU_MEMORY: 0.8
+  IS_TRAIN: True # 是否正在训练中，用来决定是否有参数更新
 MOTION:
+  USE_MOTION: False
+  IS_CALIBRATED: False
   STACK_FRAMES: False
   TRAIN:
     DELTA: [0.02, 0.02, 0.02, 0.02, 0.02, 0.02]
 STRUCTURE:
   MODE: avg
+  ENCODER_MODE: resnet # resnet fast_resnet mobilenet
+  DECODER_MODE: resnet # resnet fast_resnet mobilenet
   MAX_DEPTH: 10.0
   MIN_DEPTH: 0.2
   HG_COUNT: 2
+  HG_DEPTH_COUNT: 2
+  HG_2D_COUNT: 1
+  HG_2D_DEPTH_COUNT: 2
+  USE_FAST_RESNET: True
+STORE: # 存储相关参数
+  RESRORE_PATH: "checkpoints/nyu/fast_shufflenetv2/_stage_2.ckpt" # 加载已有模型存储位置 一般为路径文件夹+数据集名称+模型名称
+  CHECKPOINT_DIR: "checkpoints/nyu" # 训练模型存储位置，一般为路径文件夹+数据集名称+模型名称
+  TMP_DIR: "tmp/nyu" # 临时文件路径，一般是数据集名称+模型名称
+  LOG_DIR: "log/nyu"  # 日志存储位置，日志存储位置 路径文件夹+数据集名称+模型名称
+  IS_SAVE_LOSS_LOG: True # 是否存储loss 相关日志文件，开启则在日志文件中添加当前训练日志
+  MODLE_NAME: "resnet" # 模型名称 当前模型的名称--一般为网络结构名称
+  LOG_LEVEL: "3" # 输出日志级别

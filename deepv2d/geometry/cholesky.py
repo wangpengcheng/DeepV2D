@@ -6,6 +6,8 @@ from utils.einsum import einsum
 @tf.custom_gradient
 def cholesky_solve(H, b):
     """Solves the linear system Hx = b"""
+
+    
     chol = tf.linalg.cholesky(H)
     xx = tf.linalg.cholesky_solve(chol, b)
 

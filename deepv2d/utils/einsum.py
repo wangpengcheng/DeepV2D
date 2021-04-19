@@ -45,10 +45,6 @@ def einsum(equation, *inputs):
                 if len(replace_axes) > len(ellipsis_axes):
                     ellipsis_axes = replace_axes
 
-    equation = equation.replace('...', ellipsis_axes)
-    print(equation,)
-    print("===")
-    print(*inputs)
+    equation = equation.replace('...', ellipsis_axes).lower() # 'aijk,aiXYZk->aiXYZj'
     out = torch.einsum(equation, *inputs)
-    #tf.add_to_collection("checkpoints", out) 将输出放入集合
     return out
