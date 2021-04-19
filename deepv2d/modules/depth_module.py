@@ -109,7 +109,7 @@ class DepthModule(nn.Module):
         # else:
         #     fmaps = torch.reshape(fmaps, [batch, frames, 32, ht//8, wd//8]) # 1 4 32 30 40 
         # #反投影，获取对应坐标对上的反向投影插值 1 4 30 40 32 64
-        volume = operators.backproject_avg(Ts, depths, intrinsics, fmaps, self.back_project)
+        volume = operators.backproject_avg(Ts, depths, intrinsics, fmaps)
 
         pred = self.decoder(volume) # 1 32 240 320
         #self.pred_logits.append(torch.rand(1,32,240,320))

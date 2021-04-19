@@ -78,8 +78,7 @@ def backproject_avg(
             Ts, 
             depths, 
             intrinsics, 
-            fmaps, 
-            back_project
+            fmaps
             ):
     """
 

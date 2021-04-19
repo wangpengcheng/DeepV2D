@@ -50,7 +50,7 @@ class data_prefetcher():
         try:
             images_batch, poses_batch, gt_batch, filled_batch, pred_batch, intrinsics_batch, frame_id = next(self.loader)
             images_batch = images_batch.permute(0, 1, 4, 2, 3)
-            images_batch, gt_batch, intrinsics_batch, a = prepare_inputs(cfg , images_batch, gt_batch, intrinsics_batch)
+            images_batch, gt_batch, intrinsics_batch, a = prepare_inputs(self.cfg , images_batch, gt_batch, intrinsics_batch)
             self.images_batch = images_batch
             self.gt_batch = gt_batch
             self.intrinsics_batch = intrinsics_batch
