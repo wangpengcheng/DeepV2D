@@ -66,7 +66,7 @@ class data_prefetcher():
             return 
 
         with torch.cuda.stream(self.stream):
-            self.images_batch = self.images_batch.cuda(non_blocking=True)
+            self.images_batch = self.images_batch.cuda(non_blocking=True).float()
             self.gt_batch = self.gt_batch.cuda(non_blocking=True)
             self.intrinsics_batch = self.intrinsics_batch.cuda(non_blocking=True).float()
             self.poses_batch = self.poses_batch.cuda(non_blocking=True)
@@ -143,8 +143,8 @@ class DeepV2DTrainer(object):
         if is_use_gpu:
             # if torch.cuda.device_count() > 1:
             #     deepModel = nn.DataParallel(deepModel)
-            deepModel = deepModel.cuda()
-            loss_function.cuda()
+            deepModel = deepModel.to(device)
+            loss_function.to(device)
 
 
         
