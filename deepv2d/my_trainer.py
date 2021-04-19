@@ -147,7 +147,7 @@ class DeepV2DTrainer(object):
         # 设置损失函数
         optimizer = optim.RMSprop(deepModel.parameters(), lr=cfg.TRAIN.LR, momentum=0.9)
         # 设置学习策略
-        model_lr_scheduler = optim.lr_scheduler.StepLR(optimizer, max_steps, 0.1)
+        model_lr_scheduler = optim.lr_scheduler.StepLR(optimizer, int(0.8*max_steps), 0.5)
         # 计算loss值
         running_loss = 0.0
         start_step = 0
