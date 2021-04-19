@@ -21,7 +21,6 @@ def extract_and_reshape_intrinsics(intrinsics, shape=None):
     """ Extracts (fx, fy, cx, cy) from intrinsics matrix 
         更改fx,fy,cx,,cy 相关系数
     """
-
     fx = intrinsics[:, 0, 0]
     fy = intrinsics[:, 1, 1]
     cx = intrinsics[:, 0, 2]
@@ -39,8 +38,8 @@ def extract_and_reshape_intrinsics(intrinsics, shape=None):
 def backproject(depth, intrinsics, jacobian=False):
     """ backproject depth map to point cloud """
     # s
-    coords = coords_grid(depth.shape, homogeneous=True)
-    coords = coords.cuda()
+    coords = coords_grid(depth.shape, homogeneous=True, device=torch.device('cuda:0'))
+    #coords = coords.cuda()
     x, y = torch.unbind(coords, dim=-1)
 
     x_shape = x.shape

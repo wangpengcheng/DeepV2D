@@ -19,6 +19,16 @@ def compute_scaling_factor(gt, pr, min_depth=0.5, max_depth=8.0):
     # 筛选存在的值
     v = (gt > min_depth) & (gt < max_depth)
     return np.median(gt[v] / pr[v])
+def get_scale_data(gt, pr, pr_ed , min_depth = 0.5,max_depth = 8.0):
+     # 真实值
+    gt = np.array(gt, dtype=np.float64).reshape(-1)
+    # 估计值
+    pr = np.array(pr, dtype=np.float64).reshape(-1)
+    # 最终值
+    pr_ed = np.array(pr_ed, dtype=np.float64).reshape(-1)
+    v = (gt > min_depth) & (gt < max_depth)
+    res = np.vstack((gt[v],pr[v],pr_ed[v]))
+    return res
 
 # copied from https://github.com/lmb-freiburg/demon
 def scale_invariant(gt, pr):

@@ -18,33 +18,50 @@ from deepv2d import DeepV2D
 import eval_utils
 
 
+def write_pose(pose, dir_path):
+    n,_,_ = pose.shape
+    file_name = os.path.join(dir_path, "pose.txt")
+    pose = pose.reshape(n, 16)
+    np.savetxt(file_name, pose)
+
+def load_pose(dir_path):
+    file_name = os.path.join(dir_path, "pose.txt")
+    pose = np.loadtxt(file_name)
+    n, _ = pose.shape
+    pose = pose.reshape(n, 4, 4)
+    return pose
 
 def load_test_sequence(path, n_frames=-1):
-    """
-    loads images and intrinsics from demo folder
-    """
+    """ loads images and intrinsics from demo folder """
     images = []
+    # 加载所有图像
     for imfile in sorted(glob.glob(os.path.join(path, "*.png"))):
         img = cv2.imread(imfile)
         images.append(img)
-
+    # 获取图像索引
     inds = np.arange(1, len(images))
+    #print(inds)
+    # 随机选择图像
     if n_frames > 0:
         inds = np.random.choice(inds, n_frames, replace=False)
-
+    # 选取关键帧
     inds = [0] + inds.tolist() # put keyframe image first
+    # 获取图像数组
     images = [images[i] for i in inds]
-
+    # 转换数据格式
     images = np.stack(images).astype(np.float32)
+    # 加载相机内参
     intrinsics = np.loadtxt(os.path.join(path, 'intrinsics.txt'))
-
-    return images, intrinsics
+    # 加载pose
+    poses = load_pose(path)
+    poses = [poses[i] for i in inds]
+    poses = np.array(poses)
+    # 返回图像和内参
+    return images, intrinsics, poses
 
 
 def make_predictions(args):
-    """
-    runs inference on the test images
-    """
+    """ runs inference on the test images """
 
     np.random.seed(1234)
     cfg = config.cfg_from_file(args.cfg)
@@ -54,26 +71,38 @@ def make_predictions(args):
 
     with tf.Session() as sess:
         deepv2d.set_session(sess)
-
+        # 路径
         test_path = 'data/nyu/nyu'
+        # 测试文件夹
         test_paths = sorted(os.listdir(test_path))
+        # 获取文件夹数量
         num_test = len(test_paths)
 
         predictions = []
         for test_id in tqdm(range(num_test)):
-            # 
-            images, intrinsics = load_test_sequence(os.path.join(test_path, test_paths[test_id]), args.n_frames)
-            # 相机参数，执行预测
-            depth_predictions, _ = deepv2d(images, intrinsics, iters=args.n_iters)
-        
+        #for test_id in range(num_test):
+            # 加载图片和相机内参
+            images, intrinsics , poses = load_test_sequence(os.path.join(test_path, test_paths[test_id]), args.n_frames)
+            # 设置pose
+            #deepv2d.pose = poses
+            # 进行推理
+            depth_predictions, new_poses , new_intrinsics = deepv2d(images, intrinsics, my_pose = None, iters=args.n_iters)
+
+            #write_pose(poses, os.path.join(test_path, test_paths[test_id]))
+            # 获取推理结果
             keyframe_depth = depth_predictions[0]
+            # 计算关键帧
             keyframe_image = images[0]
+            # 转换数据结果
             predictions.append(keyframe_depth.astype(np.float32))
 
             if args.viz:
                 image_and_depth = vis.create_image_depth_figure(keyframe_image, keyframe_depth)
-                cv2.imshow('image', image_and_depth/255.0)
-                cv2.waitKey(10)
+                img_pth = "data/nyu/eval_res/8_iter/{}.png".format(test_id)
+                #print(img_pth)
+                ##cv2.imshow('image', image_and_depth/255.0)
+                cv2.imwrite(img_pth, image_and_depth)
+                #cv2.waitKey(10)
 
         return predictions
 
@@ -87,7 +116,9 @@ def evaluate(groundtruth, predictions):
 
     num_test = len(predictions)
     for i in range(num_test):
+        # 真实数据
         depth_gt = groundtruth[i]
+        # 预测数据
         depth_pr = predictions[i]
 
         # crop and resize
@@ -118,7 +149,7 @@ if __name__ == '__main__':
     parser.add_argument('--viz', action="store_true", help='display depth maps during inference')
     parser.add_argument('--fcrn', action="store_true", help='use single image depth initializiation')
     parser.add_argument('--scale', action="store_true", help='use single image depth initializiation')
-    parser.add_argument('--n_frames', type=int, default=-1, help='number of video frames to use for reconstruction')
+    parser.add_argument('--n_frames', type=int, default=7, help='number of video frames to use for reconstruction')
     parser.add_argument('--n_iters', type=int, default=8, help='number of video frames to use for reconstruction')
     parser.add_argument('--uncalibrated', action="store_true", help='run in uncalibrated mode')
     args = parser.parse_args()

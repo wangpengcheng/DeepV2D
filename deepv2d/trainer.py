@@ -13,12 +13,7 @@ from utils.my_utils import set_gpus
 
 from modules.depth import DepthNetwork
 
-<<<<<<< HEAD
-gpu_no = '0,1'
-os.environ["CUDA_VISIBLE_DEVICES"] = gpu_no
-=======
 
->>>>>>> 9876a9a593c41c9513b4aa6420f3d95df4fa4518
 
 MOTION_LR_FRACTION = 0.1
 
@@ -61,12 +56,7 @@ class DeepV2DTrainer(object):
             Gs = VideoSE3Transformation(matrix=poses)
             # 创建位姿估计网络
             motion_net = MotionNetwork(cfg.MOTION, bn_is_training=True, reuse=gpu_id>0)
-
-<<<<<<< HEAD
             with tf.device('/gpu:%d' % (gpu_id)):
-=======
-            with tf.device('/device:XLA_GPU:%d' % gpu_id):
->>>>>>> 9876a9a593c41c9513b4aa6420f3d95df4fa4518
                 # 获取深度信息
                 depth_input = tf.expand_dims(depth_filled, 1)
                 # 前向计算
@@ -177,23 +167,10 @@ class DeepV2DTrainer(object):
                     staircase=False
                     )
                 rnd = tf.random_uniform([], 0, 1)
-<<<<<<< HEAD
-                depth_input = tf.cond(rnd<input_prob, lambda: depth_filled, lambda: depth_pred)
-
-            with tf.device('/gpu:%d' % (gpu_id)):
-
-                # motion inference
-                Ts, kvec = motion_net.forward(None, images, depth_input[:,tf.newaxis], intrinsics)
-            
-                stop_cond = global_step < cfg.TRAIN.GT_POSE_ITERS
-                Ts = cond_transform(stop_cond, Ts.copy(stop_gradients=True), Ts)
-                kvec = tf.cond(stop_cond, lambda: tf.stop_gradient(kvec), lambda: kvec)
-
-=======
                 # 设置学习衰减指数
                 depth_input = tf.cond(rnd< input_prob, lambda: depth_filled, lambda: depth_pred)
 
-            with tf.device('/device:XLA_GPU:%d' % gpu_id):
+            with tf.device('/gpu:%d' % gpu_id):
                 if cfg.MOTION.USE_MOTION:
                     # 位姿估计网络
                     # 前向推理获取位姿矩阵，和相机参数
@@ -213,7 +190,6 @@ class DeepV2DTrainer(object):
                     # 最终的相机参数 --可以去掉
                     kvec = tf.cond(stop_cond, lambda: tf.stop_gradient(kvec), lambda: kvec)
                 
->>>>>>> 9876a9a593c41c9513b4aa6420f3d95df4fa4518
                 # depth inference
                 # 进行前向计算推理，获取深度预测值
                 depth_pr = depth_net.forward(Ts, images, kvec)
@@ -232,7 +208,6 @@ class DeepV2DTrainer(object):
                         total_loss = cfg.TRAIN.DEPTH_WEIGHT * depth_loss + motion_loss
                     else:
                         total_loss = cfg.TRAIN.DEPTH_WEIGHT * depth_loss
->>>>>>> test_run
                     var_list = tf.trainable_variables()
                     # 计算所有梯度
                     grads = gradients(total_loss, var_list)
@@ -360,7 +335,6 @@ class DeepV2DTrainer(object):
         SUMMARY_FREQ = 100
         # 设置日志频率
         LOG_FREQ = 100
-<<<<<<< HEAD
         CHECKPOINT_FREQ = 5000
         # 定义TensorFlow配置
         config = tf.ConfigProto()
@@ -373,10 +347,9 @@ class DeepV2DTrainer(object):
 
         # 在创建session的时候把config作为参数传进去
         sess = tf.InteractiveSession(config = config)
-=======
         # 设置checkpoint中间输出频率
-        CHECKPOINT_FREQ = 2000
->>>>>>> 9876a9a593c41c9513b4aa6420f3d95df4fa4518
+
+        CHECKPOINT_FREQ = 1000
 
             sess.run(init_op)
             # train with tfrecords 
@@ -395,12 +368,6 @@ class DeepV2DTrainer(object):
                 if cfg.MOTION.USE_MOTION:
                     if ckpt is not None:
                         motion_saver.restore(sess, ckpt)
-<<<<<<< HEAD
-                # # 存储的临时文件
-                # if restore_ckpt is not None:
-                #     saver.restore(sess, restore_ckpt)
-=======
->>>>>>> db644e787a6ca8d80ebaaf0e37b6088beceb627c
                     # 加载存储的临时文件
                 # 加载已经存在的模型
             if cfg.STORE.IS_USE_RESRORE:
