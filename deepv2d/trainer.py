@@ -56,8 +56,7 @@ class DeepV2DTrainer(object):
             Gs = VideoSE3Transformation(matrix=poses)
             # 创建位姿估计网络
             motion_net = MotionNetwork(cfg.MOTION, bn_is_training=True, reuse=gpu_id>0)
-
-            with tf.device('/device:XLA_GPU:%d' % gpu_id):
+            with tf.device('/gpu:%d' % (gpu_id)):
                 # 获取深度信息
                 depth_input = tf.expand_dims(depth_filled, 1)
                 # 前向计算
@@ -171,7 +170,7 @@ class DeepV2DTrainer(object):
                 # 设置学习衰减指数
                 depth_input = tf.cond(rnd< input_prob, lambda: depth_filled, lambda: depth_pred)
 
-            with tf.device('/device:XLA_GPU:%d' % gpu_id):
+            with tf.device('/gpu:%d' % gpu_id):
                 if cfg.MOTION.USE_MOTION:
                     # 位姿估计网络
                     # 前向推理获取位姿矩阵，和相机参数
@@ -209,7 +208,6 @@ class DeepV2DTrainer(object):
                         total_loss = cfg.TRAIN.DEPTH_WEIGHT * depth_loss + motion_loss
                     else:
                         total_loss = cfg.TRAIN.DEPTH_WEIGHT * depth_loss
->>>>>>> test_run
                     var_list = tf.trainable_variables()
                     # 计算所有梯度
                     grads = gradients(total_loss, var_list)
@@ -337,8 +335,21 @@ class DeepV2DTrainer(object):
         SUMMARY_FREQ = 100
         # 设置日志频率
         LOG_FREQ = 100
+        CHECKPOINT_FREQ = 5000
+        # 定义TensorFlow配置
+        config = tf.ConfigProto()
+
+        # 配置GPU内存分配方式，按需增长，很关键
+        config.gpu_options.allow_growth = True
+
+        # 配置可使用的显存比例
+        config.gpu_options.per_process_gpu_memory_fraction = 0.1
+
+        # 在创建session的时候把config作为参数传进去
+        sess = tf.InteractiveSession(config = config)
         # 设置checkpoint中间输出频率
-        CHECKPOINT_FREQ = 2000
+
+        CHECKPOINT_FREQ = 1000
 
             sess.run(init_op)
             # train with tfrecords 
@@ -357,12 +368,6 @@ class DeepV2DTrainer(object):
                 if cfg.MOTION.USE_MOTION:
                     if ckpt is not None:
                         motion_saver.restore(sess, ckpt)
-<<<<<<< HEAD
-                # # 存储的临时文件
-                # if restore_ckpt is not None:
-                #     saver.restore(sess, restore_ckpt)
-=======
->>>>>>> db644e787a6ca8d80ebaaf0e37b6088beceb627c
                     # 加载存储的临时文件
                 # 加载已经存在的模型
             if cfg.STORE.IS_USE_RESRORE:

@@ -10,7 +10,6 @@ from .networks.coders import *
 from geometry.transformation import *
 from geometry.intrinsics import *
 from special_ops import operators
-from project.back_project import BackProject
 
 # def add_depth_summaries(gt, pr):
 #     """
@@ -68,8 +67,12 @@ class DepthModule(nn.Module):
         self.pred_logits = []
         self.test_conv = Conv2d(3,32,3)
         # 注意这里默认的是线性插值
+<<<<<<< HEAD
+        self.transform = transforms.Compose([transforms.Resize(size=(self.ht,self.wd))])
+=======
         self.transform = transforms.Compose([transforms.Resize(size=(self.ht, self.wd))])
         self.back_project = BackProject()
+>>>>>>> 0fcb8eae181218550303352cd23087cfe1a738bb
         self.soft_argmax = SoftArgmax()
         self.EncoderFactory(cfg)
         self.DecoderFactory(cfg)
@@ -89,14 +92,12 @@ class DepthModule(nn.Module):
         """
         cfg = self.cfg
         # 进行线性插值，构造深度数据；用来随机初始化深度特征图
-        depths = torch.linspace(cfg.STRUCTURE.MIN_DEPTH, cfg.STRUCTURE.MAX_DEPTH, cfg.STRUCTURE.COST_VOLUME_DEPTH) # 进行线性插值获取深度序列
-        # 将深度数据加载到GPU上
-        depths = depths.cuda()
+        depths = torch.linspace(cfg.STRUCTURE.MIN_DEPTH, cfg.STRUCTURE.MAX_DEPTH, cfg.STRUCTURE.COST_VOLUME_DEPTH, device=torch.device('cuda:0')) # 进行线性插值获取深度序列
         # 相机参数转换--将相机内参转换为四元组矩阵
         intrinsics = intrinsics_vec_to_matrix(intrinsics / 4.0) # 将相机参数转换为矩阵，并将其缩小为原来的一半
         # extract 2d feature maps from images and build cost volume # 进行编码，获取2d的图像信息
         # 进行图像编码，获取特征图 1*4*120*160*32
-         # 在第5个通道上进行分离，获取数据
+        # 在第5个通道上进行分离，获取数据
         batch, frames, channel, ht, wd = images.shape
         # 将其降低维度为4维 假设数据为1*4*480*640*3->4*480*640*3 方便卷积操作
         images = images.view([batch*frames, 3, ht, wd]) # 调整输入维度为图片数量*高*宽*3
@@ -175,17 +176,6 @@ class DepthModule(nn.Module):
                 images,
                 intrinsics
                 )
-        #print("ht:{}, wd: {}".format(ht,wd))
-        # if self.cfg.STRUCTURE.MODE == 'avg':
-        #     spred = self.stereo_network_avg(
-        #         poses,
-        #         images,
-        #         intrinsics
-        #         )
-        # # perform view concatenation 执行视图连接，连接位姿图像和参数
-        # elif self.cfg.STRUCTURE.MODE == 'concat':
-        #     spred = self.stereo_network_cat(poses, images, intrinsics)
-        # 返回最终的深度估计值
         return spred
 
     

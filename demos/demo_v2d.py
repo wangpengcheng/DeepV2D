@@ -75,6 +75,7 @@ def load_sorted_test_sequence(data_path, inference_file_name, scale):
     poses = []
     for pre_pose in pre_poses:
         pose_mat = pose_vec2mat(pre_pose)
+        # 注意这里对矩阵进行了一次求逆矩阵运算
         poses.append(np.linalg.inv(pose_mat))
     depths = []
     for depth_name in depths_names:
@@ -89,6 +90,12 @@ def load_sorted_test_sequence(data_path, inference_file_name, scale):
     my_intrinsics = my_intrinsics*scale 
     
     return images, poses, depths, my_intrinsics
+
+def prcess_gt(depths_gt):
+    crop = [20//2, 459//2, 24//2, 615//2] # eigen crop
+    res = depths_gt[crop[0]:crop[1], crop[2]:crop[3]]
+    res = cv2.resize(res, (640//2, 480//2))
+    return res
 
 def main(args):
 
@@ -122,64 +129,82 @@ def main(args):
         #加载图像和相机位姿初始值
         #call deepv2d on a video sequence
         # 加载测试数据集
-        if not is_pose:
-            # 注意这里保证其它接口
-            images, intrinsics = load_test_sequence(args.sequence)
-        # 进行图参数量的统计
-        if 0:
-            graph =tf.get_default_graph()
-            stats_graph(graph)
-        # 根据相机是否标定，来执行函数
-        if is_pose:
-            # 进行参数加载
-            images ,poses, depths_gt, intrinsics = load_sorted_test_sequence(args.sequence, args.inference_file_name, cfg.INPUT.RESIZE)
-            # 根据数据进行迭代，根据前面n帧的内容，推断最后帧的内容,注意这里推理的是中间关键帧的内容
-            iter_number = int(len(images)/frames_len)
-            time_sum =0.0
-            # 遍历进行
-            for i in range(0, iter_number):
-                temp_images = images[i*frames_len:(i+1)*frames_len]
-                temp_poses = poses[i*frames_len:(i+1)*frames_len]
-                temp_intrinsics = intrinsics.copy()
-                temp_images = np.stack(temp_images, axis=0).astype(np.uint8)
-                temp_poses = np.stack(temp_poses, axis=0).astype(np.float32)
-                # print("pose",temp_poses[0])
-                # 计算时间
-                time_start=time.time()
-                # 进行推理
-                depths = deepv2d.inference(temp_images, temp_poses, temp_intrinsics)
-                time_end=time.time()
-                print('time cost',time_end-time_start,'s')
-                if i != 0:
-                    time_sum = time_sum + (time_end-time_start)
-                # 关键帧
-                key_frame_depth = depths[0][0]
-                # 关键rgb帧
-                key_frame_image = temp_images[0]
-                # 关键深度帧
-                depth_gt = depths_gt[i*frames_len]
-                # 计算深度缩放
-                scalor = eval_utils.compute_scaling_factor(depth_gt, key_frame_depth, min_depth=0.1, max_depth=10.0)
-                key_frame_depth =  scalor * key_frame_depth
-                # 对深度图像进行平滑处理
-                # key_frame_depth = cv2.medianBlur(key_frame_depth,5)
-                image_depth = vis.create_image_depth_figure(key_frame_image, key_frame_depth)
-                # 创建结果文件夹
-                result_out_dir = "{}/{}".format(args.sequence, "inference_result")
-                # 检测路径文件夹
-                if not os.path.exists(result_out_dir):
-                    os.makedirs(result_out_dir)
-                # 写入图片
-                cv2.imwrite("{}/{}.png".format(result_out_dir, i), image_depth)
-                print("wirte image:{}/{}.png".format(result_out_dir,i))
+        # 路径
+        test_path = 'data/tum'
+        # 测试文件夹
+        test_paths = sorted(os.listdir(test_path))
+        # 获取文件夹数量
+        num_test = len(test_paths)
+        for test_id in range(num_test):
+            sequence_path = os.path.join(test_path, test_paths[test_id])
+            inference_file_name = os.path.join(sequence_path, "test.txt")
+            if not is_pose:
+                # 注意这里保证其它接口
+                images, intrinsics = load_test_sequence(sequence_path)
+            # 进行图参数量的统计
+            if 0:
+                graph =tf.get_default_graph()
+                stats_graph(graph)
+            # 根据相机是否标定，来执行函数
+            if is_pose:
+                # 进行参数加载
+                images ,poses, depths_gt, intrinsics = load_sorted_test_sequence(sequence_path, inference_file_name, cfg.INPUT.RESIZE)
+               
+                # 根据数据进行迭代，根据前面n帧的内容，推断最后帧的内容,注意这里推理的是中间关键帧的内容
+                iter_number = int(len(images)/frames_len)
+                time_sum =0.0
+                # 遍历进行
+                for i in range(0, iter_number):
+                    temp_images = images[i*frames_len:(i+1)*frames_len]
+                    temp_poses = poses[i*frames_len:(i+1)*frames_len]
+                    temp_intrinsics = intrinsics.copy()
+                    temp_images = np.stack(temp_images, axis=0).astype(np.uint8)
+                    temp_poses = np.stack(temp_poses, axis=0).astype(np.float32)
+                    # 计算时间
+                    time_start=time.time()
+                    # 进行推理
+                    depths = deepv2d.inference(temp_images, temp_poses, temp_intrinsics)
+                    time_end=time.time()
+                    print('time cost',time_end-time_start,'s')
+                    if i != 0:
+                        time_sum = time_sum + (time_end-time_start)
+                    # 关键帧
+                    key_frame_depth = depths[0][0]
+                    # 关键rgb帧
+                    key_frame_image = temp_images[0]
+                    # 关键深度帧
+                    depth_gt = depths_gt[i*frames_len]
+                    depth_gt = prcess_gt(depth_gt)
+                    # 计算深度缩放
+                    scalor = eval_utils.compute_scaling_factor(depth_gt, key_frame_depth, min_depth=0.8, max_depth=10.0)
+                    pre_count = key_frame_depth.copy()
 
-            print("{} images,totle time: {} s, avg time: {} s".format(iter_number-1,time_sum,time_sum/(iter_number-1)))
-            dp_name = "deep_model.pb"
-            deepv2d.toPb(dp_name)
-        elif is_calibrated:
-            depths, poses = deepv2d(images, intrinsics, viz=True, iters=args.n_iters)
-        else:
-            depths, poses = deepv2d(images, viz=True, iters=args.n_iters)
+                    key_frame_depth =  scalor * key_frame_depth
+                    # 对深度图像进行平滑处理
+                    # key_frame_depth = cv2.medianBlur(key_frame_depth,5)
+                    image_depth = vis.create_ex_image_depth_figure(key_frame_image, depth_gt ,key_frame_depth)
+                    # 创建结果文件夹
+                    result_out_dir = "{}/{}_3".format(sequence_path, cfg.STORE.MODLE_NAME)
+                    file_dir = "{}/{}_3/scale".format(sequence_path, cfg.STORE.MODLE_NAME)
+                    # 检测路径文件夹
+                    if not os.path.exists(result_out_dir):
+                        os.makedirs(result_out_dir)
+                    if not os.path.exists(file_dir):
+                        os.makedirs(file_dir)
+                    # 写入图片
+                    cv2.imwrite("{}/{}.png".format(result_out_dir, i), image_depth)
+                    #print("wirte image:{}/{}.png".format(result_out_dir,i))
+                    #将原始数据，预测数据，纠正后数据保存为np数组
+                    gt_count = depth_gt
+                    scale_pr = key_frame_depth
+                    res = eval_utils.get_scale_data(gt_count, pre_count, scale_pr,min_depth=0.8, max_depth=10.0)
+                    np.savetxt("{}/{}.txt".format(file_dir, i), res)
+
+                print("{} images,totle time: {} s, avg time: {} s".format(iter_number-1,time_sum,time_sum/(iter_number-1)))
+            elif is_calibrated:
+                depths, poses = deepv2d(images, intrinsics, viz=True, iters=args.n_iters)
+            else:
+                depths, poses = deepv2d(images, viz=True, iters=args.n_iters)
         
        
 

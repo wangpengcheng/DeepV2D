@@ -18,19 +18,17 @@ def set_random_seed(seed = 10, deterministic=False, benchmark=False):
     if benchmark:
         torch.backends.cudnn.benchmark = True
 
-def resize_crop(images, scale_factor, inter):
+def resize_crop(images, factor, inter):
     # 获取深度
     ht, wd = images.shape[-2:]
     # 计算新尺度
-    ht1 = int(ht*scale_factor)
-    wd1 = int(wd*scale_factor)
+    ht1 = int(ht*factor)
+    wd1 = int(wd*factor)
     # 计算差距值
     dx = (wd1 - wd) // 2 
     dy = (ht1 - ht) // 2
-    # 图像缩放
-    images = transforms.functional.resize(images, (ht1, wd1), interpolation=inter)
-    # 对图像进行裁剪
-    images = transforms.functional.crop(images, dy, dx, ht, wd)
+    # 图像缩放,裁剪
+    images = torch.nn.functional.interpolate(images, scale_factor=factor, mode= inter)[:, :, dy:dy+ht, dx:dx+wd]
     return images
 
 def save_tensor(original_tensor, save_name):
@@ -68,14 +66,14 @@ def scale(cfg, images, depth_gt, intrinsics, filled):
         dx = (wd1 - wd) // 2 
         dy = (ht1 - ht) // 2
         # rgb图像缩放
-        images = resize_crop(images, s, Image.BILINEAR)
+        images = resize_crop(images, s, 'bilinear')
         # 深度图像缩放
-        depth_gt = resize_crop(depth_gt, s, Image.NEAREST)
+        depth_gt = resize_crop(depth_gt, s, 'nearest')
         # 图像缩放
         if filled is not None:
-            filled = resize_crop(filled, s, Image.NEAREST)
+            filled = resize_crop(filled, s, 'nearest')
         # 相机内参
-        intrinsics = (intrinsics * s) - torch.Tensor([0, 0, dx, dy])
+        intrinsics = (intrinsics * s) - torch.Tensor([0, 0, dx, dy]).to(intrinsics.device)
 
     return images, depth_gt, intrinsics, filled
 
@@ -107,7 +105,21 @@ def augument1(images):
     images = transforms.ToTensor()(images)
     return images
 
-def augument(images):
+def augument2(images):
+    # gamma变换
+    random_gamma = torch.Tensor(1).uniform_(0.9, 1.1).to(images.device)
+    images = 255.0*((images/255.0)**random_gamma)
+    # 亮度变换
+    random_brightness = torch.Tensor(1).uniform_(0.8, 1.2).to(images.device)
+    images *= random_brightness
+    # 颜色随机值
+    random_colors = torch.Tensor(3).uniform_(0.8, 1.2).to(images.device).view(1,3,1,1)
+    images *= random_colors
+    images = torch.clamp(images,0.0,255.0)
+    return images
+
+
+def augument1(images):
     # randomly shift gamma
     # 随机shift变换
     images = transforms.ToPILImage()(images)
@@ -146,10 +158,7 @@ def prepare_inputs(cfg, images, depth, intrinsics, filled=None):
     
     b,n,c,w,h = images.shape[:]
     images = images.view(b*n, c, w, h)
-    #save_tensor(images[0], "data_origin.png")
-    # for i in range(len(images)):
-    #     temp = augument(images[i])
-    #     images[i] = temp
+    images = augument2(images)
     images, depth, intrinsics, filled = scale(cfg, images, depth, intrinsics, filled = None)
     images = images.view(b, n, c, w, h)
     return images, depth,  intrinsics, filled

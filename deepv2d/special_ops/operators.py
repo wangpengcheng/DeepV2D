@@ -48,7 +48,7 @@ def get_cood(depths, intrinsics, Tij):
     pt1 = torch.stack([X, Y, Z], dim = -1)
     coords = project(pt1, intrinsics)
 
-    return coords
+    return coords 
 
 def TS_inverse(pose):
     """
@@ -102,7 +102,7 @@ def backproject_avg(
     batch, num, c , ht, wd = fmaps.shape[0:] # 获取特征图信息
     # Ts 8*4*4*4
     # make depth volume
-    depths = torch.reshape(depths, [1, 1, dd, 1, 1])
+    depths = depths.view([1, 1, dd, 1, 1])
     # 对其进行扩张，扩张到和fmaps维度基本相同
     depths = depths.repeat([batch, num, 1, ht, wd])
     # 根据梯度选取张数

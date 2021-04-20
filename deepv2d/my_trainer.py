@@ -8,7 +8,7 @@ import os
 import cv2
 import torch.optim as optim
 import time
-from geometry.transformation import *
+#from geometry.transformation import *
 
 from modules.depth_module import DepthModule
 from utils.my_utils import *
@@ -48,7 +48,8 @@ class data_prefetcher():
         if self.currt_index < self.len:
             images_batch, poses_batch, gt_batch, filled_batch, pred_batch, intrinsics_batch, frame_id = self.origin_loader[self.currt_index]
             images_batch = images_batch.permute(0, 1, 4, 2, 3)
-            images_batch, gt_batch, intrinsics_batch, a = prepare_inputs(self.cfg , images_batch, gt_batch, intrinsics_batch)
+            #images_batch, gt_batch, intrinsics_batch, a = prepare_inputs(self.cfg , images_batch, gt_batch, intrinsics_batch)
+            #images_batch, gt_batch, intrinsics_batch, a = prepare_inputs(self.cfg , images_batch, gt_batch, intrinsics_batch)
             self.images_batch = images_batch
             self.gt_batch = gt_batch
             self.intrinsics_batch = intrinsics_batch
@@ -64,7 +65,7 @@ class data_prefetcher():
             self.reset()
             return 
         with torch.cuda.stream(self.stream):
-            self.images_batch = self.images_batch.cuda(non_blocking=True)
+            self.images_batch = self.images_batch.cuda(non_blocking=True).float()
             self.gt_batch = self.gt_batch.cuda(non_blocking=True)
             self.intrinsics_batch = self.intrinsics_batch.cuda(non_blocking=True).float()
             self.poses_batch = self.poses_batch.cuda(non_blocking=True)
@@ -119,6 +120,8 @@ class DeepV2DTrainer(object):
         max_steps = cfg.TRAIN.ITERS[stage-1]
         # 设置GPU
         os.environ['CUDA_VISIBLE_DEVICES'] = cfg.TRAIN.USE_GPU
+        os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
+
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
         # 设置存储频率
@@ -137,10 +140,10 @@ class DeepV2DTrainer(object):
         loss_function = MyLoss(deepModel)
         
         if is_use_gpu:
-            if torch.cuda.device_count() > 1:
-                deepModel = nn.DataParallel(deepModel)
-            deepModel = deepModel.cuda()
-            loss_function.cuda()
+            # if torch.cuda.device_count() > 1:
+            #     deepModel = nn.DataParallel(deepModel)
+            deepModel = deepModel.to(device)
+            loss_function.to(device)
 
 
         # # 设置损失函数
@@ -194,6 +197,7 @@ class DeepV2DTrainer(object):
             #while images_batch is not None:
                 # 进行数据预处理
                 #images, gt_batch, filled_batch, intrinsics_batch = prepare_inputs(cfg, images, gt_batch, filled_batch,intrinsics_batch)
+                images_batch, gt_batch, intrinsics_batch, a = prepare_inputs(cfg , images_batch, gt_batch, intrinsics_batch)
                 optimizer.zero_grad()
                 # Ts = poses_batch.cuda()
                 # images = images_batch.cuda()

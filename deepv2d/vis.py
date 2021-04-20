@@ -42,7 +42,14 @@ def create_image_depth_figure(image, depth):
     # 将图像进行连接
     figure = np.concatenate([image, depth_image], axis=1)
     return figure
-
+    
+def create_ex_image_depth_figure(image, gt, depth):
+    # 将均一化的图像映射到0~255
+    depth_image = 255 * normalize_depth_for_display(depth)
+    gt_image = 255 * normalize_depth_for_display(gt)
+    # 将图像进行连接
+    figure = np.concatenate([image, gt_image, depth_image], axis=1)
+    return figure
 
 # def create_camera_polydata(R, t, only_polys=False):
 #     """Creates a vtkPolyData object with a camera mesh: https://github.com/lmb-freiburg/demon"""
