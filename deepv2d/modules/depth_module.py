@@ -67,12 +67,7 @@ class DepthModule(nn.Module):
         self.pred_logits = []
         self.test_conv = Conv2d(3,32,3)
         # 注意这里默认的是线性插值
-<<<<<<< HEAD
         self.transform = transforms.Compose([transforms.Resize(size=(self.ht,self.wd))])
-=======
-        self.transform = transforms.Compose([transforms.Resize(size=(self.ht, self.wd))])
-        self.back_project = BackProject()
->>>>>>> 0fcb8eae181218550303352cd23087cfe1a738bb
         self.soft_argmax = SoftArgmax()
         self.EncoderFactory(cfg)
         self.DecoderFactory(cfg)

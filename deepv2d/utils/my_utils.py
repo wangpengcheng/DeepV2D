@@ -28,7 +28,9 @@ def resize_crop(images, factor, inter):
     dx = (wd1 - wd) // 2 
     dy = (ht1 - ht) // 2
     # 图像缩放,裁剪
-    images = torch.nn.functional.interpolate(images, scale_factor=factor, mode= inter)[:, :, dy:dy+ht, dx:dx+wd]
+    images = torch.nn.functional.interpolate(images, scale_factor=factor, mode= inter)
+
+    images = images[..., dy:dy+ht, dx:dx+wd]
     return images
 
 def save_tensor(original_tensor, save_name):
@@ -115,7 +117,7 @@ def augument2(images):
     # 颜色随机值
     random_colors = torch.Tensor(3).uniform_(0.8, 1.2).to(images.device).view(1,3,1,1)
     images *= random_colors
-    images = torch.clamp(images,0.0,255.0)
+    images = torch.clamp(images, 0.0, 255.0)
     return images
 
 
@@ -156,9 +158,11 @@ def augument1(images):
 
 def prepare_inputs(cfg, images, depth, intrinsics, filled=None):
     
-    b,n,c,w,h = images.shape[:]
+    b, n, c, w, h = images.shape[:]
     images = images.view(b*n, c, w, h)
     images = augument2(images)
+    depth = depth.view(b, 1, w, h)
     images, depth, intrinsics, filled = scale(cfg, images, depth, intrinsics, filled = None)
     images = images.view(b, n, c, w, h)
+    depth = depth.view(b, w, h)
     return images, depth,  intrinsics, filled
