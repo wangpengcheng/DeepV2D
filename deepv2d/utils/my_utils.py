@@ -54,6 +54,7 @@ def scale(cfg, images, depth_gt, intrinsics, filled):
         # 将scales转换为常量
         scales = cfg.INPUT.SCALES
         scale_ix = torch.Tensor(1).uniform_(0, len(cfg.INPUT.SCALES))
+        scale_ix = scale_ix.cuda().int()
         scale_ix = int(scale_ix.int())
         # 索引筛选
         s = scales[scale_ix]

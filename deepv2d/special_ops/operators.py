@@ -49,7 +49,7 @@ def get_cood(depths, intrinsics, Tij):
     coords = project(pt1, intrinsics)
 
     return coords
-    
+
 def TS_inverse(pose):
     """
     位姿矩阵的逆矩阵
@@ -71,7 +71,6 @@ def TS_inverse(pose):
         g, h, i, z*i-x*g-y*h,
         zero, zero, zero, one
         ], dim = -1)
-    #print(res.shape)
     res = res.view(pose.shape)
     return  res
 
