@@ -48,7 +48,8 @@ def get_cood(depths, intrinsics, Tij):
     pt1 = torch.stack([X, Y, Z], dim = -1)
     coords = project(pt1, intrinsics)
 
-    return coords 
+    return coords
+    
 def TS_inverse(pose):
     """
     位姿矩阵的逆矩阵
@@ -111,11 +112,6 @@ def backproject_avg(
     jj = jj.view([-1]).cuda()
     Tii = my_gather(Ts, ii, 1)
     Tjj = my_gather(Ts, jj, 1)
-    # ii = ii.view([-1]).tolist()
-    # jj = jj.view([-1]).tolist()
-    # Tii = Ts[:,ii,]
-    # Tjj = Ts[:,jj,]
-    #print(Tii.shape)
     # 计算对应矩阵 
     Tij = Tjj * TS_inverse(Tii)
     #print(Tij.shape)

@@ -68,7 +68,7 @@ class DepthModule(nn.Module):
         self.pred_logits = []
         self.test_conv = Conv2d(3,32,3)
         # 注意这里默认的是线性插值
-        self.transform = transforms.Compose([transforms.Resize(size=(self.ht,self.wd))])
+        self.transform = transforms.Compose([transforms.Resize(size=(self.ht, self.wd))])
         self.back_project = BackProject()
         self.soft_argmax = SoftArgmax()
         self.EncoderFactory(cfg)
@@ -99,10 +99,10 @@ class DepthModule(nn.Module):
          # 在第5个通道上进行分离，获取数据
         batch, frames, channel, ht, wd = images.shape
         # 将其降低维度为4维 假设数据为1*4*480*640*3->4*480*640*3 方便卷积操作
-        images = torch.reshape(images, [batch*frames, 3, ht, wd]) # 调整输入维度为图片数量*高*宽*3
+        images = images.view([batch*frames, 3, ht, wd]) # 调整输入维度为图片数量*高*宽*3
         # 获取编码图片
         fmaps = self.encoder(images)
-        fmaps = torch.reshape(fmaps, [batch, frames, 32, ht//8, wd//8]) # 1 4 32 30 40 
+        fmaps = fmaps.view([batch, frames, 32, ht//8, wd//8]) # 1 4 32 30 40 
         # #再重新调整顺序，还原维度信息
         # if self.cfg.STRUCTURE.ENCODER_MODE == 'resnet':
         #     fmaps = torch.reshape(fmaps, [batch, frames, 32, ht//4, wd//4]) # 1 4 32 60 80 

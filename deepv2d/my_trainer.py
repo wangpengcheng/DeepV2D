@@ -48,7 +48,7 @@ class data_prefetcher():
         if self.currt_index < self.len:
             images_batch, poses_batch, gt_batch, filled_batch, pred_batch, intrinsics_batch, frame_id = self.origin_loader[self.currt_index]
             images_batch = images_batch.permute(0, 1, 4, 2, 3)
-            #images_batch, gt_batch, intrinsics_batch, a = prepare_inputs(self.cfg , images_batch, gt_batch, intrinsics_batch)
+            images_batch, gt_batch, intrinsics_batch, a = prepare_inputs(self.cfg , images_batch, gt_batch, intrinsics_batch)
             self.images_batch = images_batch
             self.gt_batch = gt_batch
             self.intrinsics_batch = intrinsics_batch
@@ -143,8 +143,11 @@ class DeepV2DTrainer(object):
             loss_function.cuda()
 
 
-        
-        # 设置损失函数
+        # # 设置损失函数
+        #optimizer = optim.Adam(deepModel.parameters(), lr=cfg.TRAIN.LR)
+        # # 设置学习策略
+        # model_lr_scheduler = optim.lr_scheduler.StepLR(optimizer, int(0.1*max_steps), 0.1)
+        # # 设置损失函数
         optimizer = optim.RMSprop(deepModel.parameters(), lr=cfg.TRAIN.LR, momentum=0.9)
         # 设置学习策略
         model_lr_scheduler = optim.lr_scheduler.StepLR(optimizer, int(0.8*max_steps), 0.5)
@@ -165,7 +168,7 @@ class DeepV2DTrainer(object):
             optimizer.load_state_dict(checkpoint['optimizer'])
             start_step = checkpoint['epoch']
             #model_lr_scheduler.load_state_dict(checkpoint['model_lr_scheduler'])
-            end_step = end_step + max_steps
+            end_step = start_step + max_steps
         #print(deepModel)
         # 日志
         if cfg.STORE.IS_SAVE_LOSS_LOG:
@@ -176,8 +179,11 @@ class DeepV2DTrainer(object):
         else:
             loss_file = None
         prefetcher = data_prefetcher(cfg, trainloader)
+        training_step = 0
         #prefetcher =  data_prefetcher(trainloader)
         for training_step in range(start_step, end_step):
+            
+
             #prefetcher = data_prefetcher(cfg, trainloader)
             images_batch, poses_batch, gt_batch, intrinsics_batch, frame_id = prefetcher.next()
             #print(len(trainloader))
@@ -215,6 +221,7 @@ class DeepV2DTrainer(object):
                 running_loss = running_loss + float(loss.detach().item())
                 i = i + 1
                 images_batch, poses_batch, gt_batch, intrinsics_batch, frame_id = prefetcher.next()
+
             # 修改学习率
             model_lr_scheduler.step()
             # 输出loss值
@@ -247,7 +254,7 @@ class DeepV2DTrainer(object):
         checkpoint= {
             "net": deepModel.state_dict(),
             "optimizer": optimizer.state_dict(),
-            "epoch": training_step,
+            "epoch": end_step,
             "model_lr_scheduler": model_lr_scheduler
             }
         # 模型名字
