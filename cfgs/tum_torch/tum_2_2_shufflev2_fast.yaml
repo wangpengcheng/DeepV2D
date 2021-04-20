@@ -9,7 +9,7 @@ INPUT:
   RESIZE: 0.5
 TRAIN:
   ITERS: [300, 5000]
-  BATCH: [1, 8]
+  BATCH: [1, 10]
   LR: 0.0015
   CLIP_GRADS: True
   DEPTH_WEIGHT: 1.0

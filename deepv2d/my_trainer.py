@@ -158,7 +158,7 @@ class DeepV2DTrainer(object):
         end_step = max_steps
         # 设置训练数据集
         trainloader = torch.utils.data.DataLoader(data_source, batch_size=batch_size, shuffle=False,
-                            num_workers=16, pin_memory=True)
+                            num_workers=8, pin_memory=True, drop_last=True, prefetch_factor=4)
         # 设置为训练模式
         deepModel.train()
         # 加载模型
@@ -180,11 +180,8 @@ class DeepV2DTrainer(object):
         else:
             loss_file = None
         prefetcher = data_prefetcher(cfg, trainloader)
-        training_step = 0
         #prefetcher =  data_prefetcher(trainloader)
         for training_step in range(start_step, end_step):
-            
-
             #prefetcher = data_prefetcher(cfg, trainloader)
             images_batch, poses_batch, gt_batch, intrinsics_batch, frame_id = prefetcher.next()
             #print(len(trainloader))

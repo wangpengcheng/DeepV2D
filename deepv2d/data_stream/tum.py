@@ -16,7 +16,7 @@ import threading, time
 from utils.tum_associate import *
 from torch.utils.data import DataLoader,Dataset
 
-factor = 5000.0 # for the 16-bit PNG files 
+factor = 1000.0 # for the 16-bit PNG files 
 # OR: factor = 1 # for the 32-bit float images in the ROS bag files
 #intrinsics = np.array([fx, fy, cx, cy],dtype=np.float32)
 
