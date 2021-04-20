@@ -92,7 +92,7 @@ class DepthModule(nn.Module):
         intrinsics = intrinsics_vec_to_matrix(intrinsics / 4.0) # 将相机参数转换为矩阵，并将其缩小为原来的一半
         # extract 2d feature maps from images and build cost volume # 进行编码，获取2d的图像信息
         # 进行图像编码，获取特征图 1*4*120*160*32
-         # 在第5个通道上进行分离，获取数据
+        # 在第5个通道上进行分离，获取数据
         batch, frames, channel, ht, wd = images.shape
         # 将其降低维度为4维 假设数据为1*4*480*640*3->4*480*640*3 方便卷积操作
         images = images.view([batch*frames, 3, ht, wd]) # 调整输入维度为图片数量*高*宽*3

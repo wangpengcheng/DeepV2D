@@ -9,8 +9,8 @@ def coords_grid(shape, homogeneous=True):
     b, n, c, h, w = shape[:]
     # 进行平滑操作
     yy, xx= torch.meshgrid(torch.arange(h), torch.arange(w))
-    xx = xx.float()
-    yy = yy.float()
+    xx = xx.float().cuda()
+    yy = yy.float().cuda()
     # 进行维度拼接
     coords = torch.stack((xx, yy), dim=-1)
     #coords = torch.stack((xx, yy, torch.ones_like(xx)), dim=-1)
@@ -38,7 +38,7 @@ def extract_and_reshape_intrinsics(intrinsics, shape=None):
 def backproject(depth, intrinsics, jacobian=False):
     """ backproject depth map to point cloud """
     # s
-    coords = coords_grid(depth.shape, homogeneous=True, device=torch.device('cuda:0'))
+    coords = coords_grid(depth.shape, homogeneous=True)
     #coords = coords.cuda()
     x, y = torch.unbind(coords, dim=-1)
 

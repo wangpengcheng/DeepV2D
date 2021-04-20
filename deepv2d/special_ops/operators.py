@@ -107,9 +107,9 @@ def backproject_avg(
     # 对其进行扩张，扩张到和fmaps维度基本相同
     depths = depths.repeat([batch, num, 1, ht, wd])
     # 根据梯度选取张数
-    ii, jj = torch.meshgrid(torch.arange(1), torch.arange(0, num), device= torch.device('cuda:0'))
-    ii = ii.view([-1])
-    jj = jj.view([-1])
+    ii, jj = torch.meshgrid(torch.arange(1), torch.arange(0, num))
+    ii = ii.view([-1]).cuda()
+    jj = jj.view([-1]).cuda()
     Tii = my_gather(Ts, ii, 1)
     Tjj = my_gather(Ts, jj, 1)
     # 计算对应矩阵 

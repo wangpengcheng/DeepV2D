@@ -200,7 +200,7 @@ class ShuffleNetUnitV2A(nn.Module):
 
     def forward(self, input):
         # 首先进行二维分离操作,将第三维分成两个部分
-        shortcut, x = split(input, 2)
+        shortcut, x = input.chunk(2, dim=1)
         # 组卷积
         out = self.conv1(input)
         # 进行深度可分离卷积
