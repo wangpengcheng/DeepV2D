@@ -48,8 +48,6 @@ class data_prefetcher():
         if self.currt_index < self.len:
             images_batch, poses_batch, gt_batch, filled_batch, pred_batch, intrinsics_batch, frame_id = self.origin_loader[self.currt_index]
             images_batch = images_batch.permute(0, 1, 4, 2, 3)
-            #images_batch, gt_batch, intrinsics_batch, a = prepare_inputs(self.cfg , images_batch, gt_batch, intrinsics_batch)
-            #images_batch, gt_batch, intrinsics_batch, a = prepare_inputs(self.cfg , images_batch, gt_batch, intrinsics_batch)
             self.images_batch = images_batch
             self.gt_batch = gt_batch
             self.intrinsics_batch = intrinsics_batch
@@ -159,8 +157,8 @@ class DeepV2DTrainer(object):
         start_step = 0
         end_step = max_steps
         # 设置训练数据集
-        trainloader = torch.utils.data.DataLoader(data_source, batch_size=batch_size, shuffle=True,
-                            num_workers=8, pin_memory=True, drop_last=True)
+        trainloader = torch.utils.data.DataLoader(data_source, batch_size=batch_size, shuffle=False,
+                            num_workers=16, pin_memory=True)
         # 设置为训练模式
         deepModel.train()
         # 加载模型
@@ -214,7 +212,6 @@ class DeepV2DTrainer(object):
                     intrinsics
                     )
                 
-
                 # 计算loss值
                 loss = loss_function(gt, outputs)
                 # loss backward
