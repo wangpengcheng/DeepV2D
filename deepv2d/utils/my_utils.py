@@ -27,10 +27,8 @@ def resize_crop(images, scale_factor, inter):
     # 计算差距值
     dx = (wd1 - wd) // 2 
     dy = (ht1 - ht) // 2
-    # 图像缩放
-    images = transforms.functional.resize(images, (ht1, wd1), interpolation=inter)
-    # 对图像进行裁剪
-    images = transforms.functional.crop(images, dy, dx, ht, wd)
+    # 图像缩放,裁剪
+    images = torch.nn.functional.interpolate(images, scale_factor=scale_factor, mode=inter)[:, :, dy:dy+ht, dx:dx+wd]
     return images
 
 def save_tensor(original_tensor, save_name):
@@ -53,8 +51,8 @@ def scale(cfg, images, depth_gt, intrinsics, filled):
     if len(cfg.INPUT.SCALES) > 1:
         # 将scales转换为常量
         scales = cfg.INPUT.SCALES
-        scale_ix = torch.Tensor(1).uniform_(0, len(cfg.INPUT.SCALES))
-        scale_ix = int(scale_ix.int())
+        scale_ix = np.random.uniform(0, len(cfg.INPUT.SCALES))
+        scale_ix = int(scale_ix)
         # 索引筛选
         s = scales[scale_ix]
         # 计算宽度和高度
@@ -67,12 +65,12 @@ def scale(cfg, images, depth_gt, intrinsics, filled):
         dx = (wd1 - wd) // 2 
         dy = (ht1 - ht) // 2
         # rgb图像缩放
-        images = resize_crop(images, s, Image.BILINEAR)
+        images = resize_crop(images, s, 'bilinear')
         # 深度图像缩放
-        depth_gt = resize_crop(depth_gt, s, Image.NEAREST)
+        depth_gt = resize_crop(depth_gt, s, 'nearest')
         # 图像缩放
         if filled is not None:
-            filled = resize_crop(filled, s, Image.NEAREST)
+            filled = resize_crop(filled, s, 'nearest')
         # 相机内参
         intrinsics = (intrinsics * s) - torch.Tensor([0, 0, dx, dy])
 

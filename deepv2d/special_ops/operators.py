@@ -48,8 +48,13 @@ def get_cood(depths, intrinsics, Tij):
     pt1 = torch.stack([X, Y, Z], dim = -1)
     coords = project(pt1, intrinsics)
 
+<<<<<<< HEAD
     return coords 
 
+=======
+    return coords
+    
+>>>>>>> 0fcb8eae181218550303352cd23087cfe1a738bb
 def TS_inverse(pose):
     """
     位姿矩阵的逆矩阵
