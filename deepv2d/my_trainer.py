@@ -138,8 +138,8 @@ class DeepV2DTrainer(object):
         loss_function = MyLoss(deepModel)
         
         if is_use_gpu:
-            # if torch.cuda.device_count() > 1:
-            #     deepModel = nn.DataParallel(deepModel)
+            if torch.cuda.device_count() > 1:
+                deepModel = nn.DataParallel(deepModel)
             deepModel = deepModel.to(device)
             loss_function.to(device)
 
