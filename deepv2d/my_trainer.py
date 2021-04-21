@@ -9,6 +9,7 @@ import cv2
 import torch.optim as optim
 import time
 #from geometry.transformation import *
+from tensorboardX import SummaryWriter
 
 from modules.depth_module import DepthModule
 from utils.my_utils import *
@@ -177,17 +178,22 @@ class DeepV2DTrainer(object):
             if not os.path.exists(loss_log_file_name):
                 os.mknod(loss_log_file_name)
             loss_file = open(loss_log_file_name, "w") 
+            writer = SummaryWriter(cfg.LOG_DIR+"_sum")
         else:
             loss_file = None
+            writer = None
         prefetcher = data_prefetcher(cfg, trainloader)
+        data_len = len(trainloader)
         #prefetcher =  data_prefetcher(trainloader)
         for training_step in range(start_step, end_step):
+            delta = 0
+            abs_rel = 0
             #prefetcher = data_prefetcher(cfg, trainloader)
             images_batch, poses_batch, gt_batch, intrinsics_batch, frame_id = prefetcher.next()
             #print(len(trainloader))
             i = 0
             # 开始加载数据
-            while i < len(trainloader):
+            while i < data_len:
             #for i, data in enumerate(trainloader, 0):
             #while images_batch is not None:
                 # 进行数据预处理
@@ -211,6 +217,10 @@ class DeepV2DTrainer(object):
                 
                 # 计算loss值
                 loss = loss_function(gt, outputs)
+                # 计算误差
+                temp_delta, temp_abs_rel, = add_depth_acc(gt, outputs)
+                abs_rel = abs_rel + temp_abs_rel
+                delta = delta + temp_delta
                 # loss backward
                 loss.backward()
                 # update parameters using optimizer
@@ -219,6 +229,11 @@ class DeepV2DTrainer(object):
                 running_loss = running_loss + float(loss.detach().item())
                 i = i + 1
                 images_batch, poses_batch, gt_batch, intrinsics_batch, frame_id = prefetcher.next()
+                # 进行文件写入
+            if writer is not None:
+                writer.add_scalar('Train/Loss', loss.item(), training_step)
+                writer.add_scalar('Train/abs_rel', abs_rel/data_len, training_step)
+                writer.add_scalar('Train/a1', delta/data_len, training_step)
 
             # 修改学习率
             model_lr_scheduler.step()

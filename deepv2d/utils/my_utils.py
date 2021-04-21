@@ -8,6 +8,29 @@ import random
 from PIL import Image
 import os
 
+def add_depth_acc(gt, pr):
+    """
+    tensorborad 写入函数
+
+    Args:
+        gt ([type]): [description]
+        pr ([type]): [description]
+    """
+    gt = torch.reshape(gt, [-1])
+    pr = torch.reshape(pr, [-1])
+    v = (gt > 0.1) & (gt < 10.0)
+    gt = gt[v]
+    pr = pr[v]
+    # 筛选最大值
+    thresh = torch.maximum(gt / pr, pr / gt)
+    # 计算准确率平均值
+    delta = torch.mean((thresh < 1.25).float())
+    # 计算绝对值
+    abs_rel = torch.mean(torch.abs(gt-pr) / gt)
+    #print("a1:{},abs_rel:{}".format(delta,abs_rel))
+    return delta, abs_rel
+
+
 def set_random_seed(seed = 10, deterministic=False, benchmark=False):
     random.seed(seed)
     np.random.seed(seed)
