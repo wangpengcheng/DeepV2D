@@ -32,7 +32,7 @@ def inference_test(deepModel, cfg):
             images_batch, poses_batch, gt_batch, filled_batch, pred_batch, intrinsics_batch, frame_id= data
                         # 进行数据预处理,主要是维度交换
             images = images_batch.permute(0, 1, 4, 2, 3)
-            images, gt_batch, intrinsics_batch, a = prepare_inputs(cfg , images, gt_batch, intrinsics_batch)
+            #images, gt_batch, intrinsics_batch, a = prepare_inputs(cfg , images, gt_batch, intrinsics_batch)
             Ts = poses_batch.cuda()
             images = images.float().cuda()
             intrinsics_batch = intrinsics_batch.float().cuda()
@@ -122,7 +122,7 @@ def converToONNX(deepModel, cfg):
 if __name__ == '__main__':
     cfg = config.cfg_from_file("cfgs/tum_torch/tum_2_2_shufflev2_fast.yaml")
     deepModel = DepthModule(cfg)
-    checkpoint = torch.load("pytorch_model/tum/shufflenetv2_fast/final.pth")
+    checkpoint = torch.load("pytorch_model/tum/shufflenetv2_fast/step_18800.pth")
     deepModel.load_state_dict(checkpoint['net'])
     inference_test(deepModel, cfg)
     #converToTensorrt(deepModel,cfg)
