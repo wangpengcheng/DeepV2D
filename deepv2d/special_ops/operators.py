@@ -27,11 +27,12 @@ def adj_to_inds(num=-1, adj_list=None):
 def get_cood(depths, intrinsics, Tij):
 
     batch, num, c, ht, wd = depths.shape[:]
+    # 将深度值，都映射到三维空间中
     pt= backproject(depths, intrinsics)
     # 进行向量分解出
     X, Y, Z = torch.unbind(pt, dim=-1)
     zero = torch.ones_like(X)
-    # 进行合并
+    # 进行合并，获取空间矩阵
     PT = torch.stack([X, Y, Z, zero], dim = -1)
     # 对Tij进行整合,方便进行乘法
     Tij = torch.reshape(Tij, (batch, num, 1, 1, 1, 4, 4))
@@ -41,11 +42,14 @@ def get_cood(depths, intrinsics, Tij):
     PT = PT.view(batch*num*c*ht*wd, 4, 1)
     # 进行乘法运算
     re = torch.bmm(Tij, PT)
+
     re = re.view(batch, num, c, ht, wd, 4)
 
     # 对最后一个维度进行分解
     X, Y, Z, one = torch.unbind(re, dim=-1)
+    # 获取映射后的空间点坐标
     pt1 = torch.stack([X, Y, Z], dim = -1)
+    # 反向映射为二维点坐标
     coords = project(pt1, intrinsics)
 
     return coords 

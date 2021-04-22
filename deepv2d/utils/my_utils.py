@@ -27,7 +27,6 @@ def add_depth_acc(gt, pr):
     delta = torch.mean((thresh < 1.25).float())
     # 计算绝对值
     abs_rel = torch.mean(torch.abs(gt-pr) / gt)
-    #print("a1:{},abs_rel:{}".format(delta,abs_rel))
     return delta, abs_rel
 
 
@@ -138,7 +137,7 @@ def augument2(images):
     random_brightness = torch.Tensor(1).uniform_(0.8, 1.2).to(images.device)
     images *= random_brightness
     # 颜色随机值
-    random_colors = torch.Tensor(3).uniform_(0.8, 1.2).to(images.device).view(1,3,1,1)
+    random_colors = torch.Tensor(3).uniform_(0.8, 1.2).to(images.device).view(1, 3, 1, 1)
     images *= random_colors
     images = torch.clamp(images, 0.0, 255.0)
     return images
@@ -174,7 +173,7 @@ def augument1(images):
     # images = transforms.ColorJitter(hue=0.3)(images)
     #images.save("res.png")
     # 转换为Tensor
-    images = transforms.ToTensor()(images)*255
+    images = transforms.ToTensor()(images)*255.0
     return images
 
 
@@ -183,6 +182,7 @@ def prepare_inputs(cfg, images, depth, intrinsics, filled=None):
     
     b, n, c, w, h = images.shape[:]
     images = images.view(b*n, c, w, h)
+    #print(images.shape)
     images = augument2(images)
     depth = depth.view(b, 1, w, h)
     images, depth, intrinsics, filled = scale(cfg, images, depth, intrinsics, filled = None)

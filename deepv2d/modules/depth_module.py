@@ -41,11 +41,15 @@ class SoftArgmax(nn.Module):
         super(SoftArgmax, self).__init__()
 
     def forward(self, depths, prob_volume):
-        """ Convert probability volume into point estimate of depth 转换概率体积为深度的点估计"""
+        """ 
+        Convert probability volume into point estimate of depth 
+        转换概率体积为深度的点估计
+        """
         # 特征概率  1 32 240 320 
-        prob_volume = F.softmax(prob_volume, dim=1).permute(0,2,3,1)
+        prob_volume = F.softmax(prob_volume, dim=1).permute(0, 2, 3, 1)
+        #print(prob_volume.shape)
         # 计算特征概率合并图，1*480*640*1
-        pred = torch.sum(depths*prob_volume, dim =-1) # 对概率深度进行求和
+        pred = torch.sum(depths*prob_volume, dim =-1)
         return pred # 返回深度估计值
 
 class DepthModule(nn.Module):
@@ -65,9 +69,9 @@ class DepthModule(nn.Module):
         self.wd = int(cfg.INPUT.WIDTH*cfg.INPUT.RESIZE)
         self.depths = torch.linspace(cfg.STRUCTURE.MIN_DEPTH, cfg.STRUCTURE.MAX_DEPTH, cfg.STRUCTURE.COST_VOLUME_DEPTH) # 进行线性插值获取深度序列
         self.pred_logits = []
-        self.test_conv = Conv2d(3,32,3)
+        self.test_conv = Conv2d(3, 32, 3)
         # 注意这里默认的是线性插值
-        self.transform = transforms.Compose([transforms.Resize(size=(self.ht,self.wd))])
+        self.transform = transforms.Compose([transforms.Resize(size=(self.ht, self.wd))])
         self.soft_argmax = SoftArgmax()
         self.EncoderFactory(cfg)
         self.DecoderFactory(cfg)

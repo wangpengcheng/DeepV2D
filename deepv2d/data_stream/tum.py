@@ -236,7 +236,7 @@ class TUM_RGBD(Dataset):
                 #poses.append(np.linalg.inv(pose_mat))
                 poses.append(pose_mat)
             # 转换图像和深度信息
-            images = np.stack(images, axis=0).astype(np.uint8)
+            images = np.stack(images, axis=0).astype(np.float32)
             poses = np.stack(poses, axis=0).astype(np.float32)
             # 获取深度信息
             depth_file = data_blob['depth']

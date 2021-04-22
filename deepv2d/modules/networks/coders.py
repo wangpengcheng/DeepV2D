@@ -14,22 +14,24 @@ class StereoHead(nn.Module):
         super().__init__()
         self.conv1 = Conv3d(inputs_dims, 32, 3)
         # 激活函数
-        self.act = nn.ReLU()
+        self.act1 = nn.ReLU()
         self.conv2 = Conv3d(32, 32, 3)
-
+        self.act2 = nn.ReLU()
         self.conv3 = Conv3d(32, 1, 1)
         # 注意这里默认的是线性插值
-        self.transform = transforms.Compose([transforms.Resize(size=out_size)])
-    
+        #self.transform = transforms.Compose([transforms.Resize(size=out_size)])
+        self.out_size = out_size
+
     def forward(self, input):
         out = self.conv1(input) 
-        out = self.act(out)
+        out = self.act1(out)
         out = self.conv2(out)
-        out = self.act(out)
+        out = self.act1(out)
         out = self.conv3(out)
         # 降低维度操作,注意这里是真毒 
         out = torch.squeeze(out, dim = 1)
-        out = self.transform(out)
+        #out = self.transform(out)
+        out = torch.nn.functional.interpolate(out, size=self.out_size, mode='bilinear')
         return out
 
 class FastStereoHead(nn.Module):
@@ -45,7 +47,8 @@ class FastStereoHead(nn.Module):
         self.conv3 = Conv3d(32, 32, 1)
         self.conv4 = Conv3d(32, 1, 1)
         # 注意这里默认的是线性插值
-        self.transform = transforms.Compose([transforms.Resize(size=out_size)])
+        #self.transform = transforms.Compose([transforms.Resize(size=out_size)])
+        self.out_size = out_size
     
     def forward(self, input):
         out = self.conv1_1(input) 
@@ -58,7 +61,7 @@ class FastStereoHead(nn.Module):
 
         # 降低维度操作,注意这里是真毒 
         out = torch.squeeze(out, dim = 1)
-        out = self.transform(out)
+        out = torch.nn.functional.interpolate(out, size=self.out_size, mode='bilinear')
         return out
 
 
@@ -171,9 +174,11 @@ class Shufflenetv2Encoder(nn.Module):
         self.conv1 = Conv2d(inputs_dims, 32, 3, stride = 2)
         self.res_conv1 = ShuffleNetUnitV2A(32, 32, 2)
         self.res_conv2 = ShuffleNetUnitV2A(32, 32, 2)
+        # 二次缩放卷积
         self.res_conv3 = ShuffleNetUnitV2B(32, 64, 2)
         self.res_conv4 = ShuffleNetUnitV2A(64, 64, 2)
         self.res_conv5 = ShuffleNetUnitV2A(64, 64, 2)
+        # 三次缩放卷积
         self.res_conv6 = ShuffleNetUnitV2B(64, 128, 2)
         self.res_conv7 = ShuffleNetUnitV2A(128, 128, 2)
         self.res_conv8 = ShuffleNetUnitV2A(128, 128, 2)
@@ -279,6 +284,7 @@ class FastResnetDecoder(nn.Module):
         # 沙漏网络
         self.stack_conv = FastHourglass3d(32, 32, depth_count)
         self.stereo_head = FastStereoHead(32, out_size)
+        #self.stereo_head = StereoHead(32, out_size)
 
     def forward(self, input):
         """

@@ -126,7 +126,7 @@ class DeepV2DTrainer(object):
         # 设置存储频率
         SUMMARY_FREQ = 10
         # 设置日志频率
-        LOG_FREQ = 20
+        LOG_FREQ = 50
         # 设置checkpoint中间输出频率
         CHECKPOINT_FREQ = 50
         # 设置最大步长
@@ -144,22 +144,23 @@ class DeepV2DTrainer(object):
             deepModel = deepModel.to(device)
             loss_function.to(device)
 
-
-        # # 设置损失函数
-        #optimizer = optim.Adam(deepModel.parameters(), lr=cfg.TRAIN.LR)
-        # # 设置学习策略
-        # model_lr_scheduler = optim.lr_scheduler.StepLR(optimizer, int(0.1*max_steps), 0.1)
-        # # 设置损失函数
-        optimizer = optim.RMSprop(deepModel.parameters(), lr=cfg.TRAIN.LR, momentum=0.9)
-        # 设置学习策略
-        model_lr_scheduler = optim.lr_scheduler.StepLR(optimizer, int(0.8*max_steps), 0.5)
         # 计算loss值
         running_loss = 0.0
         start_step = 0
         end_step = max_steps
+        # # 设置损失函数
+        optimizer = optim.Adam(deepModel.parameters(), lr=cfg.TRAIN.LR)
+        # 设置学习策略
+        model_lr_scheduler = optim.lr_scheduler.StepLR(optimizer, int(max_steps), 0.9)
+        # #  # 设置学习策略
+        # model_lr_scheduler = optim.lr_scheduler.StepLR(optimizer, 5000, 0.9)
+        # # 设置损失函数
+        # optimizer = optim.RMSprop(deepModel.parameters(), lr=cfg.TRAIN.LR, momentum=0.9)
+        
+        
         # 设置训练数据集
         trainloader = torch.utils.data.DataLoader(data_source, batch_size=batch_size, shuffle=False,
-                            num_workers=8, pin_memory=True, drop_last=True, prefetch_factor=4)
+                            num_workers=2, pin_memory=True, drop_last=True, prefetch_factor=4)
         # 设置为训练模式
         deepModel.train()
         # 加载模型
@@ -171,7 +172,10 @@ class DeepV2DTrainer(object):
             start_step = checkpoint['epoch']
             #model_lr_scheduler.load_state_dict(checkpoint['model_lr_scheduler'])
             end_step = start_step + max_steps
-        #print(deepModel)
+        # for p in optimizer.param_groups:
+        #     p['lr'] = cfg.TRAIN.LR
+        
+        
         # 日志
         if cfg.STORE.IS_SAVE_LOSS_LOG:
             loss_log_file_name = os.path.join(cfg.LOG_DIR, time.strftime("%Y%m%d%H%M%S.log", time.localtime()))
@@ -230,10 +234,12 @@ class DeepV2DTrainer(object):
                 i = i + 1
                 images_batch, poses_batch, gt_batch, intrinsics_batch, frame_id = prefetcher.next()
                 # 进行文件写入
-            if writer is not None:
-                writer.add_scalar('Train/Loss', loss.item(), training_step)
+            if (writer is not None) and (training_step % SUMMARY_FREQ == 0) :
+                writer.add_scalar('Train/Loss', loss.detach().cpu().numpy(), training_step)
                 writer.add_scalar('Train/abs_rel', abs_rel/data_len, training_step)
                 writer.add_scalar('Train/a1', delta/data_len, training_step)
+                writer.add_scalar('Train/lr', model_lr_scheduler.get_last_lr()[0], training_step)
+
 
             # 修改学习率
             model_lr_scheduler.step()

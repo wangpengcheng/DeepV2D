@@ -11,7 +11,7 @@ from data_stream.tum import TUM_RGBD
 from core import config
 from deepv2d import vis
 import eval_utils 
-
+from utils.my_utils import *
 #from torch2trt import torch2trt
 
 # 加载数据集进行推理
@@ -20,7 +20,7 @@ def inference_test(deepModel, cfg):
    
     #deepModel = deepModel.load_state_dict(torch.load('pytorch/tum/tmu_model/depth.pth'))
     
-    db = TUM_RGBD(cfg.INPUT.RESIZE, "data/tum3",test=True, r=2)
+    db = TUM_RGBD(cfg.INPUT.RESIZE, "data/mydata2",test=False, r=2)
 
     trainloader = torch.utils.data.DataLoader(db, batch_size=1, shuffle=False, num_workers=8)
     time_sum =0.0
@@ -30,9 +30,9 @@ def inference_test(deepModel, cfg):
         deepModel.eval()
         for i, data in enumerate(trainloader, 0):
             images_batch, poses_batch, gt_batch, filled_batch, pred_batch, intrinsics_batch, frame_id= data
-                        #images_batch, gt_batch, intrinsics_batch =  prefetcher.next()
                         # 进行数据预处理,主要是维度交换
             images = images_batch.permute(0, 1, 4, 2, 3)
+            images, gt_batch, intrinsics_batch, a = prepare_inputs(cfg , images, gt_batch, intrinsics_batch)
             Ts = poses_batch.cuda()
             images = images.float().cuda()
             intrinsics_batch = intrinsics_batch.float().cuda()
@@ -54,8 +54,8 @@ def inference_test(deepModel, cfg):
             key_frame_depth =  scalor * key_frame_depth.cpu().detach().numpy()
             # 对深度图像进行平滑处理
             # key_frame_depth = cv2.medianBlur(key_frame_depth,5)
-            image_depth = vis.create_image_depth_figure(key_frame_image.cpu().detach().numpy(), key_frame_depth)
-            result_out_dir = "{}/{}".format("data/tum3", "inference_result_1")
+            image_depth = vis.create_ex_image_depth_figure(key_frame_image.cpu().detach().numpy(), depth_gt.cpu().detach().numpy(), key_frame_depth)
+            result_out_dir = "{}/{}".format("data/mydata_test", "inference_result_1")
             # 检测路径文件夹
             if not os.path.exists(result_out_dir):
                 os.makedirs(result_out_dir)
@@ -97,7 +97,7 @@ def converToONNX(deepModel, cfg):
     for i, data in enumerate(trainloader, 0):
         if i> 0:
             break
-        images_batch, poses_batch, gt_batch, filled_batch, pred_batch, intrinsics_batch, frame_id= data
+        images_batch, poses_batch, gt_batch, filled_batch, pred_batch, intrinsics_batch, frame_id = data
         images = images_batch.permute(0, 1, 4, 2, 3)
         poses = poses_batch.cuda()
         images = images.float().cuda()
@@ -122,7 +122,7 @@ def converToONNX(deepModel, cfg):
 if __name__ == '__main__':
     cfg = config.cfg_from_file("cfgs/tum_torch/tum_2_2_shufflev2_fast.yaml")
     deepModel = DepthModule(cfg)
-    checkpoint = torch.load("pytorch_model/tum/shufflenetv2_fast/step_7850.pth")
+    checkpoint = torch.load("pytorch_model/tum/shufflenetv2_fast/final.pth")
     deepModel.load_state_dict(checkpoint['net'])
     inference_test(deepModel, cfg)
     #converToTensorrt(deepModel,cfg)
