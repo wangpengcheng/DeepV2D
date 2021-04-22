@@ -16,7 +16,7 @@ import threading, time
 from utils.tum_associate import *
 from torch.utils.data import DataLoader,Dataset
 
-factor = 1000.0 # for the 16-bit PNG files 
+factor = 5000.0 # for the 16-bit PNG files 
 # OR: factor = 1 # for the 32-bit float images in the ROS bag files
 #intrinsics = np.array([fx, fy, cx, cy],dtype=np.float32)
 
@@ -236,7 +236,7 @@ class TUM_RGBD(Dataset):
                 #poses.append(np.linalg.inv(pose_mat))
                 poses.append(pose_mat)
             # 转换图像和深度信息
-            images = np.stack(images, axis=0).astype(np.uint8)
+            images = np.stack(images, axis=0).astype(np.float32)
             poses = np.stack(poses, axis=0).astype(np.float32)
             # 获取深度信息
             depth_file = data_blob['depth']
