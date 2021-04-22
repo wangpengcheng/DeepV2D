@@ -198,7 +198,7 @@ class DeepV2DTrainer(object):
             #while images_batch is not None:
                 # 进行数据预处理
                 #images, gt_batch, filled_batch, intrinsics_batch = prepare_inputs(cfg, images, gt_batch, filled_batch,intrinsics_batch)
-                images_batch, gt_batch, intrinsics_batch, a = prepare_inputs(cfg , images_batch, gt_batch, intrinsics_batch)
+                #images_batch, gt_batch, intrinsics_batch, a = prepare_inputs(cfg , images_batch, gt_batch, intrinsics_batch)
                 optimizer.zero_grad()
                 # Ts = poses_batch.cuda()
                 # images = images_batch.cuda()
@@ -239,7 +239,7 @@ class DeepV2DTrainer(object):
             model_lr_scheduler.step()
             # 输出loss值
             if training_step % LOG_FREQ == 0:
-                loss_str = "[step= {:>5d}] loss: {:.9f}".format(training_step, running_loss / LOG_FREQ)
+                loss_str = "[step= {:>5d}] loss: {:.9f}".format(training_step, running_loss /(LOG_FREQ*data_len))
                 print(loss_str)
                 # 需要记录loss值
                 if loss_file is not None:
