@@ -110,8 +110,9 @@ class DepthModule(nn.Module):
         #     fmaps = torch.reshape(fmaps, [batch, frames, 32, ht//8, wd//8]) # 1 4 32 30 40 
         # #反投影，获取对应坐标对上的反向投影插值 1 4 30 40 32 64
         volume = operators.backproject_avg(Ts, depths, intrinsics, fmaps)
-
+        print(volume.shape)
         pred = self.decoder(volume) # 1 32 240 320
+        print(pred.shape)
         #self.pred_logits.append(torch.rand(1,32,240,320))
         # 返回最终产生的结果，可能存在多次三维金字塔卷积，取最后一次的结果
         #return self.soft_argmax(self.pred_logits[-1])

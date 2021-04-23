@@ -117,15 +117,10 @@ def backproject_avg(
     Tjj = my_gather(Ts, jj, 1)
     # 计算对应矩阵 
     Tij = Tjj * TS_inverse(Tii)
-    Tii = Tii * TS_inverse(Tii)
-    fmap1 = my_gather(fmaps, ii, 1) # 获取数组切片，主要是获取ii中的数据 1.4,30,40,32
-    fmap2 = my_gather(fmaps, jj, 1)
-    
+    #print(Tij.shape)
     # 将所有深度点，映射到二维空间中
-    coords1 = get_cood(depths, intrinsics, Tii)
-    coords2 = get_cood(depths, intrinsics, Tij)
-    print(coords1.shape)
-
+    coords = get_cood(depths, intrinsics, Tij)
+   
     volume = my_bilinear_sampler(fmaps, coords)
     
     # 8*128*32*30*40
