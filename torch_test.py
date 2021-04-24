@@ -42,6 +42,8 @@ def inference_test(deepModel, cfg):
             # print(intrinsics_batch.shape)
             # 计算时间
             time_start=time.time()
+            #print(Ts)
+            #print(intrinsics_batch)
             outputs = deepModel(Ts, images, intrinsics_batch)
             time_end=time.time()
             key_frame_depth = outputs[0]
@@ -122,8 +124,9 @@ def converToONNX(deepModel, cfg):
 if __name__ == '__main__':
     cfg = config.cfg_from_file("cfgs/tum_torch/tum_2_2_shufflev2_fast.yaml")
     deepModel = DepthModule(cfg)
-    checkpoint = torch.load("pytorch_model/tum/shufflenetv2_fast/step_18800.pth")
+    checkpoint = torch.load("pytorch_model/mydata/shufflenetv2_fast/final.pth")
     deepModel.load_state_dict(checkpoint['net'])
+    #print(deepModel.encoder.state_dict().keys())
     inference_test(deepModel, cfg)
     #converToTensorrt(deepModel,cfg)
     #converToONNX(deepModel,cfg)

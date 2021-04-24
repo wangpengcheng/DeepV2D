@@ -129,9 +129,14 @@ def my_bilinear_sampler(image, coords):
     batch_inds = torch.arange(num, device=torch.device('cuda:0'))
     batch_inds = batch_inds.view([num, 1, 1, 1])
     batch_inds = batch_inds.repeat(batch, c, ht, wd)
+    # 进行维度合并,主要是为了适配grid_sample函数
+    coords_x = 2.*coords_x/(wd-1) - 1
+    coords_y = 2.*coords_y/(ht-1) - 1
+    batch_inds = 2.*batch_inds/(num-1) - 1
     # 进行合并
-    my_coords = torch.stack([batch_inds, coords_x, coords_y], dim=-1)
-    volmap = F.grid_sample(fmaps, my_coords)
+    my_coords = torch.stack([coords_x, coords_y, batch_inds], dim=-1)
+    # 
+    volmap = F.grid_sample(fmaps, my_coords, mode='bilinear', align_corners=True)
     return volmap
 
 def bilinear_sampler(image, coords, batch_dims=1, return_valid=False):
@@ -167,15 +172,15 @@ def bilinear_sampler(image, coords, batch_dims=1, return_valid=False):
     # 对数据进行筛选，y对应高度，
     y0c = torch.clamp(y0, 0, img_shape[-3]-1)
     y1c = torch.clamp(y1, 0, img_shape[-3]-1)
-    # 
+    #  
     valid = torch.eq(x0c, x0) & torch.eq(x1c, x1) & \
         torch.eq(y0c, y0) & torch.eq(y1c, y1)
     valid = valid.float()
     # 合成新坐标，主要是个坐标
-    coords00 = torch.cat([y0c,x0c], dim=-1)
-    coords01 = torch.cat([y0c,x1c], dim=-1)
-    coords10 = torch.cat([y1c,x0c], dim=-1)
-    coords11 = torch.cat([y1c,x1c], dim=-1)
+    coords00 = torch.cat([y0c, x0c], dim=-1)
+    coords01 = torch.cat([y0c, x1c], dim=-1)
+    coords10 = torch.cat([y1c, x0c], dim=-1)
+    coords11 = torch.cat([y1c, x1c], dim=-1)
     # 获取坐标对应的值，对应的值
     img00 = gather_nd(image, coords00, batch_dims=batch_dims)
     img01 = gather_nd(image, coords01, batch_dims=batch_dims)

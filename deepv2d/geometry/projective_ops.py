@@ -8,7 +8,7 @@ def coords_grid(shape, homogeneous=True):
     """ grid of pixel coordinates 获取每个像素的网格坐标点"""
     b, n, c, h, w = shape[:]
     # 进行平滑操作
-    yy, xx= torch.meshgrid(torch.arange(h), torch.arange(w))
+    yy, xx = torch.meshgrid(torch.arange(h), torch.arange(w))
     xx = xx.float().cuda()
     yy = yy.float().cuda()
     # 进行维度拼接
@@ -27,11 +27,11 @@ def extract_and_reshape_intrinsics(intrinsics, shape=None):
     cy = intrinsics[:, 1, 2]
     if shape is not None:
         batch = fx.shape[0]
-        b, n, c ,h,w = shape[:]
-        fx = fx.reshape(batch,1,1,1,1).repeat(1,n,c,h,w)
-        fy = fy.reshape(batch,1,1,1,1).repeat(1,n,c,h,w)
-        cx = cx.reshape(batch,1,1,1,1).repeat(1,n,c,h,w)
-        cy = cy.reshape(batch,1,1,1,1).repeat(1,n,c,h,w)
+        b, n, c, h, w = shape[:]
+        fx = fx.reshape(batch, 1, 1, 1, 1).repeat(1, n, c, h, w)
+        fy = fy.reshape(batch, 1, 1, 1, 1).repeat(1, n, c, h, w)
+        cx = cx.reshape(batch, 1, 1, 1, 1).repeat(1, n, c, h, w)
+        cy = cy.reshape(batch, 1, 1, 1, 1).repeat(1, n, c, h, w)
     return (fx, fy, cx, cy)
 
 # 将depthmap转换为点云,主要是根据相机参数还原原始的3D点云

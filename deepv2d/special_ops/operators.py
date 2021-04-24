@@ -78,7 +78,7 @@ def TS_inverse(pose):
     res = res.view(pose.shape)
     return  res
 
-def backproject_avg(
+def backproject_cat(
             Ts, 
             depths, 
             intrinsics, 
@@ -96,6 +96,7 @@ def backproject_avg(
     Returns:
         [type]: [description]
     """
+    
     # use_cuda_backproject
     use_cuda_backproject = False
     # 获取通道数目
@@ -120,10 +121,75 @@ def backproject_avg(
     #print(Tij.shape)
     # 将所有深度点，映射到二维空间中
     coords = get_cood(depths, intrinsics, Tij)
-    
+   
     volume = my_bilinear_sampler(fmaps, coords)
     
     # 8*128*32*30*40
     volume = volume.view([batch, c*num, dd, ht, wd])
     return volume
 
+def backproject_avg(
+            Ts, 
+            depths, 
+            intrinsics, 
+            fmaps
+            ):
+    """
+
+    Args:
+        Ts ([type]): 相机位姿集合
+        depths ([type]): 深度图像集合
+        intrinsics ([type]): 相机内参
+        fmaps ([type]): 特征图
+        adj_list ([type], optional): 调整序列. Defaults to None.
+
+    Returns:
+        [type]: [description]
+    """
+    
+    # use_cuda_backproject
+    use_cuda_backproject = False
+    # 获取通道数目
+    dim = fmaps.shape[2]
+    # 获取深度数量
+    dd = depths.shape[0]
+    # 将特征图进行矩阵分解，获取batch、num、ht和wd等，
+    batch, num, c , ht, wd = fmaps.shape[0:] # 获取特征图信息
+    # Ts 8*4*4*4
+   
+    # 根据梯度选取张数
+    ii, jj = torch.meshgrid(torch.arange(1), torch.arange(1, num))
+    ii = ii.view([-1]).cuda()
+    jj = jj.view([-1]).cuda()
+    
+    Tii = my_gather(Ts, ii, 1)
+    Tjj = my_gather(Ts, jj, 1)
+
+    # 计算对应矩阵 
+    Tii = Tii * TS_inverse(Tii)
+    Tij = Tjj * TS_inverse(Tii)
+    
+    fmaps1 = my_gather(fmaps, ii, 1)
+    fmaps2 = my_gather(fmaps, jj, 1)
+
+    num = ii.shape[0]
+     # make depth volume
+    depths = depths.view([1, 1, dd, 1, 1])
+    # 对其进行扩张，扩张到和fmaps维度基本相同
+    depths = depths.repeat([batch, num, 1, ht, wd])
+
+    coords1 = get_cood(depths, intrinsics, Tii)
+    coords2 = get_cood(depths, intrinsics, Tij)
+    #print(Tij.shape)
+    
+    # b,n,c,d,h,w (8*5)*32*32*30*40
+    volume1 = my_bilinear_sampler(fmaps1, coords1)
+    volume2 = my_bilinear_sampler(fmaps2, coords2)
+
+    volume = torch.stack([volume1, volume2], dim = 1)
+
+
+    
+    # 8*128*32*30*40
+    volume = volume.view([batch, num, 2*c, dd, ht, wd])
+    return volume
