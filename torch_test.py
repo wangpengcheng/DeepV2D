@@ -32,7 +32,7 @@ def inference_test(deepModel, cfg):
             images_batch, poses_batch, gt_batch, filled_batch, pred_batch, intrinsics_batch, frame_id= data
                         # 进行数据预处理,主要是维度交换
             images = images_batch.permute(0, 1, 4, 2, 3)
-            images, gt_batch, intrinsics_batch, a = prepare_inputs(cfg , images, gt_batch, intrinsics_batch)
+            #images, gt_batch, intrinsics_batch, a = prepare_inputs(cfg , images, gt_batch, intrinsics_batch)
             Ts = poses_batch.cuda()
             images = images.float().cuda()
             intrinsics_batch = intrinsics_batch.float().cuda()
@@ -42,6 +42,8 @@ def inference_test(deepModel, cfg):
             # print(intrinsics_batch.shape)
             # 计算时间
             time_start=time.time()
+            #print(Ts)
+            #print(intrinsics_batch)
             outputs = deepModel(Ts, images, intrinsics_batch)
             time_end=time.time()
             key_frame_depth = outputs[0]
@@ -125,8 +127,13 @@ if __name__ == '__main__':
     os.environ['CUDA_VISIBLE_DEVICES'] = cfg.TRAIN.USE_GPU
     os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
     deepModel = DepthModule(cfg)
+<<<<<<< HEAD
     checkpoint = torch.load("pytorch_model/mydata/shufflenetv2_fast/step_34350.pth")
+=======
+    checkpoint = torch.load("pytorch_model/mydata/shufflenetv2_fast/final.pth")
+>>>>>>> 65f2c2f90454bb30f14e26aa4be7c6bfff5dcc3c
     deepModel.load_state_dict(checkpoint['net'])
+    #print(deepModel.encoder.state_dict().keys())
     inference_test(deepModel, cfg)
     #converToTensorrt(deepModel,cfg)
     #converToONNX(deepModel,cfg)

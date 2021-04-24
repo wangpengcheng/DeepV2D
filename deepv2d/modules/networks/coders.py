@@ -58,9 +58,9 @@ class FastStereoHead(nn.Module):
         out = self.conv3(out)
         out = self.act(out)
         out = self.conv4(out)
-
         # 降低维度操作,注意这里是真毒 
         out = torch.squeeze(out, dim = 1)
+
         out = torch.nn.functional.interpolate(out, size=self.out_size, mode='bilinear')
         return out
 
@@ -114,7 +114,7 @@ class ResnetEncoder(nn.Module):
         return out
 
 class ResnetDecoder(nn.Module):
-    def __init__(self, inputs_dims, output_dims, pred_logits, out_size, stack_count= 1 ,depth_count= 2):
+    def __init__(self, inputs_dims, output_dims, pred_logits, out_size, stack_count= 1, depth_count= 2):
         """
         基础解码单元
         Args:
@@ -212,7 +212,7 @@ class Shufflenetv2Encoder(nn.Module):
 
 
 class FastResnetEncoder(nn.Module):
-    def __init__(self, inputs_dims, output_dims, stack_count=1 ,depth_count=2):
+    def __init__(self, inputs_dims, output_dims, stack_count=1, depth_count=2):
         """
         基础编码单元
         Args:
@@ -262,7 +262,7 @@ class FastResnetEncoder(nn.Module):
 
 
 class FastResnetDecoder(nn.Module):
-    def __init__(self, inputs_dims, pred_logits, out_size, stack_count=1 ,depth_count=2):
+    def __init__(self, inputs_dims, pred_logits, out_size, stack_count=1 ,depth_count=2, is_avg=False):
         """
         基础解码单元
         Args:
@@ -285,7 +285,7 @@ class FastResnetDecoder(nn.Module):
         self.stack_conv = FastHourglass3d(32, 32, depth_count)
         self.stereo_head = FastStereoHead(32, out_size)
         #self.stereo_head = StereoHead(32, out_size)
-
+        self.is_avg = is_avg
     def forward(self, input):
         """
         进行前向计算
@@ -293,21 +293,27 @@ class FastResnetDecoder(nn.Module):
             input ([type]): [description]
         """
         dims = input.shape
-        # 重新进行数据 4*64*32*60*80
-        #volume = torch.reshape(input, [dims[0]*dims[1], 64, dims[3], dims[4], dims[5]])
-        # 进行卷积 4*32*32*30*40   4*32*16*30*40 
-        out = self.conv1(input)
-        out = self.res_conv1(out) #4*32*32*30*40
-        # 重新整理输出维度为32 维度, 1*4*32*32*30*40 1 4 64 32 30 40
-        #out = torch.reshape(out,[dims[0],  dims[1], 32, dims[3], dims[4],dims[5]])
-        # 求解均值 
-        #out = torch.mean(out, dim = 1)
+        if self.is_avg:
+            # 重新进行数据 4*64*32*60*80
+            volume = input.view([dims[0]*dims[1], 64, dims[3], dims[4], dims[5]])
+            # 进行卷积 4*32*32*30*40   4*32*16*30*40 
+            out = self.conv1(volume)
+            out = self.res_conv1(out) #4*32*32*30*40
+            # 重新整理输出维度为32 维度, 1*4*32*32*30*40 1 4 64 32 30 40
+            out = out.view([dims[0],  dims[1], 32, dims[3], dims[4],dims[5]])
+            # 求解均值 
+            out = torch.mean(out, dim = 1)
+        else:
+            out = self.conv1(input)
+            out = self.res_conv1(out) #4*32*32*30*40
         # 沙漏网络
         for i in range(self.stack_count):
             out = self.stack_conv(out)
             out = self.stereo_head(out)
             #self.pred_logits.append(out)
         return out
+
+        
 
 
 

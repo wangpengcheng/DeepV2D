@@ -128,7 +128,7 @@ class DeepV2DTrainer(object):
         # 设置日志频率
         LOG_FREQ = 50
         # 设置checkpoint中间输出频率
-        CHECKPOINT_FREQ = 50
+        CHECKPOINT_FREQ = 100
         # 设置最大步长
         self.training_steps = max_steps
         # 开始加载数据模型
@@ -148,15 +148,15 @@ class DeepV2DTrainer(object):
         running_loss = 0.0
         start_step = 0
         end_step = max_steps
+        # # # 设置损失函数
+        # optimizer = optim.Adam(deepModel.parameters(), lr=cfg.TRAIN.LR)
+        # # 设置学习策略
+        # model_lr_scheduler = optim.lr_scheduler.StepLR(optimizer, int(max_steps), 0.9)
+       
         # # 设置损失函数
-        optimizer = optim.Adam(deepModel.parameters(), lr=cfg.TRAIN.LR)
-        # 设置学习策略
-        model_lr_scheduler = optim.lr_scheduler.StepLR(optimizer, int(max_steps), 0.9)
+        optimizer = optim.RMSprop(deepModel.parameters(), lr=cfg.TRAIN.LR, momentum=0.9)
         # #  # 设置学习策略
-        # model_lr_scheduler = optim.lr_scheduler.StepLR(optimizer, 5000, 0.9)
-        # # 设置损失函数
-        # optimizer = optim.RMSprop(deepModel.parameters(), lr=cfg.TRAIN.LR, momentum=0.9)
-        
+        model_lr_scheduler = optim.lr_scheduler.StepLR(optimizer, int(0.8*max_steps), 0.9)
         
         # 设置训练数据集
         trainloader = torch.utils.data.DataLoader(data_source, batch_size=batch_size, shuffle=False,
@@ -168,10 +168,12 @@ class DeepV2DTrainer(object):
             # 加载模型
             checkpoint = torch.load(cfg.STORE.RESRORE_PATH)
             deepModel.load_state_dict(checkpoint['net'])
-            optimizer.load_state_dict(checkpoint['optimizer'])
+            #optimizer.load_state_dict(checkpoint['optimizer'])
             start_step = checkpoint['epoch']
-            #model_lr_scheduler.load_state_dict(checkpoint['model_lr_scheduler'])
             end_step = start_step + max_steps
+            print("load model success")
+            #model_lr_scheduler.load_state_dict(checkpoint['model_lr_scheduler'])
+            
         # for p in optimizer.param_groups:
         #     p['lr'] = cfg.TRAIN.LR
         
@@ -202,7 +204,7 @@ class DeepV2DTrainer(object):
             #while images_batch is not None:
                 # 进行数据预处理
                 #images, gt_batch, filled_batch, intrinsics_batch = prepare_inputs(cfg, images, gt_batch, filled_batch,intrinsics_batch)
-                #images_batch, gt_batch, intrinsics_batch, a = prepare_inputs(cfg , images_batch, gt_batch, intrinsics_batch)
+                images_batch, gt_batch, intrinsics_batch, a = prepare_inputs(cfg , images_batch, gt_batch, intrinsics_batch)
                 optimizer.zero_grad()
                 # Ts = poses_batch.cuda()
                 # images = images_batch.cuda()
@@ -218,7 +220,6 @@ class DeepV2DTrainer(object):
                     images, 
                     intrinsics
                     )
-                
                 # 计算loss值
                 loss = loss_function(gt, outputs)
                 # 计算误差
