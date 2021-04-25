@@ -129,9 +129,14 @@ def my_bilinear_sampler(image, coords):
     batch_inds = torch.arange(num, device=torch.device('cuda:0'))
     batch_inds = batch_inds.view([num, 1, 1, 1])
     batch_inds = batch_inds.repeat(batch, c, ht, wd)
+    # 进行维度合并,主要是为了适配grid_sample函数
+    coords_x = 2.*coords_x/(wd-1) - 1
+    coords_y = 2.*coords_y/(ht-1) - 1
+    batch_inds = 2.*batch_inds/(num-1) - 1
     # 进行合并
-    my_coords = torch.stack([batch_inds, coords_x, coords_y], dim=-1)
-    volmap = F.grid_sample(fmaps, my_coords)
+    my_coords = torch.stack([coords_x, coords_y, batch_inds], dim=-1)
+    # 
+    volmap = F.grid_sample(fmaps, my_coords, mode='bilinear', align_corners=True)
     return volmap
 
 def bilinear_sampler(image, coords, batch_dims=1, return_valid=False):

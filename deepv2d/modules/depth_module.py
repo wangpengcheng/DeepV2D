@@ -75,11 +75,51 @@ class DepthModule(nn.Module):
         self.soft_argmax = SoftArgmax()
         self.EncoderFactory(cfg)
         self.DecoderFactory(cfg)
-    
+        self.StereoNetworkFactory(cfg)
     
     def stereo_network_avg(
         self, 
         Ts,
+        images, 
+        intrinsics
+        ):
+        """3D Matching Network with view pooling
+        Ts: collection of pose estimates correponding to images   图片位姿集合
+        images: rgb images      rgb图片 
+        intrinsics: image intrinsics 相机内参
+        adj_list: [n, m] matrix specifying frames co-visiblee frames 共同可见帧的矩阵
+        """
+        cfg = self.cfg
+        # 进行线性插值，构造深度数据；用来随机初始化深度特征图
+        depths = torch.linspace(cfg.STRUCTURE.MIN_DEPTH, cfg.STRUCTURE.MAX_DEPTH, cfg.STRUCTURE.COST_VOLUME_DEPTH, device=torch.device('cuda:0')) # 进行线性插值获取深度序列
+        # 相机参数转换--将相机内参转换为四元组矩阵
+        intrinsics = intrinsics_vec_to_matrix( intrinsics / 4.0 ) # 将相机参数转换为矩阵，并将其缩小为原来的一半
+        # extract 2d feature maps from images and build cost volume # 进行编码，获取2d的图像信息
+        # 进行图像编码，获取特征图 1*4*120*160*32
+        # 在第5个通道上进行分离，获取数据
+        batch, frames, channel, ht, wd = images.shape
+        # 将其降低维度为4维 假设数据为1*4*480*640*3->4*480*640*3 方便卷积操作
+        images = images.view([batch*frames, 3, ht, wd]) # 调整输入维度为图片数量*高*宽*3
+        # 获取编码图片
+        fmaps = self.encoder(images)
+        fmaps = fmaps.view([batch, frames, 32, ht//8, wd//8]) # 1 4 32 30 40
+        # #再重新调整顺序，还原维度信息
+        # if self.cfg.STRUCTURE.ENCODER_MODE == 'resnet':
+        #     fmaps = torch.reshape(fmaps, [batch, frames, 32, ht//4, wd//4]) # 1 4 32 60 80 
+        # else:
+        #     fmaps = torch.reshape(fmaps, [batch, frames, 32, ht//8, wd//8]) # 1 4 32 30 40 
+        # #反投影，获取对应坐标对上的反向投影插值 1 4 30 40 32 64
+        volume = operators.backproject_avg(Ts, depths, intrinsics, fmaps)
+        pred = self.decoder(volume) # 1 32 240 320
+        #self.pred_logits.append(torch.rand(1,32,240,320))
+        # 返回最终产生的结果，可能存在多次三维金字塔卷积，取最后一次的结果
+        #return self.soft_argmax(self.pred_logits[-1])
+        return self.soft_argmax(depths, pred)
+        
+     
+    def stereo_network_cat(
+        self, 
+        Ts, 
         images, 
         intrinsics
         ):
@@ -109,22 +149,20 @@ class DepthModule(nn.Module):
         # else:
         #     fmaps = torch.reshape(fmaps, [batch, frames, 32, ht//8, wd//8]) # 1 4 32 30 40 
         # #反投影，获取对应坐标对上的反向投影插值 1 4 30 40 32 64
-        volume = operators.backproject_avg(Ts, depths, intrinsics, fmaps)
+        volume = operators.backproject_cat(Ts, depths, intrinsics, fmaps)
 
         pred = self.decoder(volume) # 1 32 240 320
         #self.pred_logits.append(torch.rand(1,32,240,320))
         # 返回最终产生的结果，可能存在多次三维金字塔卷积，取最后一次的结果
         #return self.soft_argmax(self.pred_logits[-1])
         return self.soft_argmax(depths, pred)
-     
-    def stereo_network_cat(self, 
-        Ts, 
-        images, 
-        intrinsics, 
-        adj_list=None
-        ):
-        print("no !!!!")
     
+    def StereoNetworkFactory(self, cfg):
+        if self.cfg.STRUCTURE.MODE == 'avg':
+            self.stereo_network = self.stereo_network_avg
+        else:
+            self.stereo_network = self.stereo_network_cat
+
     def EncoderFactory(self, cfg):
         """
         初始化编码器参数
@@ -154,13 +192,22 @@ class DepthModule(nn.Module):
         Returns:
             [type]: [description]
         """
-        if self.cfg.STRUCTURE.DECODER_MODE == 'resnet':
-            self.decoder = ResnetDecoder(cfg.INPUT.FRAMES*32, 1, self.pred_logits, (self.ht, self.wd), self.cfg.STRUCTURE.HG_COUNT, self.cfg.STRUCTURE.HG_DEPTH_COUNT)
-        elif self.cfg.STRUCTURE.DECODER_MODE == 'fast_resnet':
-            self.decoder = FastResnetDecoder(cfg.INPUT.FRAMES*32, self.pred_logits, (self.ht, self.wd), self.cfg.STRUCTURE.HG_COUNT, self.cfg.STRUCTURE.HG_DEPTH_COUNT)
+        if self.cfg.STRUCTURE.MODE == 'avg':
+            if self.cfg.STRUCTURE.DECODER_MODE == 'resnet':
+                self.decoder = ResnetDecoder(64, self.pred_logits, (self.ht, self.wd), self.cfg.STRUCTURE.HG_COUNT, self.cfg.STRUCTURE.HG_DEPTH_COUNT)
+            elif self.cfg.STRUCTURE.DECODER_MODE == 'fast_resnet':
+                self.decoder = FastResnetDecoderAvg(64, self.pred_logits, (self.ht, self.wd), self.cfg.STRUCTURE.HG_COUNT, self.cfg.STRUCTURE.HG_DEPTH_COUNT)
+            else:
+                self.decoder = None
+                print("cfg.FAST_MODE is error value:{}".format(self.cfg.FAST_MODE))
         else:
-            self.decoder = None
-            print("cfg.FAST_MODE is error value:{}".format(self.cfg.FAST_MODE))
+            if self.cfg.STRUCTURE.DECODER_MODE == 'resnet':
+                self.decoder = ResnetDecoder(cfg.INPUT.FRAMES*32, self.pred_logits, (self.ht, self.wd), self.cfg.STRUCTURE.HG_COUNT, self.cfg.STRUCTURE.HG_DEPTH_COUNT)
+            elif self.cfg.STRUCTURE.DECODER_MODE == 'fast_resnet':
+                self.decoder = FastResnetDecoder(cfg.INPUT.FRAMES*32, self.pred_logits, (self.ht, self.wd), self.cfg.STRUCTURE.HG_COUNT, self.cfg.STRUCTURE.HG_DEPTH_COUNT)
+            else:
+                self.decoder = None
+                print("cfg.FAST_MODE is error value:{}".format(self.cfg.FAST_MODE))
 
     def forward(self, poses, images, intrinsics, idx=None):
     #def forward(self, images, intrinsics, idx=None):
@@ -170,11 +217,11 @@ class DepthModule(nn.Module):
         ht = images.shape[-2]
         wd = images.shape[-1]
         self.input_dims = [ht, wd] # 获取输入信息
-        spred = self.stereo_network_avg(
-                poses,
-                images,
-                intrinsics
-                )
+        spred = self.stereo_network(
+            poses,
+            images,
+            intrinsics
+        )
         return spred
 
     

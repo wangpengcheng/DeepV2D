@@ -22,7 +22,7 @@ def inference_test(deepModel, cfg):
     
     db = TUM_RGBD(cfg.INPUT.RESIZE, "data/mydata2",test=False, r=2)
 
-    trainloader = torch.utils.data.DataLoader(db, batch_size=1, shuffle=False, num_workers=8)
+    trainloader = torch.utils.data.DataLoader(db, batch_size=1, shuffle=False, num_workers=1)
     time_sum =0.0
     iter_number = len(db)
     deepModel.cuda()
@@ -122,7 +122,7 @@ def converToONNX(deepModel, cfg):
 if __name__ == '__main__':
     cfg = config.cfg_from_file("cfgs/tum_torch/tum_2_2_shufflev2_fast.yaml")
     deepModel = DepthModule(cfg)
-    checkpoint = torch.load("pytorch_model/tum/shufflenetv2_fast/final.pth")
+    checkpoint = torch.load("pytorch_model/mydata/shufflenetv2_fast/step_13000.pth")
     deepModel.load_state_dict(checkpoint['net'])
     inference_test(deepModel, cfg)
     #converToTensorrt(deepModel,cfg)
