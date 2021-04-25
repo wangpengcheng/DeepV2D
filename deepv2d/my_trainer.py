@@ -119,7 +119,7 @@ class DeepV2DTrainer(object):
         max_steps = cfg.TRAIN.ITERS[stage-1]
         # 设置GPU
         os.environ['CUDA_VISIBLE_DEVICES'] = cfg.TRAIN.USE_GPU
-        os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
+        # os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
 
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -159,8 +159,8 @@ class DeepV2DTrainer(object):
         model_lr_scheduler = optim.lr_scheduler.StepLR(optimizer, 5000, 0.9)
         
         # 设置训练数据集
-        trainloader = torch.utils.data.DataLoader(data_source, batch_size=batch_size, shuffle=False,
-                            num_workers=2, pin_memory=True, drop_last=True, prefetch_factor=4)
+        trainloader = torch.utils.data.DataLoader(data_source, batch_size=batch_size, shuffle=True,
+                            num_workers=4, pin_memory=True, drop_last=True, prefetch_factor=4)
         # 设置为训练模式
         deepModel.train()
         # 加载模型
@@ -172,8 +172,8 @@ class DeepV2DTrainer(object):
             start_step = checkpoint['epoch']
             #model_lr_scheduler.load_state_dict(checkpoint['model_lr_scheduler'])
             end_step = start_step + max_steps
-        # for p in optimizer.param_groups:
-        #     p['lr'] = cfg.TRAIN.LR
+        for p in optimizer.param_groups:
+            p['lr'] = cfg.TRAIN.LR
         
         
         # 日志
@@ -244,7 +244,7 @@ class DeepV2DTrainer(object):
             model_lr_scheduler.step()
             # 输出loss值
             if training_step % LOG_FREQ == 0:
-                loss_str = "[step= {:>5d}] loss: {:.9f}".format(training_step, loss.detach().cpu().numpy())
+                loss_str = "[step= {:>5d}] loss: {:.9f}".format(training_step, running_loss /(LOG_FREQ*data_len))
                 print(loss_str)
                 # 需要记录loss值
                 if loss_file is not None:
