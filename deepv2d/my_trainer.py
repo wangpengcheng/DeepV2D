@@ -244,7 +244,7 @@ class DeepV2DTrainer(object):
             model_lr_scheduler.step()
             # 输出loss值
             if training_step % LOG_FREQ == 0:
-                loss_str = "[step= {:>5d}] loss: {:.9f}".format(training_step, running_loss /(LOG_FREQ*data_len))
+                loss_str = "[step= {:>5d}] loss: {:.9f}".format(training_step, loss.detach().cpu().numpy())
                 print(loss_str)
                 # 需要记录loss值
                 if loss_file is not None:
