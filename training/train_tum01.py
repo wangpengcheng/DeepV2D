@@ -42,7 +42,7 @@ def main(args):
     restore_ckpt_path = cfg.STORE.RESRORE_PATH
 
     # 创建数据集
-    db = TUM_RGBD(cfg.INPUT.RESIZE, args.dataset_dir, r=args.r)
+    db = TUM_RGBD(cfg.INPUT.RESIZE, args.dataset_dir, r=args.r, cfg = cfg)
 
     solver = DeepV2DTrainer(cfg)
     ckpt = None

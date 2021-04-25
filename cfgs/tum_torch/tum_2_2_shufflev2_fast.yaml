@@ -8,9 +8,9 @@ INPUT:
   SCALES: [1.0, 1.1, 1.2] # 缩放参数
   RESIZE: 0.5
 TRAIN:
-  ITERS: [300, 200]
+  ITERS: [300, 1000]
   BATCH: [1, 8]
-  LR: 0.0006
+  LR: 0.001
   CLIP_GRADS: True
   DEPTH_WEIGHT: 1.0
   USE_GPU: '0'
