@@ -125,13 +125,8 @@ if __name__ == '__main__':
     cfg = config.cfg_from_file("cfgs/tum_torch/tum_2_2_shufflev2_fast.yaml")
     # 设置GPU
     os.environ['CUDA_VISIBLE_DEVICES'] = cfg.TRAIN.USE_GPU
-    os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
     deepModel = DepthModule(cfg)
-<<<<<<< HEAD
-    checkpoint = torch.load("pytorch_model/mydata/shufflenetv2_fast/step_34350.pth")
-=======
     checkpoint = torch.load("pytorch_model/mydata/shufflenetv2_fast/final.pth")
->>>>>>> 65f2c2f90454bb30f14e26aa4be7c6bfff5dcc3c
     deepModel.load_state_dict(checkpoint['net'])
     #print(deepModel.encoder.state_dict().keys())
     inference_test(deepModel, cfg)
