@@ -96,6 +96,8 @@ def backproject_cat(
     Returns:
         [type]: [description]
     """
+    
+    # use_cuda_backproject
     use_cuda_backproject = False
     # 获取通道数目
     dim = fmaps.shape[2]
@@ -119,6 +121,7 @@ def backproject_cat(
     #print(Tij.shape)
     # 将所有深度点，映射到二维空间中
     coords = get_cood(depths, intrinsics, Tij)
+   
     volume = my_bilinear_sampler(fmaps, coords)
     
     # 8*128*32*30*40

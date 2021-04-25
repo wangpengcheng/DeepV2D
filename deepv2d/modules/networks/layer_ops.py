@@ -124,6 +124,7 @@ class Conv2dBnRel(nn.Module):
         :return: transformed feature map
         '''
         output = self.conv(input)
+        #output = self.conv1(output)
         output = self.bn(output)
         output = self.act(output)
         return output
