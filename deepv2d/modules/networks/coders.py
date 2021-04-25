@@ -43,7 +43,6 @@ class FastStereoHead(nn.Module):
         self.act = nn.ReLU()
         # 3*3
         self.conv2 = Conv3d(32, 32, 3)
-
         self.conv3 = Conv3d(32, 32, 1)
         self.conv4 = Conv3d(32, 1, 1)
         # 注意这里默认的是线性插值

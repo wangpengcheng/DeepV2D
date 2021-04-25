@@ -167,7 +167,7 @@ class DeepV2DTrainer(object):
             # 加载模型
             checkpoint = torch.load(cfg.STORE.RESRORE_PATH)
             deepModel.load_state_dict(checkpoint['net'])
-            optimizer.load_state_dict(checkpoint['optimizer'])
+            #optimizer.load_state_dict(checkpoint['optimizer'])
             start_step = checkpoint['epoch']
             end_step = start_step + max_steps
             print("load model success")
@@ -204,12 +204,12 @@ class DeepV2DTrainer(object):
                 # 进行数据预处理
                 #images, gt_batch, filled_batch, intrinsics_batch = prepare_inputs(cfg, images, gt_batch, filled_batch,intrinsics_batch)
                 #images_batch, gt_batch, intrinsics_batch, a = prepare_inputs(cfg , images_batch, gt_batch, intrinsics_batch)
-                optimizer.zero_grad()
+                
                 # Ts = poses_batch.cuda()
                 # images = images_batch.cuda()
                 # intrinsics_batch = intrinsics_batch.cuda().float()
                 # gt_batch = gt_batch.cuda()
-
+                optimizer.zero_grad()
                 Ts = poses_batch
                 images = images_batch
                 intrinsics = intrinsics_batch
