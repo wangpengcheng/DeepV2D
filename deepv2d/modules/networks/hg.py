@@ -38,7 +38,7 @@ class Hourglass2d(nn.Module):
         low2 = self.low2_conv(low1)
         low3 = self.low3_conv(low2)
         # up data
-        up2 = nn.functional.upsample_nearest(low3,size=(ht, wd))
+        up2 = nn.functional.upsample_nearest(low3, size=(ht, wd))
         out += up2
         return out
 

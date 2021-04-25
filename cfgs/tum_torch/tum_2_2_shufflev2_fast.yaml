@@ -9,11 +9,11 @@ INPUT:
   RESIZE: 0.5
 TRAIN:
   ITERS: [300, 10000]
-  BATCH: [1, 6]
+  BATCH: [1, 8]
   LR: 0.001
   CLIP_GRADS: True
   DEPTH_WEIGHT: 1.0
-  USE_GPU: '0'
+  USE_GPU: '1'
   GPU_MEMORY: 0.9
   IS_TRAIN: True # 是否正在训练中，用来决定是否有参数更新
 MOTION:
@@ -23,7 +23,7 @@ MOTION:
   TRAIN:
     DELTA: [0.02, 0.02, 0.02, 0.02, 0.02, 0.02]
 STRUCTURE:
-  MODE: avg
+  MODE: cat
   ENCODER_MODE: shufflenetv2 # resnet fast_resnet mobilenet asppnet shufflenet shufflenetv2
   DECODER_MODE: fast_resnet # resnet fast_resnet asppnet
   MAX_DEPTH: 10.0
@@ -34,7 +34,7 @@ STRUCTURE:
   HG_2D_DEPTH_COUNT: 2
   USE_FAST_RESNET: True
 STORE: # 存储相关参数
-  RESRORE_PATH: "pytorch_model/mydata/shufflenetv2_fast/step_14200.pth" # 加载已有模型存储位置 一般为路径文件夹+数据集名称+模型名称
+  RESRORE_PATH: "pytorch_model/mydata/shufflenetv2_fast/step_200.pth" # 加载已有模型存储位置 一般为路径文件夹+数据集名称+模型名称
   CHECKPOINT_DIR: "pytorch_model/mydata" # 训练模型存储位置，一般为路径文件夹+数据集名称+模型名称
   TMP_DIR: "tmp/mydata" # 临时文件路径，一般是数据集名称+模型名称
   LOG_DIR: "log/mydata"  # 日志存储位置，日志存储位置 路径文件夹+数据集名称+模型名称
