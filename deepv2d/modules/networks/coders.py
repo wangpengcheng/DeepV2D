@@ -292,20 +292,56 @@ class FastResnetDecoder(nn.Module):
         Args:
             input ([type]): [description]
         """
+        out = self.conv1(input)
+        out = self.res_conv1(out) #4*32*32*30*40
+       
+        for i in range(self.stack_count):
+            out = self.stack_conv(out)
+            out = self.stereo_head(out)
+            #self.pred_logits.append(out)
+        return out
+
+
+class FastResnetDecoderAvg(nn.Module):
+    def __init__(self, inputs_dims, pred_logits, out_size, stack_count=1 ,depth_count=2):
+        """
+        基础解码单元
+        Args:
+            inputs_dims ([type]): 输入维度
+            output_dims ([type]): 输出维度
+            stack_count: 沙漏网络的个数
+            depth_count: 沙漏网络的深度
+            pred_logits: 预测队列数组
+            out_size: 图像大小
+        """
+        super().__init__()
+        self.stack_count = stack_count
+        self.depth_count = depth_count
+        self.pred_logits = pred_logits
+        self.conv1 = Conv3d(inputs_dims, 32, 1, stride = 1)
+        # 注意这里可以减少一个1*1 卷积
+        self.res_conv1 = FastResConv3d(32, 32)
+        
+        # 沙漏网络
+        self.stack_conv = FastHourglass3d(32, 32, depth_count)
+        self.stereo_head = FastStereoHead(32, out_size)
+        #self.stereo_head = StereoHead(32, out_size)
+    def forward(self, input):
+        """
+        进行前向计算
+        Args:
+            input ([type]): [description]
+        """
         dims = input.shape
-        if self.is_avg:
-            # 重新进行数据 4*64*32*60*80
-            volume = input.view([dims[0]*dims[1], 64, dims[3], dims[4], dims[5]])
-            # 进行卷积 4*32*32*30*40   4*32*16*30*40 
-            out = self.conv1(volume)
-            out = self.res_conv1(out) #4*32*32*30*40
-            # 重新整理输出维度为32 维度, 1*4*32*32*30*40 1 4 64 32 30 40
-            out = out.view([dims[0],  dims[1], 32, dims[3], dims[4],dims[5]])
-            # 求解均值 
-            out = torch.mean(out, dim = 1)
-        else:
-            out = self.conv1(input)
-            out = self.res_conv1(out) #4*32*32*30*40
+        # 重新进行数据 4*64*32*60*80
+        volume = input.view([dims[0]*dims[1], 64, dims[3], dims[4], dims[5]])
+        # 进行卷积 4*32*32*30*40   4*32*16*30*40 
+        out = self.conv1(volume)
+        out = self.res_conv1(out) #4*32*32*30*40
+        # 重新整理输出维度为32 维度, 1*4*32*32*30*40 1 4 64 32 30 40
+        out = out.view([dims[0],  dims[1], 32, dims[3], dims[4],dims[5]])
+        # 求解均值 
+        out = torch.mean(out, dim = 1)    
         # 沙漏网络
         for i in range(self.stack_count):
             out = self.stack_conv(out)
@@ -314,9 +350,6 @@ class FastResnetDecoder(nn.Module):
         return out
 
         
-
-
-
 
 
 

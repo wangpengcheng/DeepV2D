@@ -21,8 +21,8 @@ def inference_test(deepModel, cfg):
     #deepModel = deepModel.load_state_dict(torch.load('pytorch/tum/tmu_model/depth.pth'))
     
     db = TUM_RGBD(cfg.INPUT.RESIZE, "data/mydata2",test=False, r=2)
-    
-    trainloader = torch.utils.data.DataLoader(db, batch_size=1, shuffle=False, num_workers=8)
+
+    trainloader = torch.utils.data.DataLoader(db, batch_size=1, shuffle=False, num_workers=1)
     time_sum =0.0
     iter_number = len(db)
     deepModel.cuda()
@@ -32,7 +32,7 @@ def inference_test(deepModel, cfg):
             images_batch, poses_batch, gt_batch, filled_batch, pred_batch, intrinsics_batch, frame_id= data
                         # 进行数据预处理,主要是维度交换
             images = images_batch.permute(0, 1, 4, 2, 3)
-            #images, gt_batch, intrinsics_batch, a = prepare_inputs(cfg , images, gt_batch, intrinsics_batch)
+            images, gt_batch, intrinsics_batch, a = prepare_inputs(cfg , images, gt_batch, intrinsics_batch)
             Ts = poses_batch.cuda()
             images = images.float().cuda()
             intrinsics_batch = intrinsics_batch.float().cuda()
@@ -42,8 +42,6 @@ def inference_test(deepModel, cfg):
             # print(intrinsics_batch.shape)
             # 计算时间
             time_start=time.time()
-            #print(Ts)
-            #print(intrinsics_batch)
             outputs = deepModel(Ts, images, intrinsics_batch)
             time_end=time.time()
             key_frame_depth = outputs[0]
@@ -95,7 +93,7 @@ def converToONNX(deepModel, cfg):
     model = deepModel.eval().cuda()
     db = TUM_RGBD(cfg.INPUT.RESIZE, "data/tum2", r=2)
 
-    trainloader = torch.utils.data.DataLoader(db, batch_size=1, shuffle=False, num_workers=8)
+    trainloader = torch.utils.data.DataLoader(db, batch_size=1, shuffle=False, num_workers=1)
     for i, data in enumerate(trainloader, 0):
         if i> 0:
             break
@@ -123,12 +121,10 @@ def converToONNX(deepModel, cfg):
 
 if __name__ == '__main__':
     cfg = config.cfg_from_file("cfgs/tum_torch/tum_2_2_shufflev2_fast.yaml")
-    # 设置GPU
     os.environ['CUDA_VISIBLE_DEVICES'] = cfg.TRAIN.USE_GPU
     deepModel = DepthModule(cfg)
     checkpoint = torch.load("pytorch_model/mydata/shufflenetv2_fast/final.pth")
     deepModel.load_state_dict(checkpoint['net'])
-    #print(deepModel.encoder.state_dict().keys())
     inference_test(deepModel, cfg)
     #converToTensorrt(deepModel,cfg)
     #converToONNX(deepModel,cfg)
