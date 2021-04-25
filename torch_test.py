@@ -12,6 +12,7 @@ from core import config
 from deepv2d import vis
 import eval_utils 
 from utils.my_utils import *
+import datetime
 #from torch2trt import torch2trt
 
 # 加载数据集进行推理
@@ -22,7 +23,7 @@ def inference_test(deepModel, cfg):
     
     db = TUM_RGBD(cfg.INPUT.RESIZE, "data/mydata2",test=False, r=2)
 
-    trainloader = torch.utils.data.DataLoader(db, batch_size=1, shuffle=False, num_workers=1)
+    trainloader = torch.utils.data.DataLoader(db, batch_size=1, shuffle=False, num_workers=8)
     time_sum =0.0
     iter_number = len(db)
     deepModel.cuda()
@@ -32,7 +33,7 @@ def inference_test(deepModel, cfg):
             images_batch, poses_batch, gt_batch, filled_batch, pred_batch, intrinsics_batch, frame_id= data
                         # 进行数据预处理,主要是维度交换
             images = images_batch.permute(0, 1, 4, 2, 3)
-            images, gt_batch, intrinsics_batch, a = prepare_inputs(cfg , images, gt_batch, intrinsics_batch)
+            #images, gt_batch, intrinsics_batch, a = prepare_inputs(cfg , images, gt_batch, intrinsics_batch)
             Ts = poses_batch.cuda()
             images = images.float().cuda()
             intrinsics_batch = intrinsics_batch.float().cuda()
@@ -41,9 +42,9 @@ def inference_test(deepModel, cfg):
             # print(Ts.shape)
             # print(intrinsics_batch.shape)
             # 计算时间
-            time_start=time.time()
+            time_start = datetime.datetime.now()
             outputs = deepModel(Ts, images, intrinsics_batch)
-            time_end=time.time()
+            time_end = datetime.datetime.now()
             key_frame_depth = outputs[0]
             # 关键rgb帧
             key_frame_image = images_batch[0][0]
@@ -62,7 +63,7 @@ def inference_test(deepModel, cfg):
             cv2.imwrite("{}/{}.png".format(result_out_dir, i), image_depth)
             print("wirte image:{}/{}.png".format(result_out_dir,i))
             if i != 0:
-                time_sum = time_sum + (time_end-time_start)
+                time_sum = time_sum + (time_end-time_start).total_seconds()
             print('time cost',time_end-time_start,'s')
         print("{} images,totle time: {} s, avg time: {} s".format(iter_number-1, time_sum, time_sum/(iter_number-1)))
 
@@ -98,6 +99,7 @@ def converToONNX(deepModel, cfg):
         if i> 0:
             break
         images_batch, poses_batch, gt_batch, filled_batch, pred_batch, intrinsics_batch, frame_id = data
+        
         images = images_batch.permute(0, 1, 4, 2, 3)
         poses = poses_batch.cuda()
         images = images.float().cuda()
@@ -123,7 +125,7 @@ if __name__ == '__main__':
     cfg = config.cfg_from_file("cfgs/tum_torch/tum_2_2_shufflev2_fast.yaml")
     os.environ['CUDA_VISIBLE_DEVICES'] = cfg.TRAIN.USE_GPU
     deepModel = DepthModule(cfg)
-    checkpoint = torch.load("pytorch_model/mydata/shufflenetv2_fast/step_13000.pth")
+    checkpoint = torch.load("pytorch_model/mydata/shufflenetv2_fast/step_12100.pth")
     deepModel.load_state_dict(checkpoint['net'])
     inference_test(deepModel, cfg)
     #converToTensorrt(deepModel,cfg)
