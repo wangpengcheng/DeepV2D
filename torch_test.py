@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import sys
 import os
 sys.path.append('deepv2d')
@@ -15,13 +16,12 @@ from utils.my_utils import *
 import datetime
 #from torch2trt import torch2trt
 
-# 加载数据集进行推理
 
 def inference_test(deepModel, cfg):
    
     #deepModel = deepModel.load_state_dict(torch.load('pytorch/tum/tmu_model/depth.pth'))
     
-    db = TUM_RGBD(cfg.INPUT.RESIZE, "data/mydata2",test=False, r=2)
+    db = TUM_RGBD(cfg.INPUT.RESIZE, "data/mydata2",test=True, r=2)
 
     trainloader = torch.utils.data.DataLoader(db, batch_size=1, shuffle=False, num_workers=1)
     time_sum =0.0
@@ -42,11 +42,8 @@ def inference_test(deepModel, cfg):
             # print(Ts.shape)
             # print(intrinsics_batch.shape)
             # 计算时间
-<<<<<<< HEAD
-            time_start=time.time()
-=======
+
             time_start = datetime.datetime.now()
->>>>>>> 551cf85d57c14601749abbc9a4ebe4894d724b73
             outputs = deepModel(Ts, images, intrinsics_batch)
             time_end = datetime.datetime.now()
             key_frame_depth = outputs[0]
@@ -129,7 +126,7 @@ if __name__ == '__main__':
     cfg = config.cfg_from_file("cfgs/tum_torch/tum_2_2_shufflev2_fast.yaml")
     os.environ['CUDA_VISIBLE_DEVICES'] = cfg.TRAIN.USE_GPU
     deepModel = DepthModule(cfg)
-    checkpoint = torch.load("pytorch_model/mydata/shufflenetv2_fast/step_13200.pth")
+    checkpoint = torch.load("pytorch_model/mydata/shufflenetv2_fast/final.pth")
     deepModel.load_state_dict(checkpoint['net'])
     inference_test(deepModel, cfg)
     #converToTensorrt(deepModel,cfg)

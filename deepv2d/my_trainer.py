@@ -156,7 +156,7 @@ class DeepV2DTrainer(object):
         # # 设置损失函数
         optimizer = optim.RMSprop(deepModel.parameters(), lr=cfg.TRAIN.LR, momentum=0.9)
         # #  # 设置学习策略
-        model_lr_scheduler = optim.lr_scheduler.StepLR(optimizer, 5000, 0.9)
+        model_lr_scheduler = optim.lr_scheduler.StepLR(optimizer, int(0.8*max_steps), 0.9)
         
         # 设置训练数据集
         trainloader = torch.utils.data.DataLoader(data_source, batch_size=batch_size, shuffle=True,
@@ -203,7 +203,7 @@ class DeepV2DTrainer(object):
                 # 进行数据预处理
 
                 #images_batch, poses_batch, gt_batch, myfilled, myfilled, intrinsics_batch, frameid = data
-                images_batch, gt_batch, intrinsics_batch, a = prepare_inputs(cfg , images_batch, gt_batch, intrinsics_batch)
+                #images_batch, gt_batch, intrinsics_batch, a = prepare_inputs(cfg , images_batch, gt_batch, intrinsics_batch)
                 optimizer.zero_grad()
                 # images_batch = images_batch.permute(0, 1, 4, 2, 3)
                 # Ts = poses_batch.cuda()
