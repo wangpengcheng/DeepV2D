@@ -114,16 +114,10 @@ def backproject_cat(
     ii, jj = torch.meshgrid(torch.arange(1), torch.arange(0, num))
     ii = ii.view([-1]).cuda()
     jj = jj.view([-1]).cuda()
-    Ti = my_gather(Ts, ii, 1)
-    Tj = my_gather(Ts, jj, 1)
-    #Tii1 = Tii * TS_inverse(Tii)
-    b, n, _, _ = Ti.shape[0:]
-    Ti = Ti.view(b*n, 4, 4)
-
-    Tj = Tj.view(b*n, 4, 4)
-
+    Tii = my_gather(Ts, ii, 1)
+    Tjj = my_gather(Ts, jj, 1)
     # 计算对应矩阵 
-    Tij = torch.bmm(Tj, torch.inverse(Ti)).view(b, n, 4, 4)
+    Tij = Tjj * TS_inverse(Tii)
     
     #print(Tij.shape)
     # 将所有深度点，映射到二维空间中
@@ -169,20 +163,15 @@ def backproject_avg(
     ii = ii.view([-1]).cuda()
     jj = jj.view([-1]).cuda()
     
-    Ti = my_gather(Ts, ii, 1)
-    Tj = my_gather(Ts, jj, 1)
-    #Tii1 = Tii * TS_inverse(Tii)
-    b, n, _, _ = Ti.shape[0:]
-    Ti = Ti.view(b*n, 4, 4)
-
-    Tj = Tj.view(b*n, 4, 4)
-
+    Tii = my_gather(Ts, ii, 1)
+    Tjj = my_gather(Ts, jj, 1)
+    print(Tii.shape)
     # 计算对应矩阵 
-    Tii = torch.bmm(Ti, torch.inverse(Ti)).view(b, n, 4, 4)
-    Tij = torch.bmm(Tj, torch.inverse(Ti)).view(b, n, 4, 4)
-    # Tii1 = Tii[...,0:3,:]
-    # Tij1 = Tij[...,0:3,:]
-    
+    Tii = Tii * TS_inverse(Tii)
+    Tij = Tjj * TS_inverse(Tii)
+    print(Tij)
+    print(intrinsics.shape)
+    print(Tij.shape)
     fmaps1 = my_gather(fmaps, ii, 1)
     fmaps2 = my_gather(fmaps, jj, 1)
 

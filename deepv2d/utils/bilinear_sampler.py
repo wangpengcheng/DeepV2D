@@ -123,8 +123,7 @@ def my_bilinear_sampler(image, coords):
     
     # 进行坐标分解
     coords_x, coords_y = torch.unbind(coords, dim=-1)
-    coords_x = torch.clamp(coords_x, 0, wd-1)
-    coords_y = torch.clamp(coords_y, 0, ht-1)
+    
     # 构造num维度
     batch_inds = torch.arange(num, device=torch.device('cuda:0'))
     batch_inds = batch_inds.view([num, 1, 1, 1])
@@ -133,8 +132,14 @@ def my_bilinear_sampler(image, coords):
     coords_x = 2.*coords_x/(wd-1) - 1
     coords_y = 2.*coords_y/(ht-1) - 1
     batch_inds = 2.*batch_inds/(num-1) - 1
+
+    # coords_x = torch.clamp(coords_x, -1, 1)
+    # coords_y = torch.clamp(coords_y, -1, 1)
+    # batch_inds = torch.clamp(batch_inds, -1, 1)
+
     # 进行合并
     my_coords = torch.stack([coords_x, coords_y, batch_inds], dim=-1)
+    my_coords = torch.clamp(my_coords, -1, 1)
     # 
     volmap = F.grid_sample(fmaps, my_coords, mode='bilinear', align_corners=True)
     return volmap
