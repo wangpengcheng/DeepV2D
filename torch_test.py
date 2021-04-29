@@ -21,7 +21,7 @@ def inference_test(deepModel, cfg):
    
     #deepModel = deepModel.load_state_dict(torch.load('pytorch/tum/tmu_model/depth.pth'))
     
-    db = TUM_RGBD(cfg.INPUT.RESIZE, "data/mydata",test=True, r=2)
+    db = TUM_RGBD(cfg.INPUT.RESIZE, "data/mydata2",test=False, r=2)
 
     trainloader = torch.utils.data.DataLoader(db, batch_size=1, shuffle=False, num_workers=1)
     time_sum =0.0
@@ -126,7 +126,7 @@ if __name__ == '__main__':
     cfg = config.cfg_from_file("cfgs/tum_torch/tum_2_2_shufflev2_fast.yaml")
     os.environ['CUDA_VISIBLE_DEVICES'] = cfg.TRAIN.USE_GPU
     deepModel = DepthModule(cfg)
-    checkpoint = torch.load("pytorch_model/mydata/shufflenetv2_fast/step_45800.pth")
+    checkpoint = torch.load("pytorch_model/mydata/shufflenetv2_fast/step_49900.pth")
     deepModel.load_state_dict(checkpoint['net'])
     inference_test(deepModel, cfg)
     #converToTensorrt(deepModel,cfg)

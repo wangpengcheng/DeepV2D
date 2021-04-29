@@ -156,11 +156,11 @@ class DeepV2DTrainer(object):
         # # 设置损失函数
         optimizer = optim.RMSprop(deepModel.parameters(), lr=cfg.TRAIN.LR, momentum=0.9)
         # #  # 设置学习策略
-        model_lr_scheduler = optim.lr_scheduler.StepLR(optimizer, int(0.8*max_steps), 0.9)
+        model_lr_scheduler = optim.lr_scheduler.StepLR(optimizer, 5000, 0.6)
         
         # 设置训练数据集
         trainloader = torch.utils.data.DataLoader(data_source, batch_size=batch_size, shuffle=True,
-                            num_workers=8, pin_memory=True, drop_last=True)
+                            num_workers=32, pin_memory=True, drop_last=True)
         # 设置为训练模式
         deepModel.train()
         # 加载模型
@@ -168,12 +168,12 @@ class DeepV2DTrainer(object):
             # 加载模型
             checkpoint = torch.load(cfg.STORE.RESRORE_PATH)
             deepModel.load_state_dict(checkpoint['net'])
-            optimizer.load_state_dict(checkpoint['optimizer'])
+            #optimizer.load_state_dict(checkpoint['optimizer'])
             start_step = checkpoint['epoch']
             #model_lr_scheduler.load_state_dict(checkpoint['model_lr_scheduler'])
             end_step = start_step + max_steps
-        for p in optimizer.param_groups:
-            p['lr'] = cfg.TRAIN.LR
+        # for p in optimizer.param_groups:
+        #     p['lr'] = cfg.TRAIN.LR
         
         
         # 日志
@@ -223,15 +223,16 @@ class DeepV2DTrainer(object):
                 # 计算loss值
                 loss = loss_function(gt, outputs)
                 # 计算误差
-                temp_delta, temp_abs_rel, = add_depth_acc(gt, outputs)
-                abs_rel = abs_rel + temp_abs_rel
-                delta = delta + temp_delta
                 # loss backward
                 loss.backward()
                 # update parameters using optimizer
                 optimizer.step()
+                #torch.cuda.empty_cache()
                 # 计算loss
-                running_loss = running_loss + float(loss.detach().item())
+                #running_loss = running_loss + float(loss)
+                temp_delta, temp_abs_rel = add_depth_acc(gt.detach(), outputs.detach())
+                abs_rel = abs_rel + float(temp_abs_rel)
+                delta = delta + float(temp_delta)
                 i = i + 1
                 images_batch, poses_batch, gt_batch, intrinsics_batch, frame_id = prefetcher.next()
                 # 进行文件写入
@@ -239,14 +240,14 @@ class DeepV2DTrainer(object):
                 writer.add_scalar('Train/Loss', loss.detach().cpu().numpy(), training_step)
                 writer.add_scalar('Train/abs_rel', abs_rel/data_len, training_step)
                 writer.add_scalar('Train/a1', delta/data_len, training_step)
-                writer.add_scalar('Train/lr', model_lr_scheduler.get_last_lr()[0], training_step)
+                writer.add_scalar('Train/lr', float(model_lr_scheduler.get_last_lr()[0]), training_step)
 
 
             # 修改学习率
             model_lr_scheduler.step()
             # 输出loss值
             if training_step % LOG_FREQ == 0:
-                loss_str = "[step= {:>5d}] loss: {:.9f}".format(training_step, running_loss /(LOG_FREQ*data_len))
+                loss_str = "[step= {:>5d}] loss: {:.9f}".format(training_step, loss.detach().cpu().numpy() )
                 print(loss_str)
                 # 需要记录loss值
                 if loss_file is not None:

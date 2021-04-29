@@ -60,7 +60,7 @@ def TS_inverse(pose):
     Args:
         pose ([type]): [description]
     """
-    b, n, w, h = pose.shape[:]
+    b_n, w, h = pose.shape[:]
     #print(type(b))
     # 提取列数据
     col1, col2, col3, col4 = torch.unbind(pose, dim=-1)
@@ -178,8 +178,8 @@ def backproject_avg(
     Tj = Tj.view(b*n, 4, 4)
 
     # 计算对应矩阵 
-    Tii = torch.bmm(Ti, torch.inverse(Ti)).view(b, n, 4, 4)
-    Tij = torch.bmm(Tj, torch.inverse(Ti)).view(b, n, 4, 4)
+    Tii = torch.bmm(Ti, TS_inverse(Ti)).view(b, n, 4, 4)
+    Tij = torch.bmm(Tj, TS_inverse(Ti)).view(b, n, 4, 4)
     # Tii1 = Tii[...,0:3,:]
     # Tij1 = Tij[...,0:3,:]
     
