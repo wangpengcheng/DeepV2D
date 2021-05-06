@@ -160,7 +160,7 @@ class DeepV2DTrainer(object):
         
         # 设置训练数据集
         trainloader = torch.utils.data.DataLoader(data_source, batch_size=batch_size, shuffle=True,
-                            num_workers=32, pin_memory=True, drop_last=True)
+                            num_workers=16, pin_memory=True, drop_last=True)
         # 设置为训练模式
         deepModel.train()
         # 加载模型
@@ -193,28 +193,28 @@ class DeepV2DTrainer(object):
             delta = 0
             abs_rel = 0
             #prefetcher = data_prefetcher(cfg, trainloader)
-            images_batch, poses_batch, gt_batch, intrinsics_batch, frame_id = prefetcher.next()
+            #images_batch, poses_batch, gt_batch, intrinsics_batch, frame_id = prefetcher.next()
             #print(len(trainloader))
             i = 0
             # 开始加载数据
-            while i < data_len:
-            #for i, data in enumerate(trainloader, 0):
+            #while i < data_len:
+            for i, data in enumerate(trainloader, 0):
             #while images_batch is not None:
                 # 进行数据预处理
 
-                #images_batch, poses_batch, gt_batch, myfilled, myfilled, intrinsics_batch, frameid = data
+                images_batch, poses_batch, gt_batch, myfilled, myfilled, intrinsics_batch, frameid = data
                 #images_batch, gt_batch, intrinsics_batch, a = prepare_inputs(cfg , images_batch, gt_batch, intrinsics_batch)
                 optimizer.zero_grad()
-                # images_batch = images_batch.permute(0, 1, 4, 2, 3)
-                # Ts = poses_batch.cuda()
-                # images = images_batch.cuda()
-                # intrinsics_batch = intrinsics_batch.cuda().float()
-                # gt_batch = gt_batch.cuda()
+                images_batch = images_batch.permute(0, 1, 4, 2, 3)
+                Ts = poses_batch.cuda()
+                images = images_batch.cuda()
+                intrinsics_batch = intrinsics_batch.cuda().float()
+                gt_batch = gt_batch.cuda()
 
-                Ts = poses_batch
-                images = images_batch
-                intrinsics = intrinsics_batch
-                gt = gt_batch
+                # Ts = poses_batch
+                # images = images_batch
+                # intrinsics = intrinsics_batch
+                # gt = gt_batch
                 outputs = deepModel(
                     Ts, 
                     images, 
@@ -234,7 +234,7 @@ class DeepV2DTrainer(object):
                 abs_rel = abs_rel + float(temp_abs_rel)
                 delta = delta + float(temp_delta)
                 i = i + 1
-                images_batch, poses_batch, gt_batch, intrinsics_batch, frame_id = prefetcher.next()
+                #images_batch, poses_batch, gt_batch, intrinsics_batch, frame_id = prefetcher.next()
                 # 进行文件写入
             if (writer is not None) and (training_step % SUMMARY_FREQ == 0) :
                 writer.add_scalar('Train/Loss', loss.detach().cpu().numpy(), training_step)

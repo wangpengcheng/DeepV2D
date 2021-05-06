@@ -9,7 +9,7 @@ INPUT:
   RESIZE: 0.5
 TRAIN:
   ITERS: [300, 30000]
-  BATCH: [1, 6]
+  BATCH: [1, 8]
   LR: 0.0001
   CLIP_GRADS: True
   DEPTH_WEIGHT: 1.0
@@ -33,8 +33,10 @@ STRUCTURE:
   HG_2D_COUNT: 1
   HG_2D_DEPTH_COUNT: 2
   USE_FAST_RESNET: True
+  TRAIN:
+    SMOOTH_W: 0.05
 STORE: # 存储相关参数
-  RESRORE_PATH: "pytorch_model/mydata/shufflenetv2_fast/step_49800.pth" # 加载已有模型存储位置 一般为路径文件夹+数据集名称+模型名称
+  RESRORE_PATH: "pytorch_model/mydata/shufflenetv2_fast/step_210.pth" # 加载已有模型存储位置 一般为路径文件夹+数据集名称+模型名称
   CHECKPOINT_DIR: "pytorch_model/tum" # 训练模型存储位置，一般为路径文件夹+数据集名称+模型名称
   TMP_DIR: "tmp/tum" # 临时文件路径，一般是数据集名称+模型名称
   LOG_DIR: "log/tum_torch"  # 日志存储位置，日志存储位置 路径文件夹+数据集名称+模型名称
