@@ -16,9 +16,13 @@ import sys
 import threading, time
 from utils.tum_associate import *
 
-
-factor = 5000.0 # for the 16-bit PNG files 
+fx = 517.3
+fy = 516.5
+cx = 318.6
+cy = 255.3
+factor = 1000.0 # for the 16-bit PNG files 
 # OR: factor = 1 # for the 32-bit float images in the ROS bag files
+
 intrinsics = np.array([fx, fy, cx, cy],dtype=np.float32)
 
 def list_split(items, n):
