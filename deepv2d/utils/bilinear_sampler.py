@@ -125,7 +125,7 @@ def my_bilinear_sampler(image, coords):
     coords_x, coords_y = torch.unbind(coords, dim=-1)
     
     # 构造num维度
-    batch_inds = torch.arange(num, device=torch.device('cuda:0'))
+    batch_inds = torch.arange(num, device=image.device)
     batch_inds = batch_inds.view([num, 1, 1, 1])
     batch_inds = batch_inds.repeat(batch, c, ht, wd)
     # 进行维度合并,主要是为了适配grid_sample函数

@@ -112,8 +112,8 @@ def backproject_cat(
     depths = depths.repeat([batch, num, 1, ht, wd])
     # 根据梯度选取张数
     ii, jj = torch.meshgrid(torch.arange(1), torch.arange(0, num))
-    ii = ii.view([-1]).cuda()
-    jj = jj.view([-1]).cuda()
+    ii = ii.view([-1]).to(fmaps.device)
+    jj = jj.view([-1]).to(fmaps.device)
     Ti = my_gather(Ts, ii, 1)
     Tj = my_gather(Ts, jj, 1)
     #Tii1 = Tii * TS_inverse(Tii)
@@ -166,8 +166,8 @@ def backproject_avg(
    
     # 根据梯度选取张数
     ii, jj = torch.meshgrid(torch.arange(1), torch.arange(1, num))
-    ii = ii.view([-1]).cuda()
-    jj = jj.view([-1]).cuda()
+    ii = ii.view([-1]).to(fmaps.device)
+    jj = jj.view([-1]).to(fmaps.device)
     
     Ti = my_gather(Ts, ii, 1)
     Tj = my_gather(Ts, jj, 1)

@@ -70,7 +70,7 @@ class DepthModule(nn.Module):
         self.wd = int(cfg.INPUT.WIDTH*cfg.INPUT.RESIZE)
         self.depths = torch.linspace(cfg.STRUCTURE.MIN_DEPTH, cfg.STRUCTURE.MAX_DEPTH, cfg.STRUCTURE.COST_VOLUME_DEPTH) # 进行线性插值获取深度序列
         self.pred_logits = []
-        self.test_conv = Conv2d(3, 32, 3)
+        #self.test_conv = Conv2d(3, 32, 3)
         # 注意这里默认的是线性插值
         self.transform = transforms.Compose([transforms.Resize(size=(self.ht, self.wd))])
         self.soft_argmax = SoftArgmax()
@@ -92,7 +92,7 @@ class DepthModule(nn.Module):
         """
         cfg = self.cfg
         # 进行线性插值，构造深度数据；用来随机初始化深度特征图
-        depths = torch.linspace(cfg.STRUCTURE.MIN_DEPTH, cfg.STRUCTURE.MAX_DEPTH, cfg.STRUCTURE.COST_VOLUME_DEPTH, device=torch.device('cuda:0')) # 进行线性插值获取深度序列
+        depths = torch.linspace(cfg.STRUCTURE.MIN_DEPTH, cfg.STRUCTURE.MAX_DEPTH, cfg.STRUCTURE.COST_VOLUME_DEPTH, device=images.device) # 进行线性插值获取深度序列
         # 相机参数转换--将相机内参转换为四元组矩阵
         intrinsics = intrinsics_vec_to_matrix( intrinsics / 4.0 ) # 将相机参数转换为矩阵，并将其缩小为原来的一半
         # extract 2d feature maps from images and build cost volume # 进行编码，获取2d的图像信息

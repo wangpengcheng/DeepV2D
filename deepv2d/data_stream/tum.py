@@ -6,7 +6,6 @@ import csv
 import glob
 import random
 import pickle
-from geometry.transformation import *
 from scipy import interpolate
 import argparse
 import random
