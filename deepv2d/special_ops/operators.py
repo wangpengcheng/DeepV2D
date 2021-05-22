@@ -60,7 +60,7 @@ def TS_inverse(pose):
     Args:
         pose ([type]): [description]
     """
-    b, n, w, h = pose.shape[:]
+    b_n, w, h = pose.shape[:]
     #print(type(b))
     # 提取列数据
     col1, col2, col3, col4 = torch.unbind(pose, dim=-1)
@@ -112,12 +112,19 @@ def backproject_cat(
     depths = depths.repeat([batch, num, 1, ht, wd])
     # 根据梯度选取张数
     ii, jj = torch.meshgrid(torch.arange(1), torch.arange(0, num))
-    ii = ii.view([-1]).cuda()
-    jj = jj.view([-1]).cuda()
-    Tii = my_gather(Ts, ii, 1)
-    Tjj = my_gather(Ts, jj, 1)
+    ii = ii.view([-1]).to(fmaps.device)
+    jj = jj.view([-1]).to(fmaps.device)
+    Ti = my_gather(Ts, ii, 1)
+    Tj = my_gather(Ts, jj, 1)
+    #Tii1 = Tii * TS_inverse(Tii)
+    b, n, _, _ = Ti.shape[0:]
+    Ti = Ti.view(b*n, 4, 4)
+
+    Tj = Tj.view(b*n, 4, 4)
+
     # 计算对应矩阵 
-    Tij = Tjj * TS_inverse(Tii)
+    Tij = torch.bmm(Tj, torch.inverse(Ti)).view(b, n, 4, 4)
+    
     #print(Tij.shape)
     # 将所有深度点，映射到二维空间中
     coords = get_cood(depths, intrinsics, Tij)
@@ -159,9 +166,10 @@ def backproject_avg(
    
     # 根据梯度选取张数
     ii, jj = torch.meshgrid(torch.arange(1), torch.arange(1, num))
-    ii = ii.view([-1]).cuda()
-    jj = jj.view([-1]).cuda()
+    ii = ii.view([-1]).to(fmaps.device)
+    jj = jj.view([-1]).to(fmaps.device)
     
+<<<<<<< HEAD
     Tii = my_gather(Ts, ii, 1)
     Tjj = my_gather(Ts, jj, 1)
     Tii1 = Tii*torch.inverse(Tii)
@@ -170,6 +178,21 @@ def backproject_avg(
     Tii2 = Tii * TS_inverse(Tii)
     print(Tii2)
     Tij = Tjj * TS_inverse(Tii)
+=======
+    Ti = my_gather(Ts, ii, 1)
+    Tj = my_gather(Ts, jj, 1)
+    #Tii1 = Tii * TS_inverse(Tii)
+    b, n, _, _ = Ti.shape[0:]
+    Ti = Ti.view(b*n, 4, 4)
+
+    Tj = Tj.view(b*n, 4, 4)
+
+    # 计算对应矩阵 
+    Tii = torch.bmm(Ti, TS_inverse(Ti)).view(b, n, 4, 4)
+    Tij = torch.bmm(Tj, TS_inverse(Ti)).view(b, n, 4, 4)
+    # Tii1 = Tii[...,0:3,:]
+    # Tij1 = Tij[...,0:3,:]
+>>>>>>> 45876635bc82993df2dfa86bab9356e2effc6d11
     
     fmaps1 = my_gather(fmaps, ii, 1)
     fmaps2 = my_gather(fmaps, jj, 1)

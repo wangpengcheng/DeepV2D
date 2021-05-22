@@ -1,0 +1,719 @@
+Pruning round 1, load model from netadapt/models/deepv2d/model.pth.tar
+DepthModule(
+  (soft_argmax): SoftArgmax()
+  (encoder): Shufflenetv2Encoder(
+    (conv1): Conv2d(
+      (conv): Conv2d(3, 32, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))
+    )
+    (res_conv1): ShuffleNetUnitV2A(
+      (conv1): Conv2dBnRel(
+        (conv): Conv2d(16, 16, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(16, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (depthwise_conv_bn): DepthSeparableConvBN(
+        (depth_wise): Conv2d(16, 16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=16, bias=False)
+        (point_wise): Conv2d(16, 16, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(16, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2dBnRel(
+        (conv): Conv2d(16, 16, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(16, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (active): ReLU()
+    )
+    (res_conv2): ShuffleNetUnitV2A(
+      (conv1): Conv2dBnRel(
+        (conv): Conv2d(16, 16, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(16, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (depthwise_conv_bn): DepthSeparableConvBN(
+        (depth_wise): Conv2d(16, 16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=16, bias=False)
+        (point_wise): Conv2d(16, 16, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(16, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2dBnRel(
+        (conv): Conv2d(16, 16, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(16, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (active): ReLU()
+    )
+    (res_conv3): ShuffleNetUnitV2B(
+      (conv1): Conv2dBnRel(
+        (conv): Conv2d(32, 32, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (depthwise_conv_bn): DepthSeparableConvBN(
+        (depth_wise): Conv2d(32, 32, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), groups=32, bias=False)
+        (point_wise): Conv2d(32, 32, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2dBnRel(
+        (conv): Conv2d(32, 32, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (depthwise_conv_bn_01): DepthSeparableConvBN(
+        (depth_wise): Conv2d(32, 32, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), groups=32, bias=False)
+        (point_wise): Conv2d(32, 32, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv3): Conv2dBnRel(
+        (conv): Conv2d(32, 32, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (active): ReLU()
+    )
+    (res_conv4): ShuffleNetUnitV2A(
+      (conv1): Conv2dBnRel(
+        (conv): Conv2d(32, 32, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (depthwise_conv_bn): DepthSeparableConvBN(
+        (depth_wise): Conv2d(32, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=32, bias=False)
+        (point_wise): Conv2d(32, 32, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2dBnRel(
+        (conv): Conv2d(32, 32, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (active): ReLU()
+    )
+    (res_conv5): ShuffleNetUnitV2A(
+      (conv1): Conv2dBnRel(
+        (conv): Conv2d(32, 32, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (depthwise_conv_bn): DepthSeparableConvBN(
+        (depth_wise): Conv2d(32, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=32, bias=False)
+        (point_wise): Conv2d(32, 32, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2dBnRel(
+        (conv): Conv2d(32, 32, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (active): ReLU()
+    )
+    (res_conv6): ShuffleNetUnitV2B(
+      (conv1): Conv2dBnRel(
+        (conv): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (depthwise_conv_bn): DepthSeparableConvBN(
+        (depth_wise): Conv2d(64, 64, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), groups=64, bias=False)
+        (point_wise): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2dBnRel(
+        (conv): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (depthwise_conv_bn_01): DepthSeparableConvBN(
+        (depth_wise): Conv2d(64, 64, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), groups=64, bias=False)
+        (point_wise): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv3): Conv2dBnRel(
+        (conv): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (active): ReLU()
+    )
+    (res_conv7): ShuffleNetUnitV2A(
+      (conv1): Conv2dBnRel(
+        (conv): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (depthwise_conv_bn): DepthSeparableConvBN(
+        (depth_wise): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=64, bias=False)
+        (point_wise): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2dBnRel(
+        (conv): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (active): ReLU()
+    )
+    (res_conv8): ShuffleNetUnitV2A(
+      (conv1): Conv2dBnRel(
+        (conv): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (depthwise_conv_bn): DepthSeparableConvBN(
+        (depth_wise): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=64, bias=False)
+        (point_wise): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2dBnRel(
+        (conv): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (active): ReLU()
+    )
+    (conv2): Conv2dBnRel(
+      (conv): Conv2d(128, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+      (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (act): ReLU()
+    )
+    (aspp): Aspp2d(
+      (conv1): Conv2d(
+        (conv): Conv2d(64, 128, kernel_size=(1, 1), stride=(1, 1))
+      )
+      (dilate_conv1): CDilated(
+        (conv): Conv2d(64, 128, kernel_size=(3, 3), stride=(1, 1), padding=(6, 6), dilation=(6, 6))
+      )
+      (dilate_conv2): CDilated(
+        (conv): Conv2d(64, 128, kernel_size=(3, 3), stride=(1, 1), padding=(12, 12), dilation=(12, 12))
+      )
+      (dilate_conv3): CDilated(
+        (conv): Conv2d(64, 128, kernel_size=(3, 3), stride=(1, 1), padding=(18, 18), dilation=(18, 18))
+      )
+      (last_conv): Conv2dBnRel(
+        (conv): Conv2d(512, 64, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+    )
+    (conv3): Conv2d(
+      (conv): Conv2d(64, 32, kernel_size=(1, 1), stride=(1, 1))
+    )
+  )
+  (decoder): FastResnetDecoderAvg(
+    (conv1): Conv3d(
+      (conv): Conv3d(64, 32, kernel_size=(1, 1, 1), stride=(1, 1, 1))
+    )
+    (res_conv1): FastResConv3d(
+      (conv1): Conv3dBnRel(
+        (conv): Conv3d(32, 32, kernel_size=(1, 1, 1), stride=(1, 1, 1))
+        (bn): BatchNorm3d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (conv2): Conv3dBnRel(
+        (conv): Conv3d(32, 32, kernel_size=(3, 3, 3), stride=(1, 1, 1), padding=(1, 1, 1))
+        (bn): BatchNorm3d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (conv3): Conv3dBnRel(
+        (conv): Conv3d(32, 32, kernel_size=(1, 1, 1), stride=(1, 1, 1))
+        (bn): BatchNorm3d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+    )
+    (stack_conv): FastHourglass3d(
+      (resnet): Conv3d(
+        (conv): Conv3d(32, 32, kernel_size=(1, 1, 1), stride=(1, 1, 1))
+      )
+      (pool): MaxPool3D(
+        (pool): MaxPool3d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+      )
+      (low1_conv): Conv3dBnRel(
+        (conv): Conv3d(32, 96, kernel_size=(3, 3, 3), stride=(1, 1, 1), padding=(1, 1, 1))
+        (bn): BatchNorm3d(96, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (low2_conv): Hourglass3d(
+        (resnet): ResConv3d(
+          (conv1): Conv3dBnRel(
+            (conv): Conv3d(96, 96, kernel_size=(3, 3, 3), stride=(1, 1, 1), padding=(1, 1, 1))
+            (bn): BatchNorm3d(96, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (act): ReLU()
+          )
+          (conv2): Conv3dBnRel(
+            (conv): Conv3d(96, 96, kernel_size=(3, 3, 3), stride=(1, 1, 1), padding=(1, 1, 1))
+            (bn): BatchNorm3d(96, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (act): ReLU()
+          )
+        )
+        (pool): MaxPool3D(
+          (pool): MaxPool3d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+        )
+        (low1_conv): Conv3dBnRel(
+          (conv): Conv3d(96, 160, kernel_size=(3, 3, 3), stride=(1, 1, 1), padding=(1, 1, 1))
+          (bn): BatchNorm3d(160, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (act): ReLU()
+        )
+        (low2_conv): Conv3dBnRel(
+          (conv): Conv3d(160, 160, kernel_size=(3, 3, 3), stride=(1, 1, 1), padding=(1, 1, 1))
+          (bn): BatchNorm3d(160, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (act): ReLU()
+        )
+        (low3_conv): Conv3dBnRel(
+          (conv): Conv3d(160, 96, kernel_size=(3, 3, 3), stride=(1, 1, 1), padding=(1, 1, 1))
+          (bn): BatchNorm3d(96, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (act): ReLU()
+        )
+      )
+      (low3_conv): Conv3dBnRel(
+        (conv): Conv3d(96, 32, kernel_size=(1, 1, 1), stride=(1, 1, 1))
+        (bn): BatchNorm3d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (upnn2d): Upsample(scale_factor=2.0, mode=nearest)
+    )
+    (stereo_head): FastStereoHead(
+      (conv1_1): Conv3d(
+        (conv): Conv3d(32, 32, kernel_size=(1, 1, 1), stride=(1, 1, 1))
+      )
+      (act): ReLU()
+      (conv2): Conv3d(
+        (conv): Conv3d(32, 32, kernel_size=(3, 3, 3), stride=(1, 1, 1), padding=(1, 1, 1))
+      )
+      (conv3): Conv3d(
+        (conv): Conv3d(32, 32, kernel_size=(1, 1, 1), stride=(1, 1, 1))
+      )
+      (conv4): Conv3d(
+        (conv): Conv3d(32, 1, kernel_size=(1, 1, 1), stride=(1, 1, 1))
+      )
+    )
+  )
+)
+<class 'deepv2d.modules.networks.coders.Shufflenetv2Encoder'>
+<class 'deepv2d.modules.networks.layer_ops.Conv2d'>
+<class 'torch.nn.modules.conv.Conv2d'>
+no thing
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.batchnorm.BatchNorm2d'>
+<class 'torch.nn.modules.activation.ReLU'>
+<class 'deepv2d.modules.networks.shufflenet_layers.DepthSeparableConvBN'>
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.batchnorm.BatchNorm2d'>
+no thing
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.batchnorm.BatchNorm2d'>
+<class 'torch.nn.modules.activation.ReLU'>
+<class 'torch.nn.modules.activation.ReLU'>
+no thing
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.batchnorm.BatchNorm2d'>
+<class 'torch.nn.modules.activation.ReLU'>
+<class 'deepv2d.modules.networks.shufflenet_layers.DepthSeparableConvBN'>
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.batchnorm.BatchNorm2d'>
+no thing
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.batchnorm.BatchNorm2d'>
+<class 'torch.nn.modules.activation.ReLU'>
+<class 'torch.nn.modules.activation.ReLU'>
+no thing
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.batchnorm.BatchNorm2d'>
+<class 'torch.nn.modules.activation.ReLU'>
+<class 'deepv2d.modules.networks.shufflenet_layers.DepthSeparableConvBN'>
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.batchnorm.BatchNorm2d'>
+no thing
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.batchnorm.BatchNorm2d'>
+<class 'torch.nn.modules.activation.ReLU'>
+<class 'deepv2d.modules.networks.shufflenet_layers.DepthSeparableConvBN'>
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.batchnorm.BatchNorm2d'>
+no thing
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.batchnorm.BatchNorm2d'>
+<class 'torch.nn.modules.activation.ReLU'>
+<class 'torch.nn.modules.activation.ReLU'>
+no thing
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.batchnorm.BatchNorm2d'>
+<class 'torch.nn.modules.activation.ReLU'>
+<class 'deepv2d.modules.networks.shufflenet_layers.DepthSeparableConvBN'>
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.batchnorm.BatchNorm2d'>
+no thing
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.batchnorm.BatchNorm2d'>
+<class 'torch.nn.modules.activation.ReLU'>
+<class 'torch.nn.modules.activation.ReLU'>
+no thing
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.batchnorm.BatchNorm2d'>
+<class 'torch.nn.modules.activation.ReLU'>
+<class 'deepv2d.modules.networks.shufflenet_layers.DepthSeparableConvBN'>
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.batchnorm.BatchNorm2d'>
+no thing
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.batchnorm.BatchNorm2d'>
+<class 'torch.nn.modules.activation.ReLU'>
+<class 'torch.nn.modules.activation.ReLU'>
+no thing
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.batchnorm.BatchNorm2d'>
+<class 'torch.nn.modules.activation.ReLU'>
+<class 'deepv2d.modules.networks.shufflenet_layers.DepthSeparableConvBN'>
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.batchnorm.BatchNorm2d'>
+no thing
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.batchnorm.BatchNorm2d'>
+<class 'torch.nn.modules.activation.ReLU'>
+<class 'deepv2d.modules.networks.shufflenet_layers.DepthSeparableConvBN'>
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.batchnorm.BatchNorm2d'>
+no thing
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.batchnorm.BatchNorm2d'>
+<class 'torch.nn.modules.activation.ReLU'>
+<class 'torch.nn.modules.activation.ReLU'>
+no thing
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.batchnorm.BatchNorm2d'>
+<class 'torch.nn.modules.activation.ReLU'>
+<class 'deepv2d.modules.networks.shufflenet_layers.DepthSeparableConvBN'>
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.batchnorm.BatchNorm2d'>
+no thing
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.batchnorm.BatchNorm2d'>
+<class 'torch.nn.modules.activation.ReLU'>
+<class 'torch.nn.modules.activation.ReLU'>
+no thing
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.batchnorm.BatchNorm2d'>
+<class 'torch.nn.modules.activation.ReLU'>
+<class 'deepv2d.modules.networks.shufflenet_layers.DepthSeparableConvBN'>
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.batchnorm.BatchNorm2d'>
+no thing
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.batchnorm.BatchNorm2d'>
+<class 'torch.nn.modules.activation.ReLU'>
+<class 'torch.nn.modules.activation.ReLU'>
+no thing
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.batchnorm.BatchNorm2d'>
+<class 'torch.nn.modules.activation.ReLU'>
+<class 'deepv2d.modules.networks.layer_ops.Conv2d'>
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'deepv2d.modules.networks.layer_ops.CDilated'>
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'deepv2d.modules.networks.layer_ops.CDilated'>
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'deepv2d.modules.networks.layer_ops.CDilated'>
+<class 'torch.nn.modules.conv.Conv2d'>
+no thing
+<class 'torch.nn.modules.conv.Conv2d'>
+<class 'torch.nn.modules.batchnorm.BatchNorm2d'>
+<class 'torch.nn.modules.activation.ReLU'>
+<class 'deepv2d.modules.networks.layer_ops.Conv2d'>
+<class 'torch.nn.modules.conv.Conv2d'>
+no thing to do !
+DepthModule(
+  (soft_argmax): SoftArgmax()
+  (encoder): Shufflenetv2Encoder(
+    (conv1): Conv2d(
+      (conv): Conv2d(3, 32, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1))
+    )
+    (res_conv1): ShuffleNetUnitV2A(
+      (conv1): Conv2dBnRel(
+        (conv): Conv2d(16, 4, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(4, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (depthwise_conv_bn): DepthSeparableConvBN(
+        (depth_wise): Conv2d(4, 4, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=4, bias=False)
+        (point_wise): Conv2d(4, 4, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(4, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2dBnRel(
+        (conv): Conv2d(4, 16, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(16, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (active): ReLU()
+    )
+    (res_conv2): ShuffleNetUnitV2A(
+      (conv1): Conv2dBnRel(
+        (conv): Conv2d(16, 4, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(4, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (depthwise_conv_bn): DepthSeparableConvBN(
+        (depth_wise): Conv2d(4, 4, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=4, bias=False)
+        (point_wise): Conv2d(4, 4, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(4, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2dBnRel(
+        (conv): Conv2d(4, 16, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(16, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (active): ReLU()
+    )
+    (res_conv3): ShuffleNetUnitV2B(
+      (conv1): Conv2dBnRel(
+        (conv): Conv2d(32, 7, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(7, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (depthwise_conv_bn): DepthSeparableConvBN(
+        (depth_wise): Conv2d(7, 7, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), groups=7, bias=False)
+        (point_wise): Conv2d(7, 7, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(7, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2dBnRel(
+        (conv): Conv2d(7, 32, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (depthwise_conv_bn_01): DepthSeparableConvBN(
+        (depth_wise): Conv2d(32, 32, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), groups=32, bias=False)
+        (point_wise): Conv2d(32, 7, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(7, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv3): Conv2dBnRel(
+        (conv): Conv2d(7, 32, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (active): ReLU()
+    )
+    (res_conv4): ShuffleNetUnitV2A(
+      (conv1): Conv2dBnRel(
+        (conv): Conv2d(32, 7, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(7, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (depthwise_conv_bn): DepthSeparableConvBN(
+        (depth_wise): Conv2d(7, 7, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=7, bias=False)
+        (point_wise): Conv2d(7, 7, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(7, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2dBnRel(
+        (conv): Conv2d(7, 32, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (active): ReLU()
+    )
+    (res_conv5): ShuffleNetUnitV2A(
+      (conv1): Conv2dBnRel(
+        (conv): Conv2d(32, 7, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(7, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (depthwise_conv_bn): DepthSeparableConvBN(
+        (depth_wise): Conv2d(7, 7, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=7, bias=False)
+        (point_wise): Conv2d(7, 7, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(7, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2dBnRel(
+        (conv): Conv2d(7, 32, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (active): ReLU()
+    )
+    (res_conv6): ShuffleNetUnitV2B(
+      (conv1): Conv2dBnRel(
+        (conv): Conv2d(64, 13, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(13, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (depthwise_conv_bn): DepthSeparableConvBN(
+        (depth_wise): Conv2d(13, 13, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), groups=13, bias=False)
+        (point_wise): Conv2d(13, 13, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(13, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2dBnRel(
+        (conv): Conv2d(13, 64, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (depthwise_conv_bn_01): DepthSeparableConvBN(
+        (depth_wise): Conv2d(64, 64, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), groups=64, bias=False)
+        (point_wise): Conv2d(64, 13, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(13, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv3): Conv2dBnRel(
+        (conv): Conv2d(13, 64, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (active): ReLU()
+    )
+    (res_conv7): ShuffleNetUnitV2A(
+      (conv1): Conv2dBnRel(
+        (conv): Conv2d(64, 13, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(13, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (depthwise_conv_bn): DepthSeparableConvBN(
+        (depth_wise): Conv2d(13, 13, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=13, bias=False)
+        (point_wise): Conv2d(13, 13, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(13, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2dBnRel(
+        (conv): Conv2d(13, 64, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (active): ReLU()
+    )
+    (res_conv8): ShuffleNetUnitV2A(
+      (conv1): Conv2dBnRel(
+        (conv): Conv2d(64, 13, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(13, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (depthwise_conv_bn): DepthSeparableConvBN(
+        (depth_wise): Conv2d(13, 13, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=13, bias=False)
+        (point_wise): Conv2d(13, 13, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(13, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      )
+      (conv2): Conv2dBnRel(
+        (conv): Conv2d(13, 64, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (active): ReLU()
+    )
+    (conv2): Conv2dBnRel(
+      (conv): Conv2d(128, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+      (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (act): ReLU()
+    )
+    (aspp): Aspp2d(
+      (conv1): Conv2d(
+        (conv): Conv2d(64, 26, kernel_size=(1, 1), stride=(1, 1))
+      )
+      (dilate_conv1): CDilated(
+        (conv): Conv2d(64, 26, kernel_size=(3, 3), stride=(1, 1), padding=(6, 6), dilation=(6, 6))
+      )
+      (dilate_conv2): CDilated(
+        (conv): Conv2d(64, 26, kernel_size=(3, 3), stride=(1, 1), padding=(12, 12), dilation=(12, 12))
+      )
+      (dilate_conv3): CDilated(
+        (conv): Conv2d(64, 26, kernel_size=(3, 3), stride=(1, 1), padding=(18, 18), dilation=(18, 18))
+      )
+      (last_conv): Conv2dBnRel(
+        (conv): Conv2d(104, 64, kernel_size=(1, 1), stride=(1, 1))
+        (bn): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+    )
+    (conv3): Conv2d(
+      (conv): Conv2d(64, 32, kernel_size=(1, 1), stride=(1, 1))
+    )
+  )
+  (decoder): FastResnetDecoderAvg(
+    (conv1): Conv3d(
+      (conv): Conv3d(64, 32, kernel_size=(1, 1, 1), stride=(1, 1, 1))
+    )
+    (res_conv1): FastResConv3d(
+      (conv1): Conv3dBnRel(
+        (conv): Conv3d(32, 32, kernel_size=(1, 1, 1), stride=(1, 1, 1))
+        (bn): BatchNorm3d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (conv2): Conv3dBnRel(
+        (conv): Conv3d(32, 32, kernel_size=(3, 3, 3), stride=(1, 1, 1), padding=(1, 1, 1))
+        (bn): BatchNorm3d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (conv3): Conv3dBnRel(
+        (conv): Conv3d(32, 32, kernel_size=(1, 1, 1), stride=(1, 1, 1))
+        (bn): BatchNorm3d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+    )
+    (stack_conv): FastHourglass3d(
+      (resnet): Conv3d(
+        (conv): Conv3d(32, 32, kernel_size=(1, 1, 1), stride=(1, 1, 1))
+      )
+      (pool): MaxPool3D(
+        (pool): MaxPool3d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+      )
+      (low1_conv): Conv3dBnRel(
+        (conv): Conv3d(32, 96, kernel_size=(3, 3, 3), stride=(1, 1, 1), padding=(1, 1, 1))
+        (bn): BatchNorm3d(96, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (low2_conv): Hourglass3d(
+        (resnet): ResConv3d(
+          (conv1): Conv3dBnRel(
+            (conv): Conv3d(96, 96, kernel_size=(3, 3, 3), stride=(1, 1, 1), padding=(1, 1, 1))
+            (bn): BatchNorm3d(96, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (act): ReLU()
+          )
+          (conv2): Conv3dBnRel(
+            (conv): Conv3d(96, 96, kernel_size=(3, 3, 3), stride=(1, 1, 1), padding=(1, 1, 1))
+            (bn): BatchNorm3d(96, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (act): ReLU()
+          )
+        )
+        (pool): MaxPool3D(
+          (pool): MaxPool3d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+        )
+        (low1_conv): Conv3dBnRel(
+          (conv): Conv3d(96, 160, kernel_size=(3, 3, 3), stride=(1, 1, 1), padding=(1, 1, 1))
+          (bn): BatchNorm3d(160, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (act): ReLU()
+        )
+        (low2_conv): Conv3dBnRel(
+          (conv): Conv3d(160, 160, kernel_size=(3, 3, 3), stride=(1, 1, 1), padding=(1, 1, 1))
+          (bn): BatchNorm3d(160, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (act): ReLU()
+        )
+        (low3_conv): Conv3dBnRel(
+          (conv): Conv3d(160, 96, kernel_size=(3, 3, 3), stride=(1, 1, 1), padding=(1, 1, 1))
+          (bn): BatchNorm3d(96, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (act): ReLU()
+        )
+      )
+      (low3_conv): Conv3dBnRel(
+        (conv): Conv3d(96, 32, kernel_size=(1, 1, 1), stride=(1, 1, 1))
+        (bn): BatchNorm3d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU()
+      )
+      (upnn2d): Upsample(scale_factor=2.0, mode=nearest)
+    )
+    (stereo_head): FastStereoHead(
+      (conv1_1): Conv3d(
+        (conv): Conv3d(32, 32, kernel_size=(1, 1, 1), stride=(1, 1, 1))
+      )
+      (act): ReLU()
+      (conv2): Conv3d(
+        (conv): Conv3d(32, 32, kernel_size=(3, 3, 3), stride=(1, 1, 1), padding=(1, 1, 1))
+      )
+      (conv3): Conv3d(
+        (conv): Conv3d(32, 32, kernel_size=(1, 1, 1), stride=(1, 1, 1))
+      )
+      (conv4): Conv3d(
+        (conv): Conv3d(32, 1, kernel_size=(1, 1, 1), stride=(1, 1, 1))
+      )
+    )
+  )
+)
+Number of Parameters: 2.3M
+Number of origin Parameters: 2.6M

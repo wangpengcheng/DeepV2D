@@ -62,13 +62,13 @@
             //     "--sequence=data/tum/cabinet",
             //     "--inference_file_name=data/tum/cabinet/rgb_depth_ground_test.txt"
             // ],
-            "program": "training/train_tum01.py",
-            "args": [
-                "--cfg=cfgs/tum/tum_2_2_shufflev2_fast.yaml",
-                "--name=tmu_model",
-                // "--restore=checkpoints/tum/tmu_model/_stage_2.ckpt",
-                "--dataset_dir=data/tum2" //,
-            ],
+            // "program": "training/train_tum01.py",
+            // "args": [
+            //     "--cfg=cfgs/tum/tum_2_2_shufflev2_fast.yaml",
+            //     "--name=tmu_model",
+            //     // "--restore=checkpoints/tum/tmu_model/_stage_2.ckpt",
+            //     "--dataset_dir=data/tum2" //,
+            // ],
             // "program": "training/train_nyuv2.py",
             // "args": [
             //     "--cfg=cfgs/nyu.yaml",
@@ -96,13 +96,13 @@
             //     "--cfg=cfgs/tum_2_2_fast_shuffle.yaml",
             //     "--model=checkpoints/tum/tmu_model/_stage_2.ckpt",
             //     "--dataset_dir=data/tum",
-            "program": "training/train_tum.py",
-            "args": [
-                "--cfg=cfgs/tum_2_2_fast_shufflev2.yaml",
-                "--name=tmu_model",
-                "--restore=checkpoints/tum/tmu_model/_stage_2.ckpt",
-                "--dataset_dir=data/tum3"//,
-             ],
+            // "program": "training/train_tum.py",
+            // "args": [
+            //     "--cfg=cfgs/tum_2_2_fast_shufflev2.yaml",
+            //     "--name=tmu_model",
+            //     "--restore=checkpoints/tum/tmu_model/_stage_2.ckpt",
+            //     "--dataset_dir=data/tum3"//,
+            //  ],
             // "program": "training/train_tum.py",
             // "args": [
             //     "--cfg=cfgs/tum/tum_2_2_resnet_resnet.yaml",
@@ -118,6 +118,28 @@
             //     "--dataset_dir=data/nyu2",
             //     "--n_iters=1"
             // ],
+            // "cwd": "${workspaceFolder}/netadapt",
+
+            // "program": "master.py",
+            // "args": [
+            //     "models/deepv2d/prune-by-mac",
+            //     "-inp","3"," 244","244",
+            //     "-im","models/deepv2d/model.pth.tar",
+            //     "-gp","0",
+            //     "-mi","3000",
+            //     "-bur","0.25",
+            //     "-rt","FLOPS",
+            //     "-irr","0.025",
+            //     "-rd","0.96",
+            //     "-lr","0.001",
+            //     "-st","500",
+            //     "-dp","/home/node/workspace/DeepV2D/data/tum3/",
+            //     "--arch","deepv2d"
+            //  ],
+            "program": "torch_pr.py",
+            "args": [
+                
+            ],
             "console": "integratedTerminal"
         }
     ]

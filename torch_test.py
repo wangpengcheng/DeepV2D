@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import sys
 import os
 sys.path.append('deepv2d')
@@ -15,13 +16,12 @@ from utils.my_utils import *
 import datetime
 #from torch2trt import torch2trt
 
-# 加载数据集进行推理
 
 def inference_test(deepModel, cfg):
    
     #deepModel = deepModel.load_state_dict(torch.load('pytorch/tum/tmu_model/depth.pth'))
     
-    db = TUM_RGBD(cfg.INPUT.RESIZE, "data/mydata2",test=False, r=2)
+    db = TUM_RGBD(cfg.INPUT.RESIZE, "data/tum-01",test=True, r=2)
 
     trainloader = torch.utils.data.DataLoader(db, batch_size=1, shuffle=False, num_workers=1)
     time_sum =0.0
@@ -38,10 +38,14 @@ def inference_test(deepModel, cfg):
             images = images.float().cuda()
             intrinsics_batch = intrinsics_batch.float().cuda()
             gt_batch = gt_batch.cuda()
-            # print(images.shape)
-            # print(Ts.shape)
-            # print(intrinsics_batch.shape)
+            print(images.shape)
+            print(Ts.shape)
+            print(intrinsics_batch.shape)
             # 计算时间
+<<<<<<< HEAD
+=======
+
+>>>>>>> 45876635bc82993df2dfa86bab9356e2effc6d11
             time_start = datetime.datetime.now()
             outputs = deepModel(Ts, images, intrinsics_batch)
             time_end = datetime.datetime.now()
@@ -56,7 +60,7 @@ def inference_test(deepModel, cfg):
             # 对深度图像进行平滑处理
             # key_frame_depth = cv2.medianBlur(key_frame_depth,5)
             image_depth = vis.create_ex_image_depth_figure(key_frame_image.cpu().detach().numpy(), depth_gt.cpu().detach().numpy(), key_frame_depth)
-            result_out_dir = "{}/{}".format("data/mydata_test", "inference_result_1")
+            result_out_dir = "{}/{}".format("data/tum3/rgbd_dataset_freiburg3_cabinet", "inference_result_2")
             # 检测路径文件夹
             if not os.path.exists(result_out_dir):
                 os.makedirs(result_out_dir)
@@ -92,7 +96,7 @@ def converToTensorrt(deepModel, cfg):
 
 def converToONNX(deepModel, cfg):
     model = deepModel.eval().cuda()
-    db = TUM_RGBD(cfg.INPUT.RESIZE, "data/tum2", r=2)
+    db = TUM_RGBD(cfg.INPUT.RESIZE, "data/tum-02", r=2)
 
     trainloader = torch.utils.data.DataLoader(db, batch_size=1, shuffle=False, num_workers=1)
     for i, data in enumerate(trainloader, 0):
@@ -125,8 +129,24 @@ if __name__ == '__main__':
     cfg = config.cfg_from_file("cfgs/tum_torch/tum_2_2_shufflev2_fast.yaml")
     os.environ['CUDA_VISIBLE_DEVICES'] = cfg.TRAIN.USE_GPU
     deepModel = DepthModule(cfg)
+<<<<<<< HEAD
     checkpoint = torch.load("pytorch_model/mydata/shufflenetv2_fast copy/step_43400.pth")
     deepModel.load_state_dict(checkpoint['net'])
+=======
+
+    deep_model_dict = deepModel.state_dict()
+    # print(deepModel)
+    #checkpoint = torch.load("pytorch_model/tum/shufflenetv2_fast/step_600.pth")
+    #deepModel.load_state_dict(checkpoint['net'])
+    #torch.save(deepModel, "netadapt/models/deepv2d/model.pth.tar")
+    model_dict = torch.load("netadapt/models/deepv2d/model.pth.tar")
+    pretrained_dict =  {k: v for k, v in model_dict.state_dict().items() if k in deep_model_dict}
+    deep_model_dict.update(pretrained_dict)
+    deepModel.load_state_dict(deep_model_dict)
+    #torch.save(deepModel, "netadapt/models/deepv2d/model.pth.tar")
+    print(deepModel)
+    #print(model_dict.cfg)
+>>>>>>> 45876635bc82993df2dfa86bab9356e2effc6d11
     inference_test(deepModel, cfg)
     #converToTensorrt(deepModel,cfg)
     #converToONNX(deepModel,cfg)

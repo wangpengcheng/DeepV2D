@@ -188,7 +188,8 @@ class ShuffleNetUnitV2A(nn.Module):
         # 块通道数目,即分组数量,一般都是4
         mid_channels = int(out_channels // 2)
         # 分组卷积
-        self.conv1 = Conv2dBnRel(input_dims, mid_channels, kSize=1, stride=1)
+        # self.conv1 = Conv2dBnRel(input_dims , mid_channels, kSize=1, stride=1)
+        self.conv1 = Conv2dBnRel(input_dims // 2, mid_channels, kSize=1, stride=1)
         # 注意这里的通道混洗
         
         # 深度可分离卷积
@@ -202,7 +203,8 @@ class ShuffleNetUnitV2A(nn.Module):
         # 首先进行二维分离操作,将第三维分成两个部分
         shortcut, x = input.chunk(2, dim=1)
         # 组卷积
-        out = self.conv1(input)
+        # out = self.conv1(input)
+        out = self.conv1(x)
         # 进行深度可分离卷积
         out = self.depthwise_conv_bn(out)
         # 进行分组卷积

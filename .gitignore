@@ -14,3 +14,5 @@ tmp/*
 data/*
 data/
 .vscode/settings.json
+docs/build
+netadapt/models/*

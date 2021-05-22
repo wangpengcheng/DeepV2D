@@ -1,16 +1,17 @@
 import numpy as np
+from torch._C import device
 from utils.einsum import einsum
 import torch
 
 MIN_DEPTH = 0.1
 # 按照形状进行网格化
-def coords_grid(shape, homogeneous=True):
+def coords_grid(shape, local_device, homogeneous=True):
     """ grid of pixel coordinates 获取每个像素的网格坐标点"""
     b, n, c, h, w = shape[:]
     # 进行平滑操作
     yy, xx = torch.meshgrid(torch.arange(h), torch.arange(w))
-    xx = xx.float().cuda()
-    yy = yy.float().cuda()
+    xx = xx.float().to(local_device)
+    yy = yy.float().to(local_device)
     # 进行维度拼接
     coords = torch.stack((xx, yy), dim=-1)
     #coords = torch.stack((xx, yy, torch.ones_like(xx)), dim=-1)
@@ -38,7 +39,7 @@ def extract_and_reshape_intrinsics(intrinsics, shape=None):
 def backproject(depth, intrinsics, jacobian=False):
     """ backproject depth map to point cloud """
     # s
-    coords = coords_grid(depth.shape, homogeneous=True)
+    coords = coords_grid(depth.shape, depth.device, homogeneous=True)
     #coords = coords.cuda()
     x, y = torch.unbind(coords, dim=-1)
 
