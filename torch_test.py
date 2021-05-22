@@ -23,7 +23,7 @@ def inference_test(deepModel, cfg):
     
     db = TUM_RGBD(cfg.INPUT.RESIZE, "data/mydata2",test=False, r=2)
 
-    trainloader = torch.utils.data.DataLoader(db, batch_size=1, shuffle=False, num_workers=8)
+    trainloader = torch.utils.data.DataLoader(db, batch_size=1, shuffle=False, num_workers=1)
     time_sum =0.0
     iter_number = len(db)
     deepModel.cuda()
@@ -33,7 +33,7 @@ def inference_test(deepModel, cfg):
             images_batch, poses_batch, gt_batch, filled_batch, pred_batch, intrinsics_batch, frame_id= data
                         # 进行数据预处理,主要是维度交换
             images = images_batch.permute(0, 1, 4, 2, 3)
-            #images, gt_batch, intrinsics_batch, a = prepare_inputs(cfg , images, gt_batch, intrinsics_batch)
+            images, gt_batch, intrinsics_batch, a = prepare_inputs(cfg , images, gt_batch, intrinsics_batch)
             Ts = poses_batch.cuda()
             images = images.float().cuda()
             intrinsics_batch = intrinsics_batch.float().cuda()
@@ -125,7 +125,7 @@ if __name__ == '__main__':
     cfg = config.cfg_from_file("cfgs/tum_torch/tum_2_2_shufflev2_fast.yaml")
     os.environ['CUDA_VISIBLE_DEVICES'] = cfg.TRAIN.USE_GPU
     deepModel = DepthModule(cfg)
-    checkpoint = torch.load("pytorch_model/mydata/shufflenetv2_fast/step_12100.pth")
+    checkpoint = torch.load("pytorch_model/mydata/shufflenetv2_fast copy/step_43400.pth")
     deepModel.load_state_dict(checkpoint['net'])
     inference_test(deepModel, cfg)
     #converToTensorrt(deepModel,cfg)

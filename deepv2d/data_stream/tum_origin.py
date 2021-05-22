@@ -15,8 +15,8 @@ import sys
 import threading, time
 from utils.tum_associate import *
 from torch.utils.data import DataLoader,Dataset
-from utils.my_utils import *
-factor = 5000.0 # for the 16-bit PNG files 
+
+factor = 1000.0 # for the 16-bit PNG files 
 # OR: factor = 1 # for the 32-bit float images in the ROS bag files
 #intrinsics = np.array([fx, fy, cx, cy],dtype=np.float32)
 
@@ -177,8 +177,7 @@ def pose_vec2mat(pvec, use_filler=True):
 class TUM_RGBD(Dataset):
     """主要用来进行数据的加载与查找
     """
-    def __init__(self, resize, dataset_path, test=False, n_frames=5, r=2, cfg = None):
-        self.cfg = cfg
+    def __init__(self, resize, dataset_path, test=False, n_frames=5, r=2):
         self.dataset_path = dataset_path
         self.resize = resize
         self.n_frames = n_frames
@@ -197,7 +196,7 @@ class TUM_RGBD(Dataset):
         self.depth_index = 0
         
         self.build_dataset_index(r=r)
-        #self.build_fast_map()
+        self.build_fast_map()
         
     # 获取数据长度
     def __len__(self):
@@ -207,14 +206,15 @@ class TUM_RGBD(Dataset):
         return [self.n_frames, self.height, self.width]
     # 获取数据
     def __getitem__(self, index):
-        # try:
+        try:
             # 获取索引
             data_blob = self.dataset_index[index]
             num_frames = data_blob['n_frames']
             # 图片样例数量
             num_samples = self.n_frames - 1
-            # 
+
             frameid = data_blob['id']
+            
             keyframe_index = num_frames // 2 # 选取中间帧作为关键帧
             # 创建关键帧
             inds = np.arange(num_frames)
@@ -226,11 +226,7 @@ class TUM_RGBD(Dataset):
             # 读取图像
             images = []
             for i in inds:
-                image_name = data_blob['images'][i]
-                image = cv2.imread(image_name)
-                image = cv2.resize(image, (int(self.width), int(self.height)))
-                #image = self.images[self.images_map[data_blob['images'][i]]]
-
+                image = self.images[self.images_map[data_blob['images'][i]]]
                 images.append(image)
             # 转换位姿信息
             poses = []
@@ -245,24 +241,14 @@ class TUM_RGBD(Dataset):
             # 获取深度信息
             depth_file = data_blob['depth']
             # 读取深度信息
-            depth = cv2.imread(depth_file, cv2.IMREAD_ANYDEPTH)
-            depth = cv2.resize(depth, (int(self.width), int(self.height)))
-            depth = (depth.astype(np.float32))/factor
-            #images_batch, gt_batch, intrinsics_batch, a = prepare_inputs(cfg , images_batch, gt_batch, intrinsics_batch)
-
-            # 读取深度信息
-            # depth = self.depths[self.depths_map[depth_file]]
+            depth = self.depths[self.depths_map[depth_file]]
             myfilled = fill_depth(depth)
             K = data_blob['intrinsics']
-            
             # 相机内参，转换为向量矩阵
             kvec = K.copy()
-
-            #images, depth, kvec, a  = prepare_inputs(self.cfg , images, depth, kvec)
-
             return images, poses, depth, myfilled, myfilled, kvec, frameid
-        # except BaseException:
-        #     print(" error ", index, depth_file)
+        except BaseException:
+            print(" error ", index, depth_file)
         
 
 

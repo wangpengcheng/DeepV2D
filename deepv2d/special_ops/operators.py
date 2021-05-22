@@ -164,9 +164,11 @@ def backproject_avg(
     
     Tii = my_gather(Ts, ii, 1)
     Tjj = my_gather(Ts, jj, 1)
-
+    Tii1 = Tii*torch.inverse(Tii)
+    print(Tii1)
     # 计算对应矩阵 
-    Tii = Tii * TS_inverse(Tii)
+    Tii2 = Tii * TS_inverse(Tii)
+    print(Tii2)
     Tij = Tjj * TS_inverse(Tii)
     
     fmaps1 = my_gather(fmaps, ii, 1)
