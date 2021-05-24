@@ -3,7 +3,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
+import sys, os
 
+sys.path.append('deepv2d')
+sys.path.append('evaluation')
 from .networks import hg
 from .networks.layer_ops import *
 from .networks.coders import *

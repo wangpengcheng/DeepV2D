@@ -169,16 +169,6 @@ def backproject_avg(
     ii = ii.view([-1]).to(fmaps.device)
     jj = jj.view([-1]).to(fmaps.device)
     
-<<<<<<< HEAD
-    Tii = my_gather(Ts, ii, 1)
-    Tjj = my_gather(Ts, jj, 1)
-    Tii1 = Tii*torch.inverse(Tii)
-    print(Tii1)
-    # 计算对应矩阵 
-    Tii2 = Tii * TS_inverse(Tii)
-    print(Tii2)
-    Tij = Tjj * TS_inverse(Tii)
-=======
     Ti = my_gather(Ts, ii, 1)
     Tj = my_gather(Ts, jj, 1)
     #Tii1 = Tii * TS_inverse(Tii)
@@ -192,7 +182,6 @@ def backproject_avg(
     Tij = torch.bmm(Tj, TS_inverse(Ti)).view(b, n, 4, 4)
     # Tii1 = Tii[...,0:3,:]
     # Tij1 = Tij[...,0:3,:]
->>>>>>> 45876635bc82993df2dfa86bab9356e2effc6d11
     
     fmaps1 = my_gather(fmaps, ii, 1)
     fmaps2 = my_gather(fmaps, jj, 1)

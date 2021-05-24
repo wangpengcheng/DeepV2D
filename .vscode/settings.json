@@ -1,5 +1,5 @@
 {
-    "python.pythonPath": "/home/node/.conda/envs/consistent_depth/bin/python",
+    "python.pythonPath": "/home/ls/.conda/envs/consistent_depth/bin/python",
     "git.ignoreLimitWarning": true,
     "files.associations": {
         "*.md": "markdown",
